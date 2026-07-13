@@ -1,168 +1,171 @@
-# A3 Multi-Agent System — Architecture
+# A3 — System Architecture
 
-> v2.6 | 18 modules | ~6,500 lines | 241 tests
-
----
-
-## Overview
-
-A3 is a **multi-agent personalized learning system**. Students describe their goals in natural language, and a pipeline of specialized AI agents collaboratively generates personalized learning paths, recommends resources, evaluates quality, and continuously improves through self-reflection.
+> **12 Agents | EventBus | Memory Layer | Knowledge Base | Dashboard**
 
 ---
 
-## Architecture Diagram
+## System Overview
 
-```
-                         ┌─────────────────────┐
-                         │    Student Input     │
-                         │  "I want to learn    │
-                         │   Multi-Agent AI..." │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                    Multi-Agent Runtime                             │
-│                                                                    │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
-│  │ Profile  │  │ Planner  │  │ Resource │  │Evaluator │         │
-│  │  Agent   │→ │  Agent   │→ │Rec Agent │→ │  Agent   │         │
-│  └──────────┘  └──────────┘  └──────────┘  └────┬─────┘         │
-│                                                  │               │
-│                        ┌─────────────────────────┘               │
-│                        ▼                                          │
-│              ┌──────────────┐    ┌──────────────┐                │
-│              │MetaReflector │ →  │Improvement   │                │
-│              │ (Reflection) │    │    Loop      │                │
-│              └──────────────┘    └──────────────┘                │
-│                                                                    │
-├───────────────────────────────────────────────────────────────────┤
-│                     Infrastructure Layer                           │
-│                                                                    │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────────────┐           │
-│  │Memory    │  │  EventBus    │  │ AgentTrace       │           │
-│  │Manager   │  │  (Singleton) │  │  Collector       │           │
-│  └──────────┘  └──────────────┘  └──────────────────┘           │
-│                                                                    │
-│  ┌──────────────┐  ┌──────────────┐                               │
-│  │Decision      │  │ Experience   │                               │
-│  │Explainer     │  │ Memory       │                               │
-│  └──────────────┘  └──────────────┘                               │
-└───────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │   Dashboard V2       │
-                         │  6-Panel Observatory │
-                         │  (Streamlit)         │
-                         └─────────────────────┘
+A3 is a research prototype exploring **multi-agent collaboration for personalized learning**. Instead of a single LLM, 12 specialized agents collaborate through shared memory and an EventBus to understand learners, generate personalized content, and continuously improve.
+
+---
+
+## 12-Agent Architecture
+
+```mermaid
+graph TD
+    User[👤 Student Input] --> ConvProf[ConversationProfileAgent]
+    ConvProf --> Profile[ProfileAgent]
+    Profile --> Memory[StudentMemory]
+    Memory --> Planner[PlannerAgent]
+    Planner --> KB[(Course Knowledge Base)]
+    Planner --> ResourceRec[ResourceRecommendationAgent]
+    Planner --> ResourceGen[ResourceGenerationAgent]
+    ResourceGen --> Content[ContentAgent]
+    Content --> ReviewGate[🚪 ReviewGate]
+    ReviewGate --> UserSim[UserSimulationAgent]
+    UserSim -->|score < 70| Feedback[FeedbackLoop]
+    Feedback --> MetaRef[🔍 MetaReflector]
+    MetaRef --> ExpMem[(ExperienceMemory)]
+    Feedback --> Content
+    UserSim -->|score >= 70| Evaluator[AgentEvaluator]
+    Evaluator --> Improvement[ImprovementLoop]
+    Improvement --> ExpMem
 ```
 
 ---
 
-## Agent Roles
+## Agent Communication Flow
 
-| Agent | Responsibility | Reasoning |
-|:------|:---------------|:----------|
-| **ProfileAgent** | NL → 6-dim DynamicProfile | Rule engine (keywords + priority) |
-| **ConversationProfileAgent** | Multi-turn profile collection | Completeness checker +追问 |
-| **PlannerAgent** | Profile + curriculum → LearningPlan | 5-level curriculum auto-detection |
-| **ResourceRecommendationAgent** | Memory + profile → resource plan | Mastery-based 7-type recommendation |
-| **ContentAgent** | 5-asset content generation | LLM-driven (tutorial/mindmap/quiz/extended/sandbox) |
-| **ReviewGate** | 3-gate quality check | AST + Pytest + Judge |
-| **UserSimulationAgent** | First-person learning simulation | Cognitive-profile-driven scoring |
-| **AgentEvaluator** | 4-dim quality scoring | RuleJudge + LLMJudge |
-| **MetaReflector** | Failure root-cause analysis | Attempt-count-based diagnosis |
-| **ImprovementLoop** | Low-score → strategy update | Evaluation-driven suggestions |
+Agents communicate through a **Singleton EventBus** — no direct coupling:
 
----
+```mermaid
+sequenceDiagram
+    participant Student
+    participant ProfileAgent
+    participant EventBus
+    participant PlannerAgent
+    participant ResourceAgent
+    participant Evaluator
 
-## Memory System
-
-```
-StudentMemory          ExperienceMemory
-┌─────────────────┐    ┌─────────────────┐
-│ profile_history  │    │ problem         │
-│ mastery_map (EMA)│    │ cause           │
-│ weak_points      │    │ solution        │
-│ feedback_history │    │ success_rate    │
-│ session_summary  │    │ keywords        │
-└─────────────────┘    └─────────────────┘
-        │                      │
-        └──────────┬───────────┘
-                   ▼
-           MemoryManager
-         (unified access)
+    Student->>ProfileAgent: Natural Language Input
+    ProfileAgent->>EventBus: emit(profile_extracted)
+    EventBus-->>PlannerAgent: profile + gap
+    PlannerAgent->>EventBus: emit(plan_created)
+    EventBus-->>ResourceAgent: plan + profile
+    ResourceAgent->>EventBus: emit(resources_generated)
+    EventBus-->>Evaluator: resources + profile
+    Evaluator->>EventBus: emit(evaluation_complete)
 ```
 
-- **EMA α=0.5**: Mastery updates via exponential moving average
-- **Keyword recall**: Experience search via token + substring matching
-- **Vector-ready**: API designed for future ChromaDB replacement
+---
+
+## Event-Driven Design
+
+Every agent action is traced through EventBus:
+
+| Event Type | Emitter | Content |
+|:-----------|:--------|:--------|
+| `profile_extracted` | ProfileAgent | 6-dim profile + confidence |
+| `plan_created` | PlannerAgent | Nodes, strategies, minutes |
+| `resources_generated` | ResourceGenerationAgent | 6 resource types |
+| `evaluation_complete` | AgentEvaluator | 4-dim scores |
+| `feedback_loop` | FeedbackLoop | Prompts refined |
+| `experience_stored` | MetaReflector | Failure patterns |
+
+Each event carries: `source_agent`, `action`, `input_summary`, `output_summary`, `duration_ms`, `status`.
 
 ---
 
-## Data Flow
+## Memory Layer
 
 ```
-Student NL
-    │
-    ▼
-ProfileAgent (rule-mode, 6-dim extraction)
-    │
-    ▼
-StudentMemory (persist profile + mastery_map)
-    │
-    ▼
-PlannerAgent (auto-detect curriculum → personalized nodes)
-    │
-    ▼
-ResourceRecommendationAgent (7 resource types, explainable)
-    │
-    ▼
-AgentEvaluator (4-dim: correctness/personalization/explainability/efficiency)
-    │
-    ▼
-ImprovementLoop (low-score detection → reflection → strategy)
-    │
-    ▼
-Dashboard V2 (6 panels, demo + runtime modes)
+┌─────────────────────────────────────────────┐
+│              MemoryManager                    │
+│                                               │
+│  ┌─────────────────┐  ┌───────────────────┐  │
+│  │ StudentMemory   │  │ ExperienceMemory  │  │
+│  │                 │  │                   │  │
+│  │ profile_history │  │ failure_patterns  │  │
+│  │ weak_points     │  │ solutions         │  │
+│  │ mastery_map     │  │ success_rate      │  │
+│  │ (EMA α=0.5)    │  │ keywords          │  │
+│  │ feedback_history│  │                   │  │
+│  └────────┬────────┘  └────────┬──────────┘  │
+│           │                    │              │
+│           ▼                    ▼              │
+│     storage/memory/     storage/memory/       │
+│     students/<id>.json  experience/records.json│
+└─────────────────────────────────────────────┘
 ```
 
-All events flow through **EventBus** (singleton) → **AgentTraceCollector** (persisted JSON).
+**EMA Mastery Formula**: `new = old × 0.5 + recent_score × 0.5`
 
 ---
 
-## Evaluation Pipeline
+## Knowledge Base
 
-| Dimension | Weight | Method |
-|:----------|:------:|:-------|
-| Correctness | 0.35 | Output structure + field completeness |
-| Personalization | 0.30 | Memory integration check |
-| Explainability | 0.20 | Reason/evidence presence |
-| Efficiency | 0.15 | Step count + redundancy |
+```
+knowledge_base/
+└── artificial_intelligence_multi_agent_course/
+    ├── course_intro.md          # Course overview
+    ├── chapters/                # 6 chapters
+    │   ├── chapter_01_ai_foundation.md
+    │   ├── chapter_02_llm_architecture.md
+    │   ├── chapter_03_prompt_engineering.md
+    │   ├── chapter_04_rag_systems.md
+    │   ├── chapter_05_agent_design.md
+    │   └── chapter_06_evaluation.md
+    ├── resources.json           # External references
+    └── exercises.json           # 24 exercises
+```
 
----
-
-## Dashboard V2 — 6 Panels
-
-| Panel | Data Source | Demo Content |
-|:------|:------------|:-------------|
-| System Overview | EventBus + TraceCollector + MemoryManager | 9 agents, 42 traces, 12 lessons |
-| Student Intelligence | StudentMemoryStore | 6-dim profile, mastery heatmap |
-| Execution Timeline | AgentTraceCollector | 12 events, reasoning_type + latency |
-| Decision Explainability | DecisionExplainer | 8 decisions, avg confidence 89% |
-| Agent Evaluation | AgentEvaluator | 4 agents, 4 dimensions each |
-| Self Improvement | ImprovementLoop + ExperienceMemory | Failure → Reflection → Strategy |
+Loaded via `CourseKnowledgeBase` → bridges to `PlannerAgent` for knowledge-gap-driven planning.
 
 ---
 
-## Technical Stack
+## Streamlit Dashboard
 
-| Layer | Technology |
-|:------|:-----------|
-| Agent Runtime | Python 3.11+ |
-| Dashboard | Streamlit |
-| Event System | AgentEventBus (singleton) |
-| Trace Storage | JSON (TraceCollector) |
-| Memory Storage | JSON (StudentMemory + ExperienceMemory) |
-| Testing | pytest (241 tests) |
-| CI/CD | ~/Terence-Agent/ PR workflow |
+6-panel observability dashboard:
+
+| Panel | Content |
+|:------|:--------|
+| System Overview | 12-agent topology, active sessions |
+| Student Intelligence | 6-dim profile, mastery heatmap |
+| Execution Timeline | Agent trace with latencies |
+| Decision Explainability | Reasons + evidence per decision |
+| Agent Evaluation | 4-dim quality scores |
+| Self Improvement | Failure → Reflect → Improve cycle |
+
+---
+
+## ReviewGate (3-Gate Content Safety)
+
+```
+Content → Gate 1: AST Static Check → Gate 2: Pytest Dynamic Validation → Gate 3: LLM Judge → Output
+              ❌ Rejected                     ❌ Rejected                      ❌ Rejected
+```
+
+---
+
+## Self-Improvement Loop
+
+```
+Agent Execute → Evaluate (4-dim) → score < threshold?
+    YES → MetaReflector.analyze() → ExperienceMemory.store()
+        → ImprovementLoop.suggest() → Re-execute with improved strategy
+    NO  → Commit result
+```
+
+---
+
+## Metrics
+
+| Metric | Value |
+|:-------|:------|
+| Agents | 12 |
+| Python LOC | 13,048 |
+| Tests | 241/245 (97.4%) |
+| Resource Types | 6 |
+| Profile Dimensions | 6 |
+| Knowledge Concepts | 46 |
