@@ -1076,7 +1076,7 @@ ProfileUpdateEngine.update()                  ← Step ⑩: 画像更新 + 衰�
 ## 附录 B: 文件增量规划
 
 ```
-a3-multi-agent-system/
+A3-Multi-Agent-System/
 ├── src/
 │   ├── council/                          # NEW — 协商层
 │   │   ├── __init__.py

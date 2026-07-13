@@ -1,6 +1,6 @@
 #!/bin/bash
 # A3 多智能体系统开发环境激活脚本
-# Source this file: source projects/a3-multi-agent-system/activate.sh
+# Source this file: source projects/A3-Multi-Agent-System/activate.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$SCRIPT_DIR/.venv"

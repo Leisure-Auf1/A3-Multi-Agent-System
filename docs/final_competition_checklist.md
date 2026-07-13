@@ -9,7 +9,7 @@
 
 ```bash
 # 1. 进入项目目录
-cd projects/a3-multi-agent-system
+cd projects/A3-Multi-Agent-System
 
 # 2. 安装依赖（仅需 streamlit）
 pip install streamlit

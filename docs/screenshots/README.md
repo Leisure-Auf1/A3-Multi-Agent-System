@@ -22,7 +22,7 @@
 
 ```bash
 # 1. Launch dashboard
-cd projects/a3-multi-agent-system
+cd projects/A3-Multi-Agent-System
 streamlit run web/app_v2.py
 
 # 2. Dashboard opens in browser at http://localhost:8501
