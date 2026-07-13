@@ -1,0 +1,37 @@
+{
+  "blueprint_id": "BP-GIT-INTERNAL-002",
+  "subject": "Git Core Infrastructure & DAG Topology",
+  "target_learner_profile": {
+    "persona": "visual_learner_hates_magic",
+    "description": "极度讨厌机械记忆 Git 命令（如 git add/commit），必须看懂 .git/objects 物理底层的有向无环图与哈希指针链接才能心安的底层逻辑控。"
+  },
+  "global_constraints": {
+    "min_review_score": 85,
+    "forbidden_keywords": ["os.system", "subprocess", "eval"]
+  },
+  "knowledge_nodes": [
+    {
+      "node_id": "node_1",
+      "title": "内容寻址存储与 Blob 对象的哈希计算",
+      "dependencies": [],
+      "core_concept": "理解 Git 如何通过 SHA-1 哈希算法将文件内容转化为唯一的键，并用 Python 手动仿真实现解压读取 .git/objects 的核心机制。"
+    },
+    {
+      "node_id": "node_2",
+      "title": "快照与 Tree 对象的目录树构建",
+      "dependencies": ["node_1"],
+      "core_concept": "解密 Git 如何用 Tree 对象存储文件名与权限，仿真实现将多个 Blob 组合为一个静态 Snapshot 的 AST 逻辑。"
+    },
+    {
+      "node_id": "node_3",
+      "title": "Commit 链条与有向无环图 (DAG) 拓扑演化",
+      "dependencies": ["node_2"],
+      "core_concept": "理解指针移动与分支的本质。用 Python 仿真构建包含 parent 指针的 Commit 节点，并在内存中还原分支合并冲突的判定拓扑。"
+    }
+  ],
+  "learning_path": {
+    "suggested_order": ["node_1", "node_2", "node_3"],
+    "estimated_time_minutes": 150,
+    "progression_logic": "从原子对象（Blob/SHA1）→ 目录结构（Tree）→ 历史拓扑（Commit DAG），层层递进，每一层都是下一层的物理基础。"
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "name": "A3 Benchmark Dataset v1",
+  "description": "20 个模拟学生, 覆盖 beginner/intermediate/advanced/edge",
+  "total_cases": 20,
+  "generated_at": "2026-07-12T23:11:41.622006+00:00",
+  "cases": [
+    {
+      "case_id": "beginner_01",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "cognitive_style": "visual_dominant",
+        "learning_pace": "fast_track"
+      },
+      "history": "我是大一新生，完全零基础，喜欢看视频和图解学习。想快速学会Python。",
+      "expected_behavior": {
+        "should_detect_knowledge": "junior_dev",
+        "should_detect_style": "visual_dominant"
+      }
+    },
+    {
+      "case_id": "beginner_02",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "cognitive_style": "text_linear",
+        "learning_pace": "deep_dive"
+      },
+      "history": "编程小白，没学过任何编程语言。喜欢慢慢看书，一步步理解每个概念。",
+      "expected_behavior": {
+        "should_detect_knowledge": "junior_dev",
+        "should_detect_style": "text_linear"
+      }
+    },
+    {
+      "case_id": "beginner_03",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "cognitive_style": "auditory",
+        "frustration_threshold": "low"
+      },
+      "history": "刚开始接触编程，更喜欢听课和听讲解来学习。很容易放弃，需要多鼓励。",
+      "expected_behavior": {
+        "should_detect_knowledge": "junior_dev",
+        "should_detect_frustration": "low"
+      }
+    },
+    {
+      "case_id": "beginner_04",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "interaction_preference": "code_sandbox"
+      },
+      "history": "新手，但是喜欢自己动手敲代码，边写边学效率最高。",
+      "expected_behavior": {
+        "should_detect_interaction": "code_sandbox"
+      }
+    },
+    {
+      "case_id": "beginner_05",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "error_prone_bias": "magic_syntax_blind"
+      },
+      "history": "Python小白，看到@装饰器这种黑魔法就完全懵了。",
+      "expected_behavior": {
+        "should_detect_error_bias": "magic_syntax_blind"
+      }
+    },
+    {
+      "case_id": "beginner_06",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "learning_pace": "fast_track",
+        "frustration_threshold": "low"
+      },
+      "history": "零基础急着学Python找工作，容易焦虑放弃。",
+      "expected_behavior": {
+        "should_detect_pace": "fast_track",
+        "should_detect_frustration": "low"
+      }
+    },
+    {
+      "case_id": "beginner_07",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "cognitive_style": "visual_dominant",
+        "interaction_preference": "quiz_first"
+      },
+      "history": "刚学编程，喜欢先做题测试自己理解没有，配合视频学习。",
+      "expected_behavior": {
+        "should_detect_interaction": "quiz_first"
+      }
+    },
+    {
+      "case_id": "beginner_08",
+      "category": "beginner",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "error_prone_bias": "indentation_errors"
+      },
+      "history": "刚开始学Python，缩进老是出错，冒号总忘。",
+      "expected_behavior": {
+        "should_detect_error_bias": "indentation_errors"
+      }
+    },
+    {
+      "case_id": "intermediate_01",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "cognitive_style": "visual_dominant",
+        "learning_pace": "normal"
+      },
+      "history": "学了一段时间Python，会写基本函数和类。喜欢看视频和图解深入学习。",
+      "expected_behavior": {
+        "should_detect_knowledge": "mid_level"
+      }
+    },
+    {
+      "case_id": "intermediate_02",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "interaction_preference": "code_sandbox",
+        "learning_pace": "deep_dive"
+      },
+      "history": "有Python基础，喜欢通过实际项目学习，想深入搞懂底层原理。",
+      "expected_behavior": {
+        "should_detect_knowledge": "mid_level",
+        "should_detect_pace": "deep_dive"
+      }
+    },
+    {
+      "case_id": "intermediate_03",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "error_prone_bias": "type_mismatch"
+      },
+      "history": "写过一段时间Python，经常遇到类型报错，int和str搞混。",
+      "expected_behavior": {
+        "should_detect_error_bias": "type_mismatch"
+      }
+    },
+    {
+      "case_id": "intermediate_04",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "cognitive_style": "text_linear",
+        "frustration_threshold": "high"
+      },
+      "history": "有一定基础，喜欢通过文档和书籍系统学习，不怕困难。",
+      "expected_behavior": {
+        "should_detect_frustration": "high"
+      }
+    },
+    {
+      "case_id": "intermediate_05",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "interaction_preference": "quiz_first"
+      },
+      "history": "学过Python基础，喜欢通过刷题和测验来检验学习效果。",
+      "expected_behavior": {
+        "should_detect_interaction": "quiz_first"
+      }
+    },
+    {
+      "case_id": "intermediate_06",
+      "category": "intermediate",
+      "profile": {
+        "knowledge_base": "mid_level",
+        "error_prone_bias": "import_issues"
+      },
+      "history": "有一定经验，但导入模块经常找不到路径，import出错很多。",
+      "expected_behavior": {
+        "should_detect_error_bias": "import_issues"
+      }
+    },
+    {
+      "case_id": "advanced_01",
+      "category": "advanced",
+      "profile": {
+        "knowledge_base": "senior",
+        "cognitive_style": "text_linear",
+        "learning_pace": "deep_dive"
+      },
+      "history": "多年Python开发经验，熟练掌握各种框架。喜欢通过文档深入学习，想彻底搞懂底层。",
+      "expected_behavior": {
+        "should_detect_knowledge": "senior"
+      }
+    },
+    {
+      "case_id": "advanced_02",
+      "category": "advanced",
+      "profile": {
+        "knowledge_base": "senior",
+        "interaction_preference": "code_sandbox",
+        "frustration_threshold": "high"
+      },
+      "history": "资深开发者，经常写项目，抗压能力强，喜欢挑战。",
+      "expected_behavior": {
+        "should_detect_frustration": "high"
+      }
+    },
+    {
+      "case_id": "advanced_03",
+      "category": "advanced",
+      "profile": {
+        "knowledge_base": "senior",
+        "cognitive_style": "visual_dominant"
+      },
+      "history": "老手程序员，但喜欢通过架构图和可视化理解复杂系统。",
+      "expected_behavior": {
+        "should_detect_knowledge": "senior",
+        "should_detect_style": "visual_dominant"
+      }
+    },
+    {
+      "case_id": "advanced_04",
+      "category": "advanced",
+      "profile": {
+        "knowledge_base": "senior",
+        "error_prone_bias": "variable_scoping"
+      },
+      "history": "经验丰富但偶尔在闭包和作用域上踩坑，变量作用域容易混淆。",
+      "expected_behavior": {
+        "should_detect_error_bias": "variable_scoping"
+      }
+    },
+    {
+      "case_id": "edge_01",
+      "category": "edge",
+      "profile": {
+        "knowledge_base": "junior_dev",
+        "cognitive_style": "visual_dominant"
+      },
+      "history": "想学Python。",
+      "expected_behavior": {
+        "should_not_crash": true,
+        "should_return_defaults": true
+      }
+    },
+    {
+      "case_id": "edge_02",
+      "category": "edge",
+      "profile": {
+        "knowledge_base": "junior_dev"
+      },
+      "history": "",
+      "expected_behavior": {
+        "should_not_crash": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "pipeline": "A3 Multi-Agent System — Git Core Infrastructure & DAG Topology",
+  "blueprint": "exec-plans/blueprint.json",
+  "created": "2026-07-13T08:00:00Z",
+  "nodes": {
+    "node_1": {
+      "title": "内容寻址存储与 Blob 对象的哈希计算",
+      "dependencies": [],
+      "status": "DONE",
+      "outputs": {
+        "tutorial": "outputs/node-1-tutorial.md",
+        "tests": "outputs/node-1-tests.py",
+        "exercise": "outputs/exercise.py",
+        "solution": "outputs/solution.py"
+      }
+    },
+    "node_2": {
+      "title": "快照与 Tree 对象的目录树构建",
+      "dependencies": ["node_1"],
+      "status": "DONE",
+      "outputs": {
+        "tutorial": "outputs/node-2-tutorial.md",
+        "tests": "outputs/node-2-tests.py"
+      }
+    },
+    "node_3": {
+      "title": "Commit 链条与有向无环图 (DAG) 拓扑演化",
+      "dependencies": ["node_2"],
+      "status": "DONE",
+      "outputs": {
+        "tutorial": "outputs/node-3-tutorial.md",
+        "tests": "outputs/node-3-tests.py"
+      }
+    }
+  },
+  "progress": {
+    "completed": 3,
+    "total": 3,
+    "ratio": "3/3"
+  },
+  "test_summary": {
+    "node_2": "17/17 PASS (3 skipped — student stubs)",
+    "node_3": "27/27 PASS (4 skipped — student stubs)"
+  }
+}

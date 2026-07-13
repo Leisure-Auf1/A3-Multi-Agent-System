@@ -1,0 +1,245 @@
+{
+  "course_id": "ai_ma_101",
+  "exercises": {
+    "chapter_01": {
+      "title": "Introduction to AI",
+      "questions": [
+        {
+          "id": "c1_q1",
+          "type": "short_answer",
+          "question": "Compare and contrast Symbolic AI with modern Foundation Models. What are the key differences in approach and capability?",
+          "rubric": ["Identifies rule-based vs data-driven", "Mentions brittleness of symbolic", "Mentions emergence in foundations", "Provides concrete examples"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c1_q2",
+          "type": "explanation",
+          "question": "Explain why the Transformer architecture was a breakthrough over RNNs and LSTMs.",
+          "rubric": ["Mentions parallelization", "Explains self-attention mechanism", "Discusses long-range dependencies", "Mentions scalability"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c1_q3",
+          "type": "list",
+          "question": "List three advantages of multi-agent systems over monolithic models. Provide a concrete scenario for each.",
+          "rubric": ["3 distinct advantages", "Each with concrete scenario", "No overlap between advantages"],
+          "max_score": 6,
+          "estimated_minutes": 8
+        },
+        {
+          "id": "c1_q4",
+          "type": "research",
+          "question": "Research: Find one real-world multi-agent application (not from course materials). Describe its architecture and explain why multi-agent was chosen.",
+          "rubric": ["Original example", "Architecture described", "Justification for multi-agent", "Sources cited"],
+          "max_score": 15,
+          "estimated_minutes": 20
+        }
+      ]
+    },
+    "chapter_02": {
+      "title": "Large Language Models",
+      "questions": [
+        {
+          "id": "c2_q1",
+          "type": "calculation",
+          "question": "Calculate the number of attention operations for a sequence of length L=2048 with hidden dimension d=4096 and h=32 attention heads.",
+          "rubric": ["Correct formula: L² × d/h per head", "Correct total: ~537M operations", "Shows step-by-step work"],
+          "max_score": 8,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c2_q2",
+          "type": "explanation",
+          "question": "Explain why RLHF (Reinforcement Learning from Human Feedback) improves instruction following compared to SFT (Supervised Fine-Tuning) alone.",
+          "rubric": ["Describes SFT limitation (distribution mismatch)", "Explains reward model training", "Explains PPO optimization", "Discusses relative vs absolute quality"],
+          "max_score": 12,
+          "estimated_minutes": 12
+        },
+        {
+          "id": "c2_q3",
+          "type": "comparison",
+          "question": "Compare the context window sizes of GPT-4, Claude 3.5, and Gemini 1.5. Explain the trade-offs of larger context windows.",
+          "rubric": ["Correct window sizes", "Discusses attention cost (quadratic)", "Discusses retrieval quality (needle-in-haystack)", "Discusses practical implications"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c2_q4",
+          "type": "implementation",
+          "question": "Implement a minimal scaled dot-product attention mechanism in Python (30 lines max). Include multi-head projection.",
+          "rubric": ["Correct attention formula", "Multi-head implementation", "Matrix operations (no loops)", "Runnable code"],
+          "max_score": 15,
+          "estimated_minutes": 20
+        }
+      ]
+    },
+    "chapter_03": {
+      "title": "Prompt Engineering",
+      "questions": [
+        {
+          "id": "c3_q1",
+          "type": "comparative_prompt",
+          "question": "Write 3 versions of a prompt for 'explain recursion': (1) Zero-shot, (2) Few-shot with 2 examples, (3) Chain-of-Thought. Analyze which would produce the best output and why.",
+          "rubric": ["3 distinct prompt versions", "Few-shot includes quality examples", "CoT shows reasoning structure", "Analysis compares effectiveness", "Justification grounded in technique"],
+          "max_score": 15,
+          "estimated_minutes": 15
+        },
+        {
+          "id": "c3_q2",
+          "type": "structured_extraction",
+          "question": "Design a few-shot prompt that extracts {name, date, location} from event descriptions. Include 3 examples. The prompt should handle edge cases (missing fields, ambiguous dates).",
+          "rubric": ["Clear extraction format", "3 diverse examples", "Handles edge cases", "Structured output format"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c3_q3",
+          "type": "system_prompt_design",
+          "question": "Create a system prompt for a code review assistant. It should enforce: PEP 8 compliance, security vulnerability detection, and performance considerations. Include an example interaction.",
+          "rubric": ["Clear role definition", "3 rules specified", "Concrete example interaction", "Professional tone"],
+          "max_score": 10,
+          "estimated_minutes": 8
+        },
+        {
+          "id": "c3_q4",
+          "type": "debugging",
+          "question": "Given this poorly-performing prompt: 'Tell me about databases. Be thorough.' Identify 3 specific issues and rewrite the prompt to address them.",
+          "rubric": ["Identifies vagueness issue", "Identifies missing structure", "Identifies missing context", "Rewritten prompt is specific and structured"],
+          "max_score": 8,
+          "estimated_minutes": 8
+        }
+      ]
+    },
+    "chapter_04": {
+      "title": "RAG Systems",
+      "questions": [
+        {
+          "id": "c4_q1",
+          "type": "implementation",
+          "question": "Implement a text splitter that respects sentence boundaries for Chinese text. It should split at periods (。), question marks (？), and exclamation marks (！), with a maximum chunk size of 512 characters.",
+          "rubric": ["Correct boundary detection for CJK", "Max chunk size enforced", "Handles edge cases (no punctuation)", "Efficient implementation"],
+          "max_score": 12,
+          "estimated_minutes": 15
+        },
+        {
+          "id": "c4_q2",
+          "type": "comparison",
+          "question": "Compare cosine similarity vs. dot product for document retrieval. When would you choose each? Include mathematical reasoning.",
+          "rubric": ["Explains both metrics", "Discusses normalization effect of cosine", "Discusses magnitude sensitivity of dot product", "Provides decision criteria"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        },
+        {
+          "id": "c4_q3",
+          "type": "build",
+          "question": "Build a minimal RAG pipeline: load 5 documents (use placeholder text), embed them, retrieve top-3 for a query, generate an answer. Use any embedding model.",
+          "rubric": ["Document loading works", "Embedding step correct", "Retrieval returns top-3", "Generation uses retrieved context", "Runnable code"],
+          "max_score": 20,
+          "estimated_minutes": 25
+        },
+        {
+          "id": "c4_q4",
+          "type": "evaluation",
+          "question": "Design an evaluation plan for your RAG system. Define faithfulness and relevance metrics. Create 5 test queries and explain how you'd measure each.",
+          "rubric": ["Defines faithfulness clearly", "Defines relevance clearly", "5 diverse test queries", "Measurement methodology described"],
+          "max_score": 10,
+          "estimated_minutes": 12
+        }
+      ]
+    },
+    "chapter_05": {
+      "title": "Multi-Agent Architecture",
+      "questions": [
+        {
+          "id": "c5_q1",
+          "type": "design",
+          "question": "Design a 3-agent system for automated code review. Specify: agent roles, communication pattern, shared state, and evaluation mechanism.",
+          "rubric": ["3 distinct agent roles defined", "Communication pattern selected with justification", "Shared state described", "Evaluation mechanism included", "Diagram or flowchart provided"],
+          "max_score": 15,
+          "estimated_minutes": 15
+        },
+        {
+          "id": "c5_q2",
+          "type": "comparison",
+          "question": "Compare Pipeline vs. Blackboard patterns. For each, describe: (1) a scenario where it excels, (2) a scenario where it fails, (3) the communication overhead.",
+          "rubric": ["Excels scenario for each", "Fails scenario for each", "Overhead analysis accurate", "Decision framework provided"],
+          "max_score": 12,
+          "estimated_minutes": 12
+        },
+        {
+          "id": "c5_q3",
+          "type": "implementation",
+          "question": "Implement a minimal EventBus with emit() and subscribe() in 50 lines of Python. Support multiple subscribers per event type and event filtering.",
+          "rubric": ["Emit/subscribe API", "Multiple subscribers supported", "Event filtering mechanism", "Clean, runnable code <50 lines"],
+          "max_score": 15,
+          "estimated_minutes": 20
+        },
+        {
+          "id": "c5_q4",
+          "type": "analysis",
+          "question": "In the A3 system, what happens if the PlannerAgent fails during execution? Analyze the failure modes and propose a graceful degradation strategy.",
+          "rubric": ["Identifies failure modes (timeout, bad output, crash)", "Proposes degradation strategy", "Discusses impact on other agents", "Concrete recovery steps"],
+          "max_score": 10,
+          "estimated_minutes": 10
+        }
+      ]
+    },
+    "chapter_06": {
+      "title": "Agent Evaluation",
+      "questions": [
+        {
+          "id": "c6_q1",
+          "type": "design",
+          "question": "Design an evaluation rubric for a code-generation agent. Include 5 dimensions with weights. Explain why each dimension matters and how you would measure it.",
+          "rubric": ["5 clearly defined dimensions", "Weights sum to 1.0", "Measurement method per dimension", "Justified importance per dimension"],
+          "max_score": 12,
+          "estimated_minutes": 12
+        },
+        {
+          "id": "c6_q2",
+          "type": "implementation",
+          "question": "Implement a minimal rule-based evaluator for a QA bot. Check: (1) answer is not empty, (2) answer contains at least one keyword from the question, (3) answer is under 500 characters.",
+          "rubric": ["Empty check works", "Keyword extraction from question", "Length check implemented", "Returns structured score", "Runnable code"],
+          "max_score": 10,
+          "estimated_minutes": 12
+        },
+        {
+          "id": "c6_q3",
+          "type": "comparison",
+          "question": "Compare RuleJudge vs LLMJudge for agent evaluation. Run both on 5 sample outputs and analyze discrepancies. When would you trust RuleJudge more? When LLMJudge?",
+          "rubric": ["Actually runs both judges", "Identifies specific discrepancies", "Analyzes root cause of differences", "Provides nuanced trust framework"],
+          "max_score": 15,
+          "estimated_minutes": 20
+        },
+        {
+          "id": "c6_q4",
+          "type": "benchmark_design",
+          "question": "Create a benchmark of 10 test cases for a text summarization agent. Include: diverse input types (news, academic, dialogue), expected outputs, and scoring criteria.",
+          "rubric": ["10 diverse test cases", "Diverse input types represented", "Expected output defined per case", "Scoring criteria clear", "Edge cases included"],
+          "max_score": 12,
+          "estimated_minutes": 15
+        }
+      ]
+    }
+  },
+  "assessment": {
+    "grading_scale": {
+      "A": [90, 100],
+      "B": [80, 89],
+      "C": [70, 79],
+      "D": [60, 69],
+      "F": [0, 59]
+    },
+    "total_points": 318,
+    "chapter_weights": {
+      "chapter_01": 41,
+      "chapter_02": 45,
+      "chapter_03": 43,
+      "chapter_04": 52,
+      "chapter_05": 52,
+      "chapter_06": 49
+    }
+  }
+}

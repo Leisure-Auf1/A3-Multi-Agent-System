@@ -1,0 +1,104 @@
+{
+  "course_id": "ai_ma_101",
+  "course_name": "Artificial Intelligence and Multi-Agent Systems",
+  "resources": {
+    "lecture_notes": [
+      {"chapter": 1, "file": "chapters/chapter_01_intro_ai.md", "slides": true},
+      {"chapter": 2, "file": "chapters/chapter_02_llm.md", "slides": true},
+      {"chapter": 3, "file": "chapters/chapter_03_prompt_engineering.md", "slides": true},
+      {"chapter": 4, "file": "chapters/chapter_04_rag.md", "slides": true},
+      {"chapter": 5, "file": "chapters/chapter_05_multi_agent_architecture.md", "slides": true},
+      {"chapter": 6, "file": "chapters/chapter_06_agent_evaluation.md", "slides": true}
+    ],
+    "mind_maps": [
+      {"chapter": 1, "topic": "AI Evolution", "format": "mermaid"},
+      {"chapter": 2, "topic": "LLM Architecture", "format": "mermaid"},
+      {"chapter": 3, "topic": "Prompt Techniques", "format": "mermaid"},
+      {"chapter": 4, "topic": "RAG Pipeline", "format": "mermaid"},
+      {"chapter": 5, "topic": "Agent Patterns", "format": "mermaid"},
+      {"chapter": 6, "topic": "Evaluation Framework", "format": "mermaid"}
+    ],
+    "code_labs": [
+      {
+        "id": "lab_01",
+        "chapter": 2,
+        "title": "Implementing Attention from Scratch",
+        "language": "python",
+        "difficulty": "intermediate",
+        "estimated_minutes": 45,
+        "file": "chapters/chapter_02_llm.md#code-lab"
+      },
+      {
+        "id": "lab_02",
+        "chapter": 4,
+        "title": "Building a Minimal RAG System",
+        "language": "python",
+        "difficulty": "intermediate",
+        "estimated_minutes": 60,
+        "file": "chapters/chapter_04_rag.md#code-lab"
+      },
+      {
+        "id": "lab_03",
+        "chapter": 6,
+        "title": "Agent Evaluation Framework",
+        "language": "python",
+        "difficulty": "advanced",
+        "estimated_minutes": 60,
+        "file": "chapters/chapter_06_agent_evaluation.md#code-lab"
+      }
+    ],
+    "video_scripts": [
+      {
+        "id": "video_01",
+        "chapter": 1,
+        "title": "The Three Waves of AI",
+        "duration_seconds": 480,
+        "format": "narration + slides"
+      },
+      {
+        "id": "video_02",
+        "chapter": 2,
+        "title": "Transformer Architecture Explained",
+        "duration_seconds": 600,
+        "format": "animation + code walkthrough"
+      },
+      {
+        "id": "video_03",
+        "chapter": 5,
+        "title": "Multi-Agent Design Patterns in Action",
+        "duration_seconds": 540,
+        "format": "diagram walkthrough + demo"
+      }
+    ],
+    "external_references": [
+      {"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762", "type": "paper", "chapter": 2},
+      {"title": "RAG: A Survey", "url": "https://arxiv.org/abs/2312.10997", "type": "paper", "chapter": 4},
+      {"title": "Generative Agents", "url": "https://arxiv.org/abs/2304.03442", "type": "paper", "chapter": 5},
+      {"title": "Chain-of-Thought Prompting", "url": "https://arxiv.org/abs/2201.11903", "type": "paper", "chapter": 3},
+      {"title": "HELM: Holistic Evaluation", "url": "https://arxiv.org/abs/2211.09110", "type": "paper", "chapter": 6}
+    ]
+  },
+  "learning_paths": {
+    "beginner": {
+      "profile": "junior_dev, visual_dominant, slow pace",
+      "node_order": [1, 2, 3, 4, 5, 6],
+      "depth_per_chapter": {"1": 2, "2": 2, "3": 1, "4": 1, "5": 1, "6": 1},
+      "skip_code_labs": ["lab_03"],
+      "estimated_hours": 36
+    },
+    "intermediate": {
+      "profile": "mid_level, code_sandbox, normal pace",
+      "node_order": [1, 2, 3, 4, 5, 6],
+      "depth_per_chapter": {"1": 2, "2": 3, "3": 2, "4": 2, "5": 2, "6": 2},
+      "skip_code_labs": [],
+      "estimated_hours": 48
+    },
+    "advanced": {
+      "profile": "senior, fast_track, deep_dive",
+      "node_order": [1, 2, 5, 4, 3, 6],
+      "depth_per_chapter": {"1": 1, "2": 3, "3": 2, "4": 3, "5": 3, "6": 3},
+      "skip_code_labs": [],
+      "estimated_hours": 30
+    }
+  }
+}
