@@ -6,11 +6,38 @@
 
 ---
 
+## 🔗 Project Navigation
+
+| Role | Repository | Description |
+|:-----|:-----------|:------------|
+| 🏠 Portfolio Hub | [Terence-Agent](https://github.com/Leisure-Auf1/Terence-Agent) | AI Agent Research Portfolio |
+| 🏗️ Next Evolution | [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) | Production-grade Agent Infrastructure |
+
+```
+A3-Multi-Agent-System
+        │
+        │  Research Prototype
+        │  Multi-agent experimentation
+        │  Prototype validation
+        ↓
+Veritas-Core
+```
+
+**A3 is the research foundation. Veritas-Core is the architectural evolution.**
+
+---
+
 ## What is A3?
 
 A3 is a research prototype exploring **multi-agent collaboration for personalized learning**. Instead of using a single LLM, A3 deploys a **team of 12 specialized agents** — each with a focused role — collaborating through shared memory and an EventBus.
 
-**This project is the foundation that inspired [Veritas-Core](../Veritas-Core/).**
+A3 focuses on:
+- Multi-agent experimentation
+- Agent collaboration patterns
+- Event-driven architecture
+- Prototype validation
+
+The architectural ideas discovered here continue into [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core).
 
 ---
 
@@ -77,7 +104,8 @@ DecisionExplainer produces evidence chains, confidence scores, and reasoning for
 ## Quick Start
 
 ```bash
-cd projects/A3-Multi-Agent-System
+git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
+cd A3-Multi-Agent-System
 
 # Install
 pip install -r web/requirements.txt
@@ -118,9 +146,23 @@ knowledge_base/artificial_intelligence_multi_agent_course/
 
 ---
 
-## Relationship to Veritas-Core
+## Project Evolution
 
-A3 is the **research prototype** where we explored multi-agent learning concepts. [Veritas-Core](../Veritas-Core/) is the **architectural evolution** that introduces:
+```
+A3-Multi-Agent-System
+        │
+        │  Research Foundation
+        │  Multi-agent experimentation
+        │  Prototype validation
+        ↓
+Veritas-Core
+        │
+        │  Engineering Evolution
+        │  Production-grade infrastructure
+        │  Runtime + Trust + Memory
+```
+
+A3 is the **research prototype** where we explored multi-agent learning concepts. [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) is the **architectural evolution** that introduces:
 
 - Agent Runtime State Machine
 - RAG-enhanced knowledge retrieval
@@ -128,9 +170,7 @@ A3 is the **research prototype** where we explored multi-agent learning concepts
 - Trust Layer (memory validation, permissions, injection defense)
 - Agent+Tool architecture
 
-```
-A3 (prototype) ──evolution──→ Veritas-Core (production architecture)
-```
+**A3 and Veritas-Core are independent repositories — not a rename, but an evolution.**
 
 ---
 
