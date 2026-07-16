@@ -9,9 +9,10 @@ Phase 3 — ReflectionAgent: 执行后反思分析
 """
 
 from __future__ import annotations
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 # ──────────────────────────────────────────────
@@ -27,6 +28,7 @@ class ReflectionResult:
     achievements: List[str] = field(default_factory=list)   # 达成的成果
     improvements: List[str] = field(default_factory=list)   # 改进建议
     summary: str = ""                          # 综合总结
+    source: str = "rule"                       # 反思来源: rule | llm (Phase 4.2)
     generated_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -39,6 +41,7 @@ class ReflectionResult:
             "achievements": self.achievements,
             "improvements": self.improvements,
             "summary": self.summary,
+            "source": self.source,
             "generated_at": self.generated_at,
         }
 
@@ -67,7 +70,13 @@ class ReflectionAgent:
     """
 
     def __init__(self):
-        pass
+        self._llm_provider = None  # LLMProvider (Phase 4.2, optional)
+
+    # ── LLM Provider Injection (Phase 4.2) ─────
+
+    def set_llm_provider(self, provider: Any) -> None:
+        """Inject an LLMProvider for LLM reflection (None = pure rule)."""
+        self._llm_provider = provider
 
     # ── 主入口 ────────────────────────────────
 
@@ -115,23 +124,113 @@ class ReflectionAgent:
             resources=resources,
         )
 
-        # 生成总结
-        summary = self._generate_summary(
-            goal=goal,
-            success=success,
-            score=score,
-            achievements=achievements,
-            improvements=improvements,
-        )
+        # 生成总结 — LLM 优先 (Phase 4.2), 失败 fallback 规则模板
+        summary = ""
+        llm_improvements: List[str] = []
+        source = "rule"
+        if self._llm_provider is not None:
+            summary, llm_improvements = self._reflect_with_llm(
+                goal=goal, plan=plan, resources=resources, score=score,
+            )
+            if summary:
+                source = "llm"
+                for imp in llm_improvements:
+                    if imp not in improvements:
+                        improvements.append(imp)
 
-        return ReflectionResult(
+        if not summary:
+            summary = self._generate_summary(
+                goal=goal,
+                success=success,
+                score=score,
+                achievements=achievements,
+                improvements=improvements,
+            )
+
+        result = ReflectionResult(
             success=success,
             goal=goal,
             score=score,
             achievements=achievements,
             improvements=improvements,
             summary=summary,
+            source=source,
         )
+        return result
+
+    # ── LLM 反思 (Phase 4.2) ────────────────────
+
+    REFLECTION_LLM_PROMPT = """你是学习反思分析专家。基于本次学习规划的执行结果，生成简洁的反思总结。
+
+学习目标: {goal}
+学习路径: {plan_summary}
+推荐资源: {resources_summary}
+质量评分: {score}/100
+
+请输出 JSON (只输出 JSON, 不要 markdown):
+{{
+  "summary": "综合反思总结 (60-120字, 包含目标达成情况与关键收获)",
+  "improvements": ["改进建议1", "改进建议2"]
+}}"""
+
+    def _reflect_with_llm(
+        self,
+        goal: str,
+        plan: Dict[str, Any],
+        resources: List[Dict[str, Any]],
+        score: float,
+    ) -> Tuple[str, List[str]]:
+        """
+        LLM 反思生成 (Phase 4.2).
+
+        Returns:
+            (summary, improvements) — 失败时返回 ("", []) 触发规则 fallback。
+        """
+        llm = self._llm_provider
+        if llm is None:
+            return "", []
+        try:
+            nodes = plan.get("nodes", [])
+            plan_summary = (
+                f"{len(nodes)} 个节点, 共 {plan.get('total_minutes', 0)} 分钟: "
+                + ", ".join(n.get("title", "") for n in nodes[:6])
+            ) if nodes else "无学习路径"
+            resources_summary = (
+                ", ".join(f"{r.get('type', '?')}:{r.get('title', '?')}" for r in resources[:5])
+            ) if resources else "无推荐资源"
+
+            response = llm.generate(
+                prompt=self.REFLECTION_LLM_PROMPT.format(
+                    goal=goal,
+                    plan_summary=plan_summary,
+                    resources_summary=resources_summary,
+                    score=score,
+                ),
+                system_prompt="You are a learning reflection expert. Output ONLY valid JSON.",
+                temperature=0.3,
+                max_tokens=512,
+            )
+            if not response.success:
+                return "", []
+
+            content = response.content.strip()
+            if content.startswith("```"):
+                lines = content.split("\n")
+                content = "\n".join(lines[1:]) if len(lines) > 2 else content
+                if content.endswith("```"):
+                    content = content[:-3]
+            data = json.loads(content)
+
+            summary = data.get("summary", "")
+            improvements = [
+                i for i in data.get("improvements", []) or []
+                if isinstance(i, str) and i.strip()
+            ][:3]
+            if isinstance(summary, str) and summary.strip():
+                return summary.strip(), improvements
+            return "", []
+        except Exception:
+            return "", []  # rule fallback
 
     # ── 内部逻辑 ──────────────────────────────
 

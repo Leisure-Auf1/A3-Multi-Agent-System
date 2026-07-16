@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 
 from src.workflow import A3Workflow
-from src.core.provider_factory import get_provider_info
+from src.core.provider_factory import create_provider
 
 
 def main():
@@ -85,15 +85,16 @@ def main():
     tab1, tab2, tab3 = st.tabs(["🏠 学习助手", "👤 学习画像", "📚 学习空间"])
 
     # ═══════════════════════════════════════════════
-    # Cached workflow
+    # Cached workflow (Phase 4.2 — provider-aware)
     # ═══════════════════════════════════════════════
 
     @st.cache_resource
-    def init_workflow() -> A3Workflow:
-        """Single A3Workflow instance."""
-        return A3Workflow(student_id="app_v3_user")
-
-    workflow = init_workflow()
+    def init_workflow(provider_mode: str) -> A3Workflow:
+        """A3Workflow instance per provider mode (mock | spark | rule)."""
+        provider = None
+        if provider_mode in ("mock", "spark"):
+            provider = create_provider(provider_mode)
+        return A3Workflow(student_id="app_v3_user", llm_provider=provider)
 
     # ═══════════════════════════════════════════════
     # Session state
@@ -281,14 +282,29 @@ def main():
                 st.session_state.student_text = "我是后端开发，想快速上手AI Agent开发。时间紧，直接上实战。容易受挫。"
                 st.rerun()
 
-        info = get_provider_info()
-        provider_labels = {
-            "XunfeiSparkProvider": "🚀 讯飞星火 (Spark Pro)",
-            "MockLLMProvider (fallback)": "🤖 演示模式 (Mock)",
-            "MockLLMProvider": "🤖 演示模式",
-            "None (rule-only)": "📏 纯规则模式",
+        # ── Provider Selector (Phase 4.2) ──
+        PROVIDER_OPTIONS = {
+            "🤖 Mock (演示 LLM)": "mock",
+            "🚀 Xunfei Spark": "spark",
+            "⚙️ Rule (纯规则)": "rule",
         }
-        st.caption(f"推理引擎: {provider_labels.get(info.get('provider', ''), info.get('provider', '未知'))}")
+        col_provider, col_mode = st.columns([3, 2])
+        with col_provider:
+            provider_label = st.radio(
+                "Provider",
+                list(PROVIDER_OPTIONS.keys()),
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+        provider_mode = PROVIDER_OPTIONS[provider_label]
+        workflow = init_workflow(provider_mode)
+
+        with col_mode:
+            if workflow.llm_provider is not None:
+                _model = getattr(workflow.llm_provider, "model", "?")
+                st.caption(f"当前模式: 🤖 LLM Mode ({_model})")
+            else:
+                st.caption("当前模式: ⚙️ Rule Mode")
 
         # 使用 text_area 返回值判断 (手动输入无 key 绑定, session_state 不会自动同步)
         btn_disabled = not (student_text or "").strip()

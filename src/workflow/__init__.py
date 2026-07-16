@@ -56,6 +56,7 @@ class A3Workflow:
         resource_agent: Optional[ResourceAgent] = None,
         reflection_agent: Optional[ReflectionAgent] = None,
         student_id: str = "demo_student",
+        llm_provider: Any = None,
     ):
         self.memory = memory_manager or MemoryManager()
         self.profile_agent = profile_agent or ProfileAgent()
@@ -64,6 +65,13 @@ class A3Workflow:
         self.reflection_agent = reflection_agent or ReflectionAgent()
         self.student_id = student_id
         self._bus = AgentEventBus.get_instance()
+
+        # Phase 4.2 — LLM Provider 注入 (None = 纯规则模式)
+        self.llm_provider = llm_provider
+        if llm_provider is not None:
+            self.profile_agent.set_llm_provider(llm_provider)
+            self.planner_agent.set_llm_provider(llm_provider)
+            self.reflection_agent.set_llm_provider(llm_provider)
 
     # ── 主入口 ────────────────────────────────
 
@@ -108,11 +116,16 @@ class A3Workflow:
 
         # ── Step 1: ProfileAgent — 分析学习者 ──
         try:
+            _t0 = time.time()
             profile_result = self._run_profile_agent(user_goal, user_profile)
             result.profile = profile_result.to_dict() if hasattr(profile_result, "to_dict") else profile_result
+            _profile_d = result.profile or {}
+            _source = _profile_d.get("source", "rule")
             self._emit("ProfileAgent", "profile_extracted",
                        f"目标: {user_goal[:60]}",
-                       f"画像: {result.profile.get('profile', {}).get('knowledge_base', 'unknown')}")
+                       f"画像: {_profile_d.get('profile', {}).get('knowledge_base', 'unknown')} "
+                       f"(mode={_source})",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"ProfileAgent: {e}")
             self._emit("ProfileAgent", "profile_extracted",
@@ -120,12 +133,15 @@ class A3Workflow:
 
         # ── Step 2: PlannerAgent — 生成学习路径 ──
         try:
+            _t0 = time.time()
             plan_result = self._run_planner_agent(user_goal, result.profile)
             result.learning_plan = plan_result.to_dict() if hasattr(plan_result, "to_dict") else plan_result
             node_count = len(result.learning_plan.get("nodes", [])) if result.learning_plan else 0
+            _mode = (result.learning_plan or {}).get("metadata", {}).get("planning_mode", "rule")
             self._emit("PlannerAgent", "plan_generated",
                        f"目标: {user_goal[:60]}",
-                       f"路径: {node_count} 个节点")
+                       f"路径: {node_count} 个节点 (mode={_mode})",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"PlannerAgent: {e}")
             self._emit("PlannerAgent", "plan_generated",
@@ -133,6 +149,7 @@ class A3Workflow:
 
         # ── Step 3: ResourceAgent — 推荐资源 ──
         try:
+            _t0 = time.time()
             profile_dict = self._extract_profile_dict(result.profile)
             resource_result = self._run_resource_agent(
                 profile_dict, user_goal, knowledge_gaps
@@ -144,7 +161,8 @@ class A3Workflow:
             res_count = len(result.resources) if result.resources else 0
             self._emit("ResourceAgent", "resources_recommended",
                        f"目标: {user_goal[:60]} | 缺口: {knowledge_gaps}",
-                       f"推荐: {res_count} 项资源")
+                       f"推荐: {res_count} 项资源",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"ResourceAgent: {e}")
             self._emit("ResourceAgent", "resources_recommended",
@@ -152,6 +170,7 @@ class A3Workflow:
 
         # ── Step 4: Review + Step 5: Reflection ──
         try:
+            _t0 = time.time()
             feedback = self._simulate_review(result.learning_plan, result.resources or [])
             result.evaluation = feedback  # ★ 新字段
             score = feedback.get("score", 75)
@@ -163,16 +182,20 @@ class A3Workflow:
             }
             self._emit("ReviewAgent", "review_completed",
                        f"评审 {len(result.resources or [])} 项资源",
-                       f"评分: {score}")
+                       f"评分: {score}",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
 
+            _t0 = time.time()
             refl_result = self._run_reflection_agent(user_goal, reflection_input)
             result.reflection = (
                 refl_result.to_dict() if hasattr(refl_result, "to_dict")
                 else refl_result
             )
+            _refl_source = (result.reflection or {}).get("source", "rule")
             self._emit("ReflectionAgent", "reflection_completed",
                        f"目标: {user_goal[:60]}",
-                       str(result.reflection.get("summary", ""))[:150])
+                       f"(mode={_refl_source}) " + str((result.reflection or {}).get("summary", ""))[:130],
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"Review/Reflection: {e}")
             self._emit("ReflectionAgent", "reflection_completed",
@@ -180,6 +203,7 @@ class A3Workflow:
 
         # ── Step 6: Memory — 保存体验 ──
         try:
+            _t0 = time.time()
             self._save_to_memory(
                 student_id=self.student_id,
                 user_goal=user_goal,
@@ -191,7 +215,8 @@ class A3Workflow:
             result.memory_saved = True  # ★ 新字段
             self._emit("Memory", "experience_saved",
                        f"Session: {session_id}",
-                       "Memory 已更新")
+                       "Memory 已更新",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"Memory: {e}")
 
@@ -233,7 +258,9 @@ class A3Workflow:
             )
             return ProfileExtractionResult(profile=profile, source="preset", confidence=1.0)
 
-        # 从目标文本提取
+        # 从目标文本提取 — LLM 优先 (Phase 4.2), provider=None 时自动走规则模式
+        if self.llm_provider is not None:
+            return self.profile_agent.extract_with_provider(user_goal)
         return self.profile_agent.extract(user_goal)
 
     def _run_planner_agent(
@@ -395,6 +422,7 @@ class A3Workflow:
         input_summary: str,
         output_summary: str,
         status: str = "success",
+        duration_ms: float = 0.0,
     ):
         """发送事件到 EventBus"""
         try:
@@ -404,6 +432,7 @@ class A3Workflow:
                 input_summary=input_summary,
                 output_summary=output_summary,
                 status=status,
+                duration_ms=duration_ms,
             )
         except Exception:
             pass

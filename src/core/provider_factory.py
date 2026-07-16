@@ -111,6 +111,34 @@ def _seed_mock_responses(provider: MockLLMProvider):
         })
     )
 
+    # Phase 4.2 — Planner LLM enhancement
+    provider.add_response(
+        "学习路径规划专家",
+        json.dumps({
+            "strategy_rationale": (
+                "基于你的画像（有编程基础、视觉型学习者、偏好快速实战），"
+                "本路径按「概念图解 → 代码沙箱 → 综合实战」推进，"
+                "每个节点配 ✅/❌ 语法对比示例，控制单节点时长避免疲劳。"
+            ),
+            "node_adjustments": [],
+        }, ensure_ascii=False)
+    )
+
+    # Phase 4.2 — Reflection LLM summary
+    provider.add_response(
+        "学习反思分析专家",
+        json.dumps({
+            "summary": (
+                "本次规划达成学习目标：路径覆盖核心概念且节奏与画像匹配，"
+                "资源类型多样（文档/练习/项目）。关键收获是先建立整体认知再动手实战的路线设计。"
+            ),
+            "improvements": [
+                "建议在实战节点后追加一次自测以巩固薄弱概念",
+                "可为视觉型学习者补充结构化图解资源",
+            ],
+        }, ensure_ascii=False)
+    )
+
 
 def get_provider_info() -> dict:
     """Get information about the active provider configuration."""
