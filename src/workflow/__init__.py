@@ -57,6 +57,7 @@ class A3Workflow:
         reflection_agent: Optional[ReflectionAgent] = None,
         student_id: str = "demo_student",
         llm_provider: Any = None,
+        bus: Optional[AgentEventBus] = None,
     ):
         self.memory = memory_manager or MemoryManager()
         self.profile_agent = profile_agent or ProfileAgent()
@@ -64,7 +65,12 @@ class A3Workflow:
         self.resource_agent = resource_agent or ResourceAgent()
         self.reflection_agent = reflection_agent or ReflectionAgent()
         self.student_id = student_id
-        self._bus = AgentEventBus.get_instance()
+
+        # Phase 4.2.6 — EventBus: 外部注入实例优先, 否则使用全局单例
+        #   API 请求:     传入独立 EventBus() → 请求级隔离
+        #   Streamlit:     不传 → 使用全局单例 (保持向后兼容)
+        self._bus = bus if bus is not None else AgentEventBus.get_instance()
+        self._owns_bus = bus is not None  # True = 注入实例, False = 全局单例
 
         # Phase 4.2 — LLM Provider 注入 (None = 纯规则模式)
         self.llm_provider = llm_provider
@@ -107,9 +113,15 @@ class A3Workflow:
             knowledge_gaps=knowledge_gaps or [],
         )
 
-        # 重置 EventBus — 使用类方法确保单例一致性
-        AgentEventBus.reset_instance()
-        self._bus = AgentEventBus.get_instance()
+        # 重置 EventBus
+        # Phase 4.2.6 — API 请求使用独立实例时只 clear，不触碰全局单例
+        if self._owns_bus:
+            # 注入的独立 EventBus — 只清空自己的事件
+            self._bus.clear()
+        else:
+            # 全局单例 — 需要 reset 以清理之前的 session (Streamlit 兼容)
+            AgentEventBus.reset_instance()
+            self._bus = AgentEventBus.get_instance()
         self._bus.start_session(session_id)
 
         result = WorkflowResult(context=context)

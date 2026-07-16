@@ -543,6 +543,9 @@ class PlannerAgent:
 草案路径节点:
 {nodes}
 
+参考知识库内容 (课程章节原文):
+{context}
+
 请输出 JSON (只输出 JSON, 不要 markdown):
 {{
   "strategy_rationale": "针对该学习者的个性化路线解释 (80-150字)",
@@ -560,7 +563,11 @@ class PlannerAgent:
         goal_text: str,
     ) -> "LearningPlan":
         """
-        用 LLM 增强规则规划结果 (Phase 4.2).
+        用 LLM 增强规则规划结果 (Phase 4.2 / 4.3).
+
+        Phase 4.3 — RAG: 从知识库检索与 goal 相关的章节原文,
+        注入 LLM prompt 作为参考上下文。任何 RAG 失败 → 空上下文,
+        不影响原流程。
 
         LLM 可优化: strategy_rationale, 节点 notes, 节点 estimated_minutes。
         节点结构 (数量/顺序/依赖) 保持知识库驱动, 不由 LLM 改变。
@@ -569,6 +576,10 @@ class PlannerAgent:
         llm = self._llm_provider
         if llm is None:
             return plan
+
+        # Phase 4.3 — RAG: 检索相关课程章节
+        knowledge_context = self._retrieve_knowledge_context(goal_text)
+
         try:
             nodes_brief = "\n".join(
                 f"- {n.node_id}: {n.title} ({n.estimated_minutes}min, depth={n.depth})"
@@ -579,6 +590,7 @@ class PlannerAgent:
                     goal=goal_text,
                     profile=json.dumps(profile_dict, ensure_ascii=False),
                     nodes=nodes_brief,
+                    context=knowledge_context,
                 ),
                 system_prompt="You are a learning path planning expert. Output ONLY valid JSON.",
                 temperature=0.2,
@@ -693,6 +705,27 @@ class PlannerAgent:
             alts.append("文本路线: 线性分步拆解, 代码注释铺满")
 
         return alts
+
+    # ── Phase 4.3 — RAG 知识检索 ──────────────
+
+    def _retrieve_knowledge_context(self, goal_text: str, top_k: int = 3) -> str:
+        """
+        从知识库检索与 goal 相关的章节原文。
+
+        任何失败 → 返回空字符串，不影响 LLM 增强流程。
+        """
+        try:
+            from src.rag import get_retriever
+            retriever = get_retriever()
+            chunks = retriever.search(goal_text, top_k=top_k)
+            if not chunks:
+                return ""
+            return "\n\n".join(
+                f"## {c.section}\n{c.text[:500]}"
+                for c in chunks
+            )
+        except Exception:
+            return ""
 
     # ── 批量生成 ──────────────────────────────
 
