@@ -2,11 +2,11 @@
 
 # Run all tests
 test:
-	cd src && python -m pytest ../tests/ -v --tb=short
+	python -m pytest tests/ -v --tb=short
 
 # Run tests with coverage
 test-cov:
-	cd src && python -m pytest ../tests/ -v --tb=short --cov=. --cov-report=term-missing
+	python -m pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
 
 # Launch Streamlit Dashboard
 run:

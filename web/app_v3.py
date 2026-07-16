@@ -290,10 +290,11 @@ def main():
         }
         st.caption(f"推理引擎: {provider_labels.get(info.get('provider', ''), info.get('provider', '未知'))}")
 
-        btn_disabled = not st.session_state.get("student_text", "").strip()
+        # 使用 text_area 返回值判断 (手动输入无 key 绑定, session_state 不会自动同步)
+        btn_disabled = not (student_text or "").strip()
         if st.button("🚀 开始分析", type="primary", use_container_width=True, disabled=btn_disabled):
             st.session_state.pipeline_run = True
-            st.session_state.student_text = st.session_state.student_text.strip()
+            st.session_state.student_text = (student_text or "").strip()
             st.rerun()
 
         if st.session_state.pipeline_run:
