@@ -1,0 +1,29 @@
+# ══════════════════════════════════════════════════════
+# A3 Multi-Agent System — Render Blueprint
+# ══════════════════════════════════════════════════════
+# Deploy: https://dashboard.render.com → New → Blueprint
+# Docs:   docs/deployment/render.md
+#
+# Free tier notes:
+#   - Service sleeps after 15 min idle (cold start ~30-60s)
+#   - Filesystem is ephemeral: storage/memory/ resets on redeploy
+#   - Default provider is "mock" — zero API keys required
+
+services:
+  - type: web
+    name: a3-multi-agent-system
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    healthCheckPath: /
+    envVars:
+      # Pin Python version (Render default may drift)
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      # LLM provider: "mock" (no keys) | "spark" (needs XF_SPARK_API_KEY)
+      - key: LLM_PROVIDER
+        value: mock
+      # Disable Streamlit usage-stats prompt in headless env
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: "false"

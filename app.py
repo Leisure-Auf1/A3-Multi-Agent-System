@@ -1,11 +1,13 @@
 """
-A3 Multi-Agent Learning System — HuggingFace Spaces Entry
-==========================================================
+A3 Multi-Agent Learning System — Deployment Entry
+==================================================
 
-Launcher for HuggingFace Spaces. Sets up path, then delegates
-all rendering to web/app_v3.py's main().
+Launcher for HuggingFace Spaces / Render / local. Sets up path,
+then delegates all rendering to web/app_v3.py's main().
 
-HF Spaces will auto-detect this as a Streamlit app.
+HF Spaces auto-detects this as a Streamlit app.
+Render start command (see render.yaml):
+    streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 """
 
 import sys

@@ -1,1 +1,4 @@
+# A3 Multi-Agent System — deployment dependencies
+# Full pipeline (app.py → web/app_v3.py → A3Workflow → 5 agents + memory)
+# uses only streamlit + Python stdlib. Mock provider needs zero API deps.
 streamlit>=1.28.0
