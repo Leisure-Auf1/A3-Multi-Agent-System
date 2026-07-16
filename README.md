@@ -1,6 +1,6 @@
 # A3 — Multi-Agent Personalized Learning System
 
-> **Research Prototype v2.8** | 12 Agents | 241 Tests | 13k+ LOC
+> **Research Prototype v3.0** | 12 Agents + Workflow Orchestrator | 283 Tests | 15k+ LOC
 >
 > *"Students describe what they want to learn. A team of AI agents does the rest."*
 
@@ -137,12 +137,114 @@ knowledge_base/artificial_intelligence_multi_agent_course/
 |:-------|:------|
 | Agents | 12 |
 | Source Lines | 13,048 Python |
-| Tests | 241/245 (97.4%) |
+| Tests | 283/287 (98.6%) |
 | Resource Types | 6 |
 | Profile Dimensions | 6 |
 | Knowledge Concepts | 46 |
 | Experience Lessons | 5→13+ self-growing |
 | Dashboard Panels | 6 |
+
+---
+
+## Complete Agent Workflow
+
+A3 demonstrates: **"From user intent to personalized execution through multi-agent collaboration."**
+
+```bash
+python examples/full_pipeline_demo.py
+```
+
+### Pipeline Architecture
+
+```
+User Goal ("Learn Python Network Programming")
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│                  A3Workflow Orchestrator                 │
+│                                                         │
+│  ① ProfileAgent    — Extract learner profile            │
+│        │                                                │
+│        ▼                                                │
+│  ② PlannerAgent    — Generate personalized learning path│
+│        │                                                │
+│        ▼                                                │
+│  ③ ResourceAgent   — Recommend matching resources       │
+│        │                                                │
+│        ▼                                                │
+│  ④ ReviewGate      — Evaluate quality & relevance       │
+│        │                                                │
+│        ▼                                                │
+│  ⑤ ReflectionAgent — Analyze success & improvements     │
+│        │                                                │
+│        ▼                                                │
+│  ⑥ Memory          — Save learning experience           │
+├─────────────────────────────────────────────────────────┤
+│  Infrastructure: EventBus | TraceCollector | MemoryManager│
+└─────────────────────────────────────────────────────────┘
+    │
+    ▼
+ WorkflowResult { profile, plan, resources, reflection }
+```
+
+### What happens at each step
+
+| Step | Agent | Input | Output |
+|:-----|:------|:------|:-------|
+| 1 | **ProfileAgent** | Natural language goal | 6-dim DynamicProfile |
+| 2 | **PlannerAgent** | Profile + course KB | LearningPlan (nodes + strategies) |
+| 3 | **ResourceAgent** | Profile + goal + knowledge gaps | Personalized resources (5 types) |
+| 4 | **ReviewGate** | Plan + resources | Quality score + issues |
+| 5 | **ReflectionAgent** | Execution results | Success evaluation + improvements |
+| 6 | **Memory** | All outputs | Persistent student memory |
+
+### Running the demo
+
+```
+================================
+A3 Multi-Agent Demo
+================================
+
+User Goal:
+  Learn Python Network Programming
+
+[ProfileAgent]
+  Analyzing learner profile...
+
+[PlannerAgent]
+  Generating personalized learning path...
+
+[ResourceAgent]
+  Finding matching resources...
+
+[ReviewAgent]
+  Evaluating quality...
+
+[ReflectionAgent]
+  Post-execution reflection...
+
+[Memory]
+  Saving learning experience...
+
+================================
+Completed — Score: 95/100 ✅
+================================
+```
+
+### Key innovations demonstrated
+
+- **Agent communication through EventBus** — Every agent action is traced and visible
+- **Shared memory usage** — Profile history, mastery tracking, experience recall
+- **Intermediate results** — Plan nodes, resource recommendations, quality scores
+- **Final reflection** — Post-execution analysis of what worked and what to improve
+
+New in v3.0:
+- `src/agents/resource_agent.py` — Simplified resource recommendation for pipeline demo
+- `src/agents/reflection_agent.py` — Post-execution success/improvement analysis
+- `src/workflow/` — A3Workflow orchestrator with full pipeline coordination
+- `src/core/event_trace.py` — Enhanced TraceCollector with timeline rendering
+- `examples/full_pipeline_demo.py` — Runnable demo showing the complete collaboration
+- `tests/integration/test_full_pipeline.py` — 42 integration tests (pipeline + EventBus + memory)
 
 ---
 
