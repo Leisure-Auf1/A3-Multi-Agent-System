@@ -1,21 +1,7 @@
 """
-Phase 5.8 — Agent Runtime (Plugin System)
+Phase 5.9 — Agent Runtime (Distributed)
 
-State-machine + analyzer + failure detection + policy + recovery + lifecycle + explainability + plugins + observability.
-
-Usage:
-    from src.runtime import RuntimeEngine, PluginManager, RuntimePlugin
-
-    class MyPlugin(RuntimePlugin):
-        name = "my_plugin"
-        def on_start(self): print("started!")
-
-    mgr = PluginManager()
-    mgr.install(MyPlugin())
-    mgr.initialize_all(engine)
-    mgr.start_all()
-    engine.add_hook(mgr.bridge)
-    engine.run()
+State-machine + policy + recovery + lifecycle + explainability + plugins + distributed + observability.
 """
 
 from .state import AgentState
@@ -35,6 +21,7 @@ from .recovery import RecoveryManager, RecoveryResult, CheckpointManager, Recove
 from .lifecycle import AgentLifecycle, LifecycleManager, RuntimeSession, AgentLifecycleRecord  # Phase 5.5
 from .explain import DecisionTrace, DecisionReason, DecisionCategory, DecisionChain, ExplanationRecorder  # Phase 5.7
 from .plugins import RuntimePlugin, PluginState, PluginMetadata, PluginRegistry, PluginLoader, PluginHookBridge, PluginManager  # Phase 5.8
+from .distributed import RuntimeNode, NodeStatus, NodeRegistry, DistributedEventBus, RemoteExecutionManager, DistributedTraceCollector  # Phase 5.9
 from .runtime import RuntimeEngine, RuntimeContext, create_runtime_from_workflow
 
 __all__ = [
@@ -82,6 +69,12 @@ __all__ = [
     "PluginLoader",            # Phase 5.8
     "PluginHookBridge",        # Phase 5.8
     "PluginManager",           # Phase 5.8
+    "RuntimeNode",             # Phase 5.9
+    "NodeStatus",              # Phase 5.9
+    "NodeRegistry",            # Phase 5.9
+    "DistributedEventBus",     # Phase 5.9
+    "RemoteExecutionManager",  # Phase 5.9
+    "DistributedTraceCollector", # Phase 5.9
     "RuntimeEngine",
     "RuntimeContext",
     "create_runtime_from_workflow",
