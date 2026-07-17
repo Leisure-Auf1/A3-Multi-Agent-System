@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -31,7 +31,7 @@ from src.runtime import (
     FailureDetector,
     FailureEvent,
 )
-from src.runtime.recovery import (
+from veritas.runtime.recovery import (
     RecoveryStrategy,
     RecoveryConfig,
     CheckpointManager,

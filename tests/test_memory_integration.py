@@ -9,8 +9,8 @@ import os, sys, tempfile, unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from memory.memory_manager import MemoryManager
-from memory.student_memory import StudentMemory
+from veritas.memory.memory_manager import MemoryManager
+from veritas.memory.student_memory import StudentMemory
 from agents.profile_agent import ProfileAgent
 from agents.planner_agent import PlannerAgent
 from core.agent_router import DynamicProfile

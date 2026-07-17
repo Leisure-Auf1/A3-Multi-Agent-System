@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -33,7 +33,7 @@ from src.runtime import (
     RuntimeContext,
 )
 from src.workflow import A3Workflow
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 from src.core.meta_reflector import MetaReflectorAgent, _LocalMemoryStore
 
 

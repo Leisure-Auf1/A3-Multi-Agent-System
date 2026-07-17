@@ -14,7 +14,7 @@ from typing import Optional
 
 from src.core.provider_factory import create_provider
 from src.core.event_bus import AgentEventBus
-from src.llm.provider import LLMProvider
+from veritas.llm.provider import LLMProvider
 from src.workflow import A3Workflow
 
 

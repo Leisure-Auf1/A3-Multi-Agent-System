@@ -8,15 +8,6 @@
       "learning_pace": "normal",
       "interaction_preference": "code_sandbox",
       "frustration_threshold": "medium",
-      "timestamp": "2026-07-17T05:58:26.831249+00:00"
-    },
-    {
-      "knowledge_base": "junior_dev",
-      "cognitive_style": "visual_dominant",
-      "error_prone_bias": "magic_syntax_blind",
-      "learning_pace": "normal",
-      "interaction_preference": "code_sandbox",
-      "frustration_threshold": "medium",
       "timestamp": "2026-07-17T05:58:58.172069+00:00"
     },
     {
@@ -90,6 +81,15 @@
       "interaction_preference": "code_sandbox",
       "frustration_threshold": "medium",
       "timestamp": "2026-07-17T12:12:05.492429+00:00"
+    },
+    {
+      "knowledge_base": "junior_dev",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "normal",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T12:15:54.590407+00:00"
     }
   ],
   "weak_points": [],
@@ -97,7 +97,7 @@
     "avg_pace": "normal",
     "preferred_style": "visual_dominant",
     "frustration_pattern": "medium",
-    "interaction_count": 49,
+    "interaction_count": 50,
     "avg_score": 0.0,
     "time_of_day_preference": ""
   },
@@ -109,13 +109,6 @@
   },
   "feedback_history": [],
   "session_summaries": [
-    {
-      "course_id": "",
-      "nodes_completed": 4,
-      "total_score": 95,
-      "time_spent": 0,
-      "timestamp": "2026-07-17T05:58:26.831478+00:00"
-    },
     {
       "course_id": "",
       "nodes_completed": 4,
@@ -178,8 +171,15 @@
       "total_score": 95,
       "time_spent": 0,
       "timestamp": "2026-07-17T12:12:05.492682+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 4,
+      "total_score": 95,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T12:15:54.590847+00:00"
     }
   ],
   "created_at": "2026-07-16T23:18:07.268341+00:00",
-  "updated_at": "2026-07-17T12:12:05.492684+00:00"
+  "updated_at": "2026-07-17T12:15:54.590853+00:00"
 }

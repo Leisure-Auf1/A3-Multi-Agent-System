@@ -11,13 +11,13 @@ This proves Veritas-Core can power real applications beyond simple demos.
 import sys, os, json
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine, RuntimeContext, AgentState, TransitionTable,
     RuntimeHook, RuntimePolicyEngine,
 )
-from src.runtime.recovery import RecoveryManager
-from src.runtime.lifecycle import LifecycleManager
-from src.runtime.explain import ExplanationRecorder
+from veritas.runtime.recovery import RecoveryManager
+from veritas.runtime.lifecycle import LifecycleManager
+from veritas.runtime.explain import ExplanationRecorder
 
 
 # ── A3 Agent Implementations ────────────────

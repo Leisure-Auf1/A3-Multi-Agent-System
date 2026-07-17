@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.sdk import (
+from veritas.sdk import (
     RuntimeClient,
     TaskRequest,
     TaskResult,
@@ -31,7 +31,7 @@ from src.sdk import (
     ConfigLoader,
     PluginEntry,
 )
-from src.sdk.exceptions import (
+from veritas.sdk.exceptions import (
     VeritasError,
     ConfigError,
     ContractValidationError,
@@ -39,7 +39,7 @@ from src.sdk.exceptions import (
     SessionNotFoundError,
     PluginError,
 )
-from src.runtime import RuntimeEngine, TransitionTable, AgentState
+from veritas.runtime import RuntimeEngine, TransitionTable, AgentState
 
 
 # ══════════════════════════════════════════════
@@ -325,7 +325,7 @@ class TestBackwardCompat:
 
     def test_sdk_does_not_break_existing_imports(self):
         """All existing runtime imports still work."""
-        from src.runtime import (
+        from veritas.runtime import (
             AgentState, RuntimeEngine, RuntimeContext, RuntimeHook,
             RecoveryManager, LifecycleManager, ExplanationRecorder,
             RuntimeNode, NodeRegistry, PluginManager,

@@ -9,12 +9,12 @@ Shows how LifecycleManager tracks every agent through its state:
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine, RuntimeContext, AgentState, TransitionTable,
     RuntimePolicyEngine,
 )
-from src.runtime.recovery import RecoveryManager, RecoveryConfig
-from src.runtime.lifecycle import LifecycleManager
+from veritas.runtime.recovery import RecoveryManager, RecoveryConfig
+from veritas.runtime.lifecycle import LifecycleManager
 
 
 def main():

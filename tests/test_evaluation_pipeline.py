@@ -23,7 +23,7 @@ from src.evaluation.evaluator import EvaluationManager
 from src.workflow import A3Workflow
 from src.workflow.result import WorkflowResult
 from src.core.provider_factory import create_provider
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 from fastapi.testclient import TestClient
 
 from src.api.server import app

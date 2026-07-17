@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from src.llm.provider import LLMProvider, LLMResponse
+from veritas.llm.provider import LLMProvider, LLMResponse
 
 
 # ──────────────────────────────────────────────

@@ -21,8 +21,8 @@ from agents.resource_recommendation_agent import (
     ResourceFeedback,
     RESOURCE_TYPES,
 )
-from memory.memory_manager import MemoryManager
-from memory.student_memory import StudentMemory
+from veritas.memory.memory_manager import MemoryManager
+from veritas.memory.student_memory import StudentMemory
 from agents.planner_agent import PlannerAgent
 from core.agent_router import DynamicProfile
 

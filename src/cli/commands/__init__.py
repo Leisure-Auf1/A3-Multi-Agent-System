@@ -1,3 +1,0 @@
-"""
-veritas init — Package init
-"""

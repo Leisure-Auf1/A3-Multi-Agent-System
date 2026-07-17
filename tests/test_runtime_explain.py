@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 from unittest.mock import MagicMock
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -34,15 +34,15 @@ from src.runtime import (
     RuntimePolicyEngine,
     RuntimeDecision,
 )
-from src.runtime.recovery import RecoveryManager, RecoveryConfig
-from src.runtime.explain import (
+from veritas.runtime.recovery import RecoveryManager, RecoveryConfig
+from veritas.runtime.explain import (
     DecisionTrace,
     DecisionReason,
     DecisionCategory,
     DecisionChain,
     ExplanationRecorder,
 )
-from src.benchmark import ExplainabilityMetrics
+from veritas.benchmark import ExplainabilityMetrics
 
 
 # ══════════════════════════════════════════════
@@ -217,7 +217,7 @@ class TestExplanationRecorderBasic:
         assert len(r.chains) == 0
 
     def test_is_runtime_hook(self):
-        from src.runtime import RuntimeHook
+        from veritas.runtime import RuntimeHook
         r = ExplanationRecorder()
         assert isinstance(r, RuntimeHook)
 

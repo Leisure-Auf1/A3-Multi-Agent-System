@@ -20,8 +20,8 @@ from agents.conversation_profile_agent import (
     PROFILE_DIMENSIONS,
 )
 from agents.profile_agent import ProfileAgent
-from memory.student_memory import StudentMemoryStore, StudentMemory
-from memory.memory_manager import MemoryManager
+from veritas.memory.student_memory import StudentMemoryStore, StudentMemory
+from veritas.memory.memory_manager import MemoryManager
 from core.agent_router import DynamicProfile
 
 import shutil

@@ -28,7 +28,7 @@ from src.rag.retriever import (
 from src.rag import get_retriever as rag_get_retriever
 from src.core.provider_factory import create_provider
 from src.workflow import A3Workflow
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 import tempfile
 
 

@@ -28,7 +28,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from src.llm.provider import LLMProvider
+from veritas.llm.provider import LLMProvider
 from src.core.event_bus import AgentEventBus
 
 
@@ -310,7 +310,7 @@ class LLMAgentAdapter:
 # ──────────────────────────────────────────────
 
 if __name__ == "__main__":
-    from src.llm.mock_provider import MockLLMProvider
+    from veritas.llm.mock_provider import MockLLMProvider
 
     print("╔══════════════════════════════════════════╗")
     print("║  LLMAgentAdapter — Demo                 ║")

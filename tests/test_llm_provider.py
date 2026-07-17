@@ -23,19 +23,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.llm.provider import LLMProvider, LLMResponse
-from src.llm.mock_provider import MockLLMProvider
-from src.llm.rule_provider import RuleProvider
-from src.llm.deepseek_provider import DeepSeekProvider
-from src.llm.openai_provider import OpenAIProvider
-from src.llm.xunfei_provider import XunfeiSparkProvider
-from src.llm.factory import (
+from veritas.llm.provider import LLMProvider, LLMResponse
+from veritas.llm.mock_provider import MockLLMProvider
+from veritas.llm.rule_provider import RuleProvider
+from veritas.llm.deepseek_provider import DeepSeekProvider
+from veritas.llm.openai_provider import OpenAIProvider
+from veritas.llm.xunfei_provider import XunfeiSparkProvider
+from veritas.llm.factory import (
     create_provider, FallbackChain, get_provider_info,
 )
 from src.core.meta_reflector import MetaReflectorAgent, _LocalMemoryStore
 from src.core.agent_router import AgentRouter
 from src.workflow import A3Workflow
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 
 
 # ──────────────────────────────────────────────

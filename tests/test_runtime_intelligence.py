@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -69,10 +69,10 @@ class TestRuntimeAnalyzer:
         assert len(analyses) >= 4
 
     def test_analyze_metrics(self):
-        bus = __import__('src.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
+        bus = __import__('veritas.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
         metrics = RuntimeMetrics()
         metrics.attach(bus)
-        from src.runtime.events import RuntimeEvent
+        from veritas.runtime.events import RuntimeEvent
         # Emit success transitions + evaluation
         bus.emit(RuntimeEvent(event_type="transition", status="success"))
         bus.emit(RuntimeEvent(event_type="transition", status="success"))
@@ -85,10 +85,10 @@ class TestRuntimeAnalyzer:
         assert result["is_degraded"] is False
 
     def test_health_score_healthy(self):
-        bus = __import__('src.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
+        bus = __import__('veritas.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
         metrics = RuntimeMetrics()
         metrics.attach(bus)
-        from src.runtime.events import RuntimeEvent
+        from veritas.runtime.events import RuntimeEvent
         for i in range(3):
             bus.emit(RuntimeEvent(event_type="transition", status="success"))
             bus.emit(RuntimeEvent(event_type="evaluation", metadata={"score": 88}))
@@ -100,10 +100,10 @@ class TestRuntimeAnalyzer:
         assert health.status == "healthy"
 
     def test_health_score_degraded(self):
-        bus = __import__('src.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
+        bus = __import__('veritas.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
         metrics = RuntimeMetrics()
         metrics.attach(bus)
-        from src.runtime.events import RuntimeEvent
+        from veritas.runtime.events import RuntimeEvent
         # Error-heavy
         bus.emit(RuntimeEvent(event_type="transition", status="error"))
         bus.emit(RuntimeEvent(event_type="transition", status="success"))
@@ -114,10 +114,10 @@ class TestRuntimeAnalyzer:
         assert health.score < 80
 
     def test_generate_runtime_report(self):
-        bus = __import__('src.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
+        bus = __import__('veritas.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
         metrics = RuntimeMetrics()
         metrics.attach(bus)
-        from src.runtime.events import RuntimeEvent
+        from veritas.runtime.events import RuntimeEvent
         bus.emit(RuntimeEvent(event_type="evaluation", metadata={"score": 75}))
 
         analyzer = RuntimeAnalyzer()
@@ -380,7 +380,7 @@ class TestBackwardCompat:
     def test_analyzer_standalone(self):
         """Analyzer works without engine."""
         analyzer = RuntimeAnalyzer()
-        bus = __import__('src.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
+        bus = __import__('veritas.runtime.events', fromlist=['RuntimeEventBus']).RuntimeEventBus()
         metrics = RuntimeMetrics()
         metrics.attach(bus)
         health = analyzer.health_score(metrics)

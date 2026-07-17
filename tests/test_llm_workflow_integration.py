@@ -20,9 +20,9 @@ import pytest
 from src.workflow import A3Workflow
 from src.core.provider_factory import create_provider
 from src.core.agent_router import DynamicProfile
-from src.llm.provider import LLMProvider, LLMResponse
-from src.llm.mock_provider import MockLLMProvider
-from src.memory.memory_manager import MemoryManager
+from veritas.llm.provider import LLMProvider, LLMResponse
+from veritas.llm.mock_provider import MockLLMProvider
+from veritas.memory.memory_manager import MemoryManager
 from src.agents.profile_agent import ProfileAgent
 from src.agents.planner_agent import PlannerAgent
 from src.agents.resource_agent import ResourceAgent

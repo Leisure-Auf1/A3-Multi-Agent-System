@@ -25,7 +25,7 @@ from src.evaluation.review_adapter import adapt_review_gate_result
 from src.evaluation.evaluator import EvaluationManager
 from src.workflow import A3Workflow
 from src.core.provider_factory import create_provider
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 from fastapi.testclient import TestClient
 
 from src.api.server import app

@@ -9,8 +9,8 @@ No RuntimeEngine imports — all through the public SDK.
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.sdk import RuntimeClient, TaskRequest
-from src.sdk.exceptions import VeritasError
+from veritas.sdk import RuntimeClient, TaskRequest
+from veritas.sdk.exceptions import VeritasError
 
 
 def main():

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -28,14 +28,14 @@ from src.runtime import (
     RuntimeHook,
     FailureEvent,
 )
-from src.runtime.lifecycle import (
+from veritas.runtime.lifecycle import (
     AgentLifecycle,
     AgentLifecycleRecord,
     RuntimeSession,
     LifecycleManager,
     agent_name_for_state,
 )
-from src.runtime.recovery import RecoveryManager
+from veritas.runtime.recovery import RecoveryManager
 
 
 # ══════════════════════════════════════════════

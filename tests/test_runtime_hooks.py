@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     RuntimeHook,
     CompositeHook,
@@ -46,7 +46,7 @@ class TestRuntimeHookBase:
         hook.on_run_start(None, None)
         hook.on_run_end(None, None, 0.0)
         hook.before_transition(None, AgentState.INIT, AgentState.PROFILE, None)
-        from src.runtime.transition import StateTransition
+        from veritas.runtime.transition import StateTransition
         hook.after_transition(None, AgentState.INIT, AgentState.PROFILE, None,
                               StateTransition(from_state=AgentState.INIT, to_state=AgentState.PROFILE))
         hook.on_error(None, AgentState.PROFILE, None, "test error")
