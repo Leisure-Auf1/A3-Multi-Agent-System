@@ -22,7 +22,7 @@ Usage:
 """
 
 from .scenarios import FailureScenario, FailureInjector, InjectionConfig
-from .metrics import BenchmarkMetrics, RunRecord
+from .metrics import BenchmarkMetrics, RunRecord, ExplainabilityMetrics  # Phase 5.7
 from .runner import BenchmarkRunner
 from .reporter import BenchmarkReporter
 
@@ -32,6 +32,7 @@ __all__ = [
     "InjectionConfig",
     "BenchmarkMetrics",
     "RunRecord",
+    "ExplainabilityMetrics",  # Phase 5.7
     "BenchmarkRunner",
     "BenchmarkReporter",
 ]

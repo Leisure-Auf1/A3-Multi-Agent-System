@@ -1,19 +1,18 @@
 """
-Phase 5.5 — Agent Runtime State Machine (Intelligence + Recovery + Lifecycle)
+Phase 5.7 — Agent Runtime (Intelligence + Recovery + Lifecycle + Explainability)
 
-State-machine + analyzer + failure detection + policy decisions + recovery + lifecycle + observability.
+State-machine + analyzer + failure detection + policy decisions + recovery + lifecycle + explainability + observability.
 
 Usage:
-    from src.runtime import AgentState, RuntimeEngine, LifecycleManager
+    from src.runtime import AgentState, RuntimeEngine, ExplanationRecorder
 
-    lm = LifecycleManager()
+    recorder = ExplanationRecorder()
     recovery = RecoveryManager()
     policy = RuntimePolicyEngine()
     engine = RuntimeEngine(session_id="demo", policy_engine=policy, recovery_manager=recovery)
-    engine.add_hook(lm)
+    engine.add_hook(recorder)
     engine.run()
-    for name, state in lm.agent_states.items():
-        print(name, state)
+    print(recorder.to_dict())
 """
 
 from .state import AgentState
@@ -31,6 +30,7 @@ from .policy import RuntimePolicyEngine
 from .decision import RuntimeDecision, DecisionLog
 from .recovery import RecoveryManager, RecoveryResult, CheckpointManager, RecoveryStrategy, RecoveryConfig, ProviderFallback  # Phase 5.4
 from .lifecycle import AgentLifecycle, LifecycleManager, RuntimeSession, AgentLifecycleRecord  # Phase 5.5
+from .explain import DecisionTrace, DecisionReason, DecisionCategory, DecisionChain, ExplanationRecorder  # Phase 5.7
 from .runtime import RuntimeEngine, RuntimeContext, create_runtime_from_workflow
 
 __all__ = [
@@ -66,6 +66,11 @@ __all__ = [
     "LifecycleManager",       # Phase 5.5
     "RuntimeSession",         # Phase 5.5
     "AgentLifecycleRecord",   # Phase 5.5
+    "DecisionTrace",          # Phase 5.7
+    "DecisionReason",         # Phase 5.7
+    "DecisionCategory",       # Phase 5.7
+    "DecisionChain",          # Phase 5.7
+    "ExplanationRecorder",    # Phase 5.7
     "RuntimeEngine",
     "RuntimeContext",
     "create_runtime_from_workflow",
