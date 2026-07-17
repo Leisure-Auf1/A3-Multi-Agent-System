@@ -90,6 +90,8 @@ class AgentRouter:
         xf_spark_base_url: Optional[str] = None,
         core_engine_api_key: Optional[str] = None,
         core_engine_base_url: Optional[str] = None,
+        spark_provider: Any = None,      # Phase 4.7 — LLMProvider for frontend
+        core_provider: Any = None,        # Phase 4.7 — LLMProvider for backend
     ):
         # 讯飞星火 — 前场合规引擎
         self.xf_spark_api_key = xf_spark_api_key or os.getenv(
@@ -108,6 +110,10 @@ class AgentRouter:
             "CORE_ENGINE_URL",
             "https://api.deepseek.com/v1",
         )
+
+        # Phase 4.7 — LLMProvider (takes priority over raw keys)
+        self._spark_provider = spark_provider
+        self._core_provider = core_provider
 
     def route_request(
         self, agent_role: str, payload: Dict[str, Any]
@@ -130,6 +136,9 @@ class AgentRouter:
 
     def _dispatch_to_spark(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """前场 → 讯飞星火"""
+        # Phase 4.7 — Use LLMProvider if available
+        if self._spark_provider is not None:
+            return self._dispatch_via_provider(self._spark_provider, payload, "Spark")
         return self._call_api(
             api_key=self.xf_spark_api_key,
             base_url=self.xf_spark_base_url,
@@ -139,12 +148,52 @@ class AgentRouter:
 
     def _dispatch_to_core(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """后场 → DeepSeek"""
+        # Phase 4.7 — Use LLMProvider if available
+        if self._core_provider is not None:
+            return self._dispatch_via_provider(self._core_provider, payload, "Core")
         return self._call_api(
             api_key=self.core_api_key,
             base_url=self.core_base_url,
             payload=payload,
             label="Core",
         )
+
+    @staticmethod
+    def _dispatch_via_provider(provider: Any, payload: Dict[str, Any], label: str) -> Dict[str, Any]:
+        """Phase 4.7 — Dispatch via LLMProvider."""
+        messages = payload.get("messages", [])
+        system_prompt = ""
+        user_prompt = ""
+        for msg in messages:
+            if msg.get("role") == "system":
+                system_prompt = msg.get("content", "")
+            elif msg.get("role") == "user":
+                user_prompt = msg.get("content", "")
+        if not user_prompt and messages:
+            user_prompt = str(messages[-1].get("content", ""))
+
+        try:
+            response = provider.generate(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=payload.get("temperature", 0.7),
+                max_tokens=payload.get("max_tokens", 2048),
+            )
+            if response.success:
+                return {
+                    "choices": [{"message": {"content": response.content}}],
+                    "model": response.model,
+                    "usage": response.usage,
+                }
+            return {
+                "error": response.error or f"{label} provider returned error",
+                "choices": [{"message": {"content": ""}}],
+            }
+        except Exception as e:
+            return {
+                "error": f"{label} dispatch failed: {e}",
+                "choices": [{"message": {"content": ""}}],
+            }
 
     def _call_api(
         self,

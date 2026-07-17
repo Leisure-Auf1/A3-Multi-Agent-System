@@ -447,10 +447,12 @@ class ReviewGateManager:
                 sol_lines[sol_func.lineno - 1: sol_func.end_lineno]
             )
 
-            # 匹配 exercise 中的 stub: def name(...): 后紧跟 pass / ... / raise NotImplementedError
+            # 匹配 exercise 中的 stub: def name(...): 后紧跟 (可能有注释行) pass / ... / raise NotImplementedError
+            # DOTALL 让 . 匹配换行符, 跨越中间的注释行
             pattern = _re.compile(
                 rf"(def\s+{_re.escape(func_name)}\s*\([^)]*\).*?)"
                 rf"(\n\s+pass|\n\s+\.\.\.|\n\s+raise\s+NotImplementedError)",
+                _re.DOTALL,
             )
 
             if pattern.search(result):
@@ -461,6 +463,10 @@ class ReviewGateManager:
                 else:
                     replacement = func_source
                 result = pattern.sub(replacement, result, count=1)
+
+        if result == exercise_src:
+            # Pattern didn't match any stub — fallback: append solution at end
+            result = exercise_src.rstrip() + "\n\n# --- Solution injected ---\n" + solution_src
 
         return result
 
@@ -603,6 +609,33 @@ class ReviewGateManager:
             if scores.get(dim, 0) < thresh:
                 suggestions.append(f"[{dim}] {advice}")
         return suggestions
+
+    @classmethod
+    def evaluate_content_quality(cls, text: str) -> Dict[str, Any]:
+        """
+        Phase 4.5 — 公开的内容质量评分入口。
+
+        对任意文本应用 ReviewGate 三维启发式评分
+        (口语化/清晰度/过渡)，返回标准化结果。
+        无需文件系统，无需 workspace。
+
+        Args:
+            text: 待评分文本内容
+
+        Returns:
+            {score: int 0-100, passed: bool, scores: {colloquialism, clarity, progression}}
+        """
+        tmp = cls.__new__(cls)
+        tmp.workspace = Path(".")
+        scores = tmp._heuristic_rubric_scoring(text)
+        total = sum(scores.values())
+        max_score = len(scores) * 100
+        normalized = round(total / max_score * 100) if max_score > 0 else 50
+        return {
+            "score": normalized,
+            "passed": normalized >= cls.JUDGE_PASS_THRESHOLD,
+            "scores": scores,
+        }
 
     # ═══════════════════════════════════════════
     #  全局门禁管道
