@@ -1,18 +1,21 @@
 """
-Phase 5.7 — Agent Runtime (Intelligence + Recovery + Lifecycle + Explainability)
+Phase 5.8 — Agent Runtime (Plugin System)
 
-State-machine + analyzer + failure detection + policy decisions + recovery + lifecycle + explainability + observability.
+State-machine + analyzer + failure detection + policy + recovery + lifecycle + explainability + plugins + observability.
 
 Usage:
-    from src.runtime import AgentState, RuntimeEngine, ExplanationRecorder
+    from src.runtime import RuntimeEngine, PluginManager, RuntimePlugin
 
-    recorder = ExplanationRecorder()
-    recovery = RecoveryManager()
-    policy = RuntimePolicyEngine()
-    engine = RuntimeEngine(session_id="demo", policy_engine=policy, recovery_manager=recovery)
-    engine.add_hook(recorder)
+    class MyPlugin(RuntimePlugin):
+        name = "my_plugin"
+        def on_start(self): print("started!")
+
+    mgr = PluginManager()
+    mgr.install(MyPlugin())
+    mgr.initialize_all(engine)
+    mgr.start_all()
+    engine.add_hook(mgr.bridge)
     engine.run()
-    print(recorder.to_dict())
 """
 
 from .state import AgentState
@@ -31,6 +34,7 @@ from .decision import RuntimeDecision, DecisionLog
 from .recovery import RecoveryManager, RecoveryResult, CheckpointManager, RecoveryStrategy, RecoveryConfig, ProviderFallback  # Phase 5.4
 from .lifecycle import AgentLifecycle, LifecycleManager, RuntimeSession, AgentLifecycleRecord  # Phase 5.5
 from .explain import DecisionTrace, DecisionReason, DecisionCategory, DecisionChain, ExplanationRecorder  # Phase 5.7
+from .plugins import RuntimePlugin, PluginState, PluginMetadata, PluginRegistry, PluginLoader, PluginHookBridge, PluginManager  # Phase 5.8
 from .runtime import RuntimeEngine, RuntimeContext, create_runtime_from_workflow
 
 __all__ = [
@@ -71,6 +75,13 @@ __all__ = [
     "DecisionCategory",       # Phase 5.7
     "DecisionChain",          # Phase 5.7
     "ExplanationRecorder",    # Phase 5.7
+    "RuntimePlugin",           # Phase 5.8
+    "PluginState",             # Phase 5.8
+    "PluginMetadata",          # Phase 5.8
+    "PluginRegistry",          # Phase 5.8
+    "PluginLoader",            # Phase 5.8
+    "PluginHookBridge",        # Phase 5.8
+    "PluginManager",           # Phase 5.8
     "RuntimeEngine",
     "RuntimeContext",
     "create_runtime_from_workflow",
