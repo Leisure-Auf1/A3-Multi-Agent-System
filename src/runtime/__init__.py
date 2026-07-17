@@ -1,17 +1,19 @@
 """
-Phase 5.4 — Agent Runtime State Machine (Intelligence + Recovery Layer)
+Phase 5.5 — Agent Runtime State Machine (Intelligence + Recovery + Lifecycle)
 
-State-machine + analyzer + failure detection + policy decisions + recovery + observability.
+State-machine + analyzer + failure detection + policy decisions + recovery + lifecycle + observability.
 
 Usage:
-    from src.runtime import AgentState, RuntimeEngine, RecoveryManager
+    from src.runtime import AgentState, RuntimeEngine, LifecycleManager
 
+    lm = LifecycleManager()
     recovery = RecoveryManager()
     policy = RuntimePolicyEngine()
     engine = RuntimeEngine(session_id="demo", policy_engine=policy, recovery_manager=recovery)
+    engine.add_hook(lm)
     engine.run()
-    for r in recovery.history:
-        print(r.strategy, r.success)
+    for name, state in lm.agent_states.items():
+        print(name, state)
 """
 
 from .state import AgentState
@@ -28,6 +30,7 @@ from .failure_detector import FailureDetector, FailureEvent
 from .policy import RuntimePolicyEngine
 from .decision import RuntimeDecision, DecisionLog
 from .recovery import RecoveryManager, RecoveryResult, CheckpointManager, RecoveryStrategy, RecoveryConfig, ProviderFallback  # Phase 5.4
+from .lifecycle import AgentLifecycle, LifecycleManager, RuntimeSession, AgentLifecycleRecord  # Phase 5.5
 from .runtime import RuntimeEngine, RuntimeContext, create_runtime_from_workflow
 
 __all__ = [
@@ -59,6 +62,10 @@ __all__ = [
     "RecoveryStrategy",      # Phase 5.4
     "RecoveryConfig",        # Phase 5.4
     "ProviderFallback",      # Phase 5.4
+    "AgentLifecycle",         # Phase 5.5
+    "LifecycleManager",       # Phase 5.5
+    "RuntimeSession",         # Phase 5.5
+    "AgentLifecycleRecord",   # Phase 5.5
     "RuntimeEngine",
     "RuntimeContext",
     "create_runtime_from_workflow",
