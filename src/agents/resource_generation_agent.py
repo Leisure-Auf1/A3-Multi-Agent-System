@@ -451,10 +451,72 @@ class ResourceGenerationAgent:
             "document": self.generate_course_notes(title=f"{topic} — Course Notes", topic=topic, concepts=concepts).to_dict(),
             "mindmap": self.generate_mind_map(title=f"{topic} — Mind Map", central_topic=topic, subtopics=[{"name": c, "children": []} for c in concepts[:6]]).to_dict(),
             "exercise": self.generate_exercises(title=f"{topic} — Exercises", topic=topic, num_questions=3).to_dict(),
-            "code": self.generate_code_lab(title=f"{topic} — Code Lab", description=f"Implement a simple {topic} example.", language="python", starter_code=f"# TODO: implement {topic} example\n", expected_output="Expected output: [your result here]").to_dict(),
+            "code": self.generate_code_lab(title=f"{topic} — Code Lab", description=f"Implement a simple {topic} example.", language="python", starter_code=f"# TODO: implement {topic} example\\n", expected_output="Expected output: [your result here]").to_dict(),
             "video": self.generate_video_script(title=f"{topic} — Video Script", topic=topic, key_points=concepts[:4]).to_dict(),
             "extended_reading": self.generate_extended_reading(title=f"{topic} — Extended Reading", topic=topic),
         }
+
+    # ── Phase 9.5: Multimodal Gateway Integration ──
+
+    def generate_via_gateway(
+        self,
+        topic: str,
+        concepts: List[str],
+        student_id: str = "",
+        profile: Dict[str, Any] = None,
+        types: List[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Generate resources via the MultimodalGateway.
+
+        This is the Phase 9.5 upgrade path — generates all 7 resource types
+        through the unified gateway with validation, cost control, and fallback.
+
+        Args:
+            topic: Learning topic
+            concepts: Key concepts to cover
+            student_id: Student ID for tracking
+            profile: Student profile dict
+            types: List of resource types (default: all 7)
+
+        Returns:
+            Dict mapping resource_type → ResourceArtifact.to_dict()
+        """
+        from src.multimodal.gateway import MultimodalGateway, GenerateRequest
+        from src.multimodal.artifact import ResourceType
+
+        # Map string types to ResourceType enum
+        type_map = {
+            "document": ResourceType.DOCUMENT,
+            "mindmap": ResourceType.MINDMAP,
+            "exercise": ResourceType.EXERCISE,
+            "code": ResourceType.CODE_LAB,
+            "slides": ResourceType.SLIDES,
+            "illustration": ResourceType.ILLUSTRATION,
+            "video": ResourceType.VIDEO_SCRIPT,
+        }
+
+        gateway = MultimodalGateway()
+        profile = profile or {}
+
+        rtypes = []
+        if types:
+            for t in types:
+                rt = type_map.get(t)
+                if rt:
+                    rtypes.append(rt)
+        if not rtypes:
+            rtypes = list(ResourceType)
+
+        results = gateway.generate_all(
+            student_id=student_id,
+            topic=topic,
+            concepts=concepts,
+            profile=profile,
+            types=rtypes,
+        )
+
+        return {k: v.to_dict() for k, v in results.items()}
 
     # ── History ──
 

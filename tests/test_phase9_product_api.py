@@ -145,8 +145,8 @@ class TestResourcesAPI:
             "resource_types": ["document", "mindmap"]}, headers=headers)
         assert resp.status_code == 200
         data = resp.json()
-        assert isinstance(data, list)
-        assert len(data) >= 1
+        assert "artifacts" in data
+        assert data["count"] >= 1
 
     def test_generate_single_resource(self, client):
         headers = _auth_headers(client)

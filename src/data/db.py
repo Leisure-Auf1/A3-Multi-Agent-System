@@ -92,6 +92,28 @@ def init_db():
             ON learning_records(user_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_chat_messages_thread
             ON chat_messages(thread_id, created_at);
+
+        CREATE TABLE IF NOT EXISTS resources (
+            id TEXT PRIMARY KEY,
+            student_id TEXT DEFAULT '',
+            resource_type TEXT NOT NULL,
+            title TEXT DEFAULT '',
+            topic TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            artifact_path TEXT DEFAULT '',
+            content_preview TEXT DEFAULT '',
+            provider TEXT DEFAULT 'rule',
+            tokens_used INTEGER DEFAULT 0,
+            cost_usd REAL DEFAULT 0.0,
+            metadata_json TEXT DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            completed_at TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_resources_student
+            ON resources(student_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_resources_type
+            ON resources(resource_type, status);
     """)
     # Ensure schema version
     row = conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()

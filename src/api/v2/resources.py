@@ -1,130 +1,156 @@
 """
-Phase 9.4 — Resource API
+Phase 9.5 — Resource API (Gateway-enabled)
 
-POST   /api/v2/resources/generate
-POST   /api/v2/resources/generate/{type}
-GET    /api/v2/resources/courses
-GET    /api/v2/resources/search
+POST   /api/v2/resources/generate       — Gateway generation
+POST   /api/v2/resources/generate/{type} — Single type
+GET    /api/v2/resources/courses         — Course listing
+GET    /api/v2/resources/search          — Search courses
+GET    /api/v2/resources/{id}            — Get artifact status
+GET    /api/v2/resources/student/{id}    — Student history
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+import json
+from datetime import datetime, timezone
 
 from src.auth.middleware import require_auth
 from src.auth.models import AuthUser
-from src.agents.resource_generation_agent import ResourceGenerationAgent
-from src.data.kb_manager import (
-    list_courses, get_course_meta, get_course_resources,
-    get_course_exercises, search_courses,
-)
+from src.multimodal.gateway import MultimodalGateway, GenerateRequest
+from src.multimodal.artifact import ResourceArtifact, ResourceType
+from src.data.kb_manager import list_courses, get_course_meta, search_courses
+from src.data.db import _get_conn
 
 router = APIRouter(prefix="/api/v2/resources", tags=["resources"])
 
 
-class GenerateRequest(BaseModel):
+class GenerateBody(BaseModel):
     topic: str = Field(..., min_length=1)
     concepts: List[str] = Field(default_factory=list)
     resource_types: List[str] = Field(default=["document", "mindmap", "exercise"])
     student_level: str = "beginner"
     title: str = ""
+    use_gateway: bool = True
 
 
-class ResourceResponse(BaseModel):
+class ArtifactResponse(BaseModel):
+    id: str
     resource_type: str
     title: str
-    data: Dict[str, Any] = Field(default_factory=dict)
-    markdown: str = ""
-    summary: str = ""
+    topic: str
+    status: str
+    provider: str
+    content_preview: str
+    created_at: str
+    completed_at: Optional[str] = None
 
 
-_RESOURCE_TYPES = {
-    "document": "generate_course_notes",
-    "mindmap": "generate_mind_map",
-    "exercise": "generate_exercises",
-    "code": "generate_code_lab",
-    "video": "generate_video_script",
-    "reading": "generate_extended_reading",
-}
+def _save_artifact(artifact: ResourceArtifact, student_id: str):
+    conn = _get_conn()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO resources (id, student_id, resource_type, title, topic, "
+        "status, artifact_path, content_preview, provider, tokens_used, "
+        "cost_usd, metadata_json, created_at, completed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (artifact.id, student_id, artifact.resource_type.value,
+         artifact.title, artifact.topic, artifact.status.value,
+         artifact.file_path, artifact.content[:500],
+         artifact.provider, artifact.tokens_used, artifact.cost_usd,
+         json.dumps(artifact.metadata, ensure_ascii=False),
+         artifact.created_at, artifact.completed_at))
+    conn.commit()
 
 
-@router.post("/generate", response_model=List[ResourceResponse])
-def generate_resources(
-    req: GenerateRequest,
-    user: AuthUser = Depends(require_auth),
-):
-    """Generate learning resources for a topic."""
-    agent = ResourceGenerationAgent()
-    results = []
-    title = req.title or req.topic
-
-    for rtype in req.resource_types:
-        method_name = _RESOURCE_TYPES.get(rtype)
-        if method_name is None:
-            continue
-        try:
-            method = getattr(agent, method_name)
-            resource = method(
-                title=title,
-                topic=req.topic,
-                concepts=req.concepts,
-            )
-            results.append(ResourceResponse(
-                resource_type=rtype,
-                title=title,
-                data=resource if isinstance(resource, dict) else {},
-                markdown=resource.to_markdown() if hasattr(resource, 'to_markdown') else str(resource),
-                summary=getattr(resource, 'summary', '') or str(resource)[:200],
-            ))
-        except Exception:
-            pass  # Skip failed resource types
-
-    return results
+def _get_student_artifacts(student_id: str, limit: int = 50) -> List[dict]:
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT * FROM resources WHERE student_id = ? "
+        "ORDER BY created_at DESC LIMIT ?", (student_id, limit)).fetchall()
+    return [dict(r) for r in rows]
 
 
-@router.post("/generate/{resource_type}", response_model=ResourceResponse)
-def generate_single_resource(
-    resource_type: str,
-    req: GenerateRequest,
-    user: AuthUser = Depends(require_auth),
-):
-    """Generate a single resource type."""
-    method_name = _RESOURCE_TYPES.get(resource_type)
-    if method_name is None:
-        raise HTTPException(400, f"Unknown resource type: {resource_type}")
+# ── Static routes first (before parameterized) ────────────
 
-    agent = ResourceGenerationAgent()
-    title = req.title or req.topic
-    method = getattr(agent, method_name)
-    resource = method(title=title, topic=req.topic, concepts=req.concepts)
-
-    return ResourceResponse(
-        resource_type=resource_type,
-        title=title,
-        data=resource if isinstance(resource, dict) else {},
-        markdown=resource.to_markdown() if hasattr(resource, 'to_markdown') else str(resource),
-        summary=getattr(resource, 'summary', '') or str(resource)[:200],
-    )
-
-
-@router.get("/courses", response_model=List[Dict[str, Any]])
+@router.get("/courses")
 def get_courses():
-    """List available courses."""
     courses = []
     for c in list_courses():
         meta = get_course_meta(c)
         courses.append({
-            "id": c,
-            "name": meta.get("course_name", c),
+            "id": c, "name": meta.get("course_name", c),
             "learning_paths": list(meta.get("learning_paths", {}).keys()),
         })
     return courses
 
 
 @router.get("/search")
-def search_resources(q: str = ""):
-    """Search across course resources."""
+def search(q: str = ""):
     if not q:
         return []
     return search_courses(q)
+
+
+# ── Generation routes ─────────────────────────────────────
+
+@router.post("/generate")
+def generate_resources_v2(
+    req: GenerateBody,
+    user: AuthUser = Depends(require_auth),
+):
+    gateway = MultimodalGateway()
+    results = []
+    for rtype in req.resource_types:
+        try:
+            valid = [e.value for e in ResourceType]
+            if rtype not in valid:
+                continue
+            rt = ResourceType(rtype)
+            artifact = gateway.generate(GenerateRequest(
+                student_id=user.id, resource_type=rt,
+                topic=req.topic, title=req.title or req.topic,
+                concepts=req.concepts, student_level=req.student_level))
+            _save_artifact(artifact, user.id)
+            results.append(artifact.to_dict())
+        except Exception:
+            pass
+    return {"topic": req.topic, "artifacts": results, "count": len(results)}
+
+
+@router.post("/generate/{resource_type}")
+def generate_single_v2(resource_type: str, req: GenerateBody,
+                        user: AuthUser = Depends(require_auth)):
+    valid = [e.value for e in ResourceType]
+    if resource_type not in valid:
+        raise HTTPException(400, f"Unknown type: {resource_type}. Valid: {valid}")
+    gateway = MultimodalGateway()
+    artifact = gateway.generate(GenerateRequest(
+        student_id=user.id, resource_type=ResourceType(resource_type),
+        topic=req.topic, title=req.title or req.topic,
+        concepts=req.concepts, student_level=req.student_level))
+    _save_artifact(artifact, user.id)
+    return artifact.to_dict()
+
+
+# ── Status / Query routes ─────────────────────────────────
+
+@router.get("/student/{student_id}")
+def get_student_resources(student_id: str, limit: int = 50):
+    return _get_student_artifacts(student_id, limit)
+
+
+@router.get("/{artifact_id}", response_model=ArtifactResponse)
+def get_artifact_status(artifact_id: str):
+    conn = _get_conn()
+    row = conn.execute("SELECT * FROM resources WHERE id = ?",
+                       (artifact_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Artifact not found")
+    return ArtifactResponse(
+        id=row["id"], resource_type=row["resource_type"],
+        title=row["title"], topic=row["topic"],
+        status=row["status"], provider=row["provider"],
+        content_preview=row["content_preview"] or "",
+        created_at=row["created_at"], completed_at=row["completed_at"])
