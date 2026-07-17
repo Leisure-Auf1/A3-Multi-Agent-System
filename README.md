@@ -154,6 +154,57 @@ make test       # 1130 tests
 
 ---
 
+## Demo Showcase
+
+Run these demos to see A3 in action:
+
+```bash
+# Beginner learning flow — ProfileAgent → PlannerAgent → ResourceAgent
+python examples/beginner_learning_demo.py
+
+# Multimodal generation — 7 resource types via Gateway
+python examples/multimodal_generation_demo.py
+
+# Interactive tutor — ChatGPT-style streaming conversation
+python examples/tutor_chat_demo.py
+
+# Evaluation loop — Quiz → Scoring → Weakness detection → Recommendations
+python examples/evaluation_loop_demo.py
+```
+
+### Workflow Diagram
+
+```
+Student: "I want to learn Python"
+        │
+        ▼
+ProfileAgent ──→ 6-dimension student profile
+        │
+        ▼
+PlannerAgent ──→ Personalized learning path
+        │
+        ▼
+ResourceAgent ──→ Resource recommendations
+        │
+        ▼
+MultimodalGateway ──→ 7 resource types generated
+        │
+        ▼
+TutorAgent ──→ Interactive tutoring (streaming)
+        │
+        ▼
+EvaluationAgent ──→ Quiz + scoring + recommendations
+        │
+        ▼
+ReflectionAgent ──→ Update profile → next iteration
+```
+
+## Screenshots
+
+See [docs/images/](docs/images/) for product screenshots.
+
+---
+
 ## License
 
 MIT
