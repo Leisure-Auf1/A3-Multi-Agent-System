@@ -100,14 +100,23 @@ POST /api/v2/evaluation/quiz/score
 ## Docker Quick Start 🐳
 
 ```bash
+# Option 1: Pull from Docker Hub (no build needed)
+docker pull leisureauf1/a3-multi-agent-system:latest
+docker run -p 8000:8000 -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
+
+# Option 2: Build locally
 git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
 cd A3-Multi-Agent-System
 docker compose up -d
+
+# Access
 # Dashboard: http://localhost:8501
 # API Docs:  http://localhost:8000/docs
 ```
 
-No Python required on host. Zero API keys needed — runs fully offline with mock providers. See [docs/docker-quickstart.md](docs/docker-quickstart.md) for details.
+No Python required on host. Zero API keys needed — runs fully offline with mock providers.
+
+📖 [Docker Quickstart](docs/docker-quickstart.md) · 🚀 [Release Guide](docs/docker-release.md)
 
 ---
 
