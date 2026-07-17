@@ -267,6 +267,13 @@ class PlannerAgent:
         self.knowledge_graph = knowledge_graph or self.DEFAULT_KNOWLEDGE_GRAPH
         self._kb_loader = kb_loader
         self._kb_loaded = False
+        self._llm_provider = None  # LLMProvider (Phase 4.2, optional)
+
+    # ── LLM Provider Injection (Phase 4.2) ─────
+
+    def set_llm_provider(self, provider: Any) -> None:
+        """Inject an LLMProvider for LLM-enhanced planning (None = pure rule)."""
+        self._llm_provider = provider
 
     # ── Knowledge Base Integration (Phase 11.5) ─
 
@@ -460,7 +467,7 @@ class PlannerAgent:
         # 9. 生成备选路径
         alternatives = self._generate_alternatives(profile_dict, all_topics)
 
-        return LearningPlan(
+        plan_result = LearningPlan(
             plan_id=f"plan_{course_id}_{profile_dict.get('learning_pace', 'normal')}",
             profile_summary=f"{profile_dict.get('knowledge_base')} / "
                            f"{profile_dict.get('cognitive_style')} / "
@@ -475,8 +482,18 @@ class PlannerAgent:
                 "pace_adj": pace_adj,
                 "teaching_strategy": teaching_strategy,
                 "start_offset": start_offset,
+                "planning_mode": "rule",
             },
         )
+
+        # 10. LLM 增强 (Phase 4.2) — provider 存在时优化 rationale/notes/时长
+        #     任何失败自动保持规则结果原样 (rule fallback)
+        if self._llm_provider is not None:
+            plan_result = self._enhance_plan_with_llm(
+                plan_result, profile_dict, goal_text or course_id,
+            )
+
+        return plan_result
 
     # ── 课程检测 ──────────────────────────────
 
@@ -516,6 +533,105 @@ class PlannerAgent:
             if kb == "junior_dev":
                 return "python_basics"
         return "python_advanced"
+
+    # ── LLM 增强规划 (Phase 4.2) ────────────────
+
+    PLANNER_LLM_PROMPT = """你是学习路径规划专家。以下是基于知识库生成的学习路径草案，请针对该学习者进行个性化优化。
+
+学习目标: {goal}
+学习者画像: {profile}
+草案路径节点:
+{nodes}
+
+参考知识库内容 (课程章节原文):
+{context}
+
+请输出 JSON (只输出 JSON, 不要 markdown):
+{{
+  "strategy_rationale": "针对该学习者的个性化路线解释 (80-150字)",
+  "node_adjustments": [
+    {{"node_id": "草案中的节点id", "estimated_minutes": 25, "note": "针对该学习者的教学提示"}}
+  ]
+}}
+
+约束: node_adjustments 只能引用草案中已有的 node_id; estimated_minutes 范围 10-120; 可以为空数组。"""
+
+    def _enhance_plan_with_llm(
+        self,
+        plan: "LearningPlan",
+        profile_dict: Dict[str, str],
+        goal_text: str,
+    ) -> "LearningPlan":
+        """
+        用 LLM 增强规则规划结果 (Phase 4.2 / 4.3).
+
+        Phase 4.3 — RAG: 从知识库检索与 goal 相关的章节原文,
+        注入 LLM prompt 作为参考上下文。任何 RAG 失败 → 空上下文,
+        不影响原流程。
+
+        LLM 可优化: strategy_rationale, 节点 notes, 节点 estimated_minutes。
+        节点结构 (数量/顺序/依赖) 保持知识库驱动, 不由 LLM 改变。
+        任何失败 (调用/解析/校验) → 返回原规则 plan (rule fallback)。
+        """
+        llm = self._llm_provider
+        if llm is None:
+            return plan
+
+        # Phase 4.3 — RAG: 检索相关课程章节
+        knowledge_context = self._retrieve_knowledge_context(goal_text)
+
+        try:
+            nodes_brief = "\n".join(
+                f"- {n.node_id}: {n.title} ({n.estimated_minutes}min, depth={n.depth})"
+                for n in plan.nodes
+            )
+            response = llm.generate(
+                prompt=self.PLANNER_LLM_PROMPT.format(
+                    goal=goal_text,
+                    profile=json.dumps(profile_dict, ensure_ascii=False),
+                    nodes=nodes_brief,
+                    context=knowledge_context,
+                ),
+                system_prompt="You are a learning path planning expert. Output ONLY valid JSON.",
+                temperature=0.2,
+                max_tokens=1024,
+            )
+            if not response.success:
+                return plan
+
+            content = response.content.strip()
+            if content.startswith("```"):
+                lines = content.split("\n")
+                content = "\n".join(lines[1:]) if len(lines) > 2 else content
+                if content.endswith("```"):
+                    content = content[:-3]
+            data = json.loads(content)
+        except Exception:
+            return plan  # rule fallback — 保持规则结果
+
+        # 应用增强 (带校验)
+        rationale = data.get("strategy_rationale", "")
+        if isinstance(rationale, str) and rationale.strip():
+            plan.strategy_rationale = rationale.strip()
+
+        node_map = {n.node_id: n for n in plan.nodes}
+        for adj in data.get("node_adjustments", []) or []:
+            if not isinstance(adj, dict):
+                continue
+            node = node_map.get(adj.get("node_id", ""))
+            if node is None:
+                continue  # 只接受草案中存在的节点
+            minutes = adj.get("estimated_minutes")
+            if isinstance(minutes, (int, float)):
+                node.estimated_minutes = int(max(10, min(120, minutes)))
+            note = adj.get("note", "")
+            if isinstance(note, str) and note.strip():
+                node.notes = f"{node.notes}; LLM: {note.strip()}" if node.notes else note.strip()
+
+        plan.total_minutes = sum(n.estimated_minutes for n in plan.nodes)
+        plan.metadata["planning_mode"] = "llm"
+        plan.metadata["llm_model"] = getattr(self._llm_provider, "model", "")
+        return plan
 
     # ── 辅助方法 ──────────────────────────────
 
@@ -589,6 +705,27 @@ class PlannerAgent:
             alts.append("文本路线: 线性分步拆解, 代码注释铺满")
 
         return alts
+
+    # ── Phase 4.3 — RAG 知识检索 ──────────────
+
+    def _retrieve_knowledge_context(self, goal_text: str, top_k: int = 3) -> str:
+        """
+        从知识库检索与 goal 相关的章节原文。
+
+        任何失败 → 返回空字符串，不影响 LLM 增强流程。
+        """
+        try:
+            from src.rag import get_retriever
+            retriever = get_retriever()
+            chunks = retriever.search(goal_text, top_k=top_k)
+            if not chunks:
+                return ""
+            return "\n\n".join(
+                f"## {c.section}\n{c.text[:500]}"
+                for c in chunks
+            )
+        except Exception:
+            return ""
 
     # ── 批量生成 ──────────────────────────────
 

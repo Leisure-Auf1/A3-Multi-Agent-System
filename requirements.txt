@@ -2,3 +2,7 @@
 # Full pipeline (app.py → web/app_v3.py → A3Workflow → 5 agents + memory)
 # uses only streamlit + Python stdlib. Mock provider needs zero API deps.
 streamlit>=1.28.0
+
+# Phase 4.2.5 — API Runtime
+fastapi>=0.115.0
+uvicorn>=0.30.0

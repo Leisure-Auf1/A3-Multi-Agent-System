@@ -31,6 +31,7 @@ class LLMResponse:
     finish_reason: str = "stop"  # stop | length | content_filter | error
     raw_response: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    latency_ms: float = 0.0       # Phase 4.7 — provider round-trip latency
 
     @property
     def success(self) -> bool:
@@ -43,6 +44,7 @@ class LLMResponse:
             "usage": self.usage,
             "finish_reason": self.finish_reason,
             "error": self.error,
+            "latency_ms": self.latency_ms,
         }
 
 

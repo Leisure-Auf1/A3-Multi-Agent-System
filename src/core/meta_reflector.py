@@ -3,7 +3,7 @@ Phase 4 — MetaReflectorAgent + 自适应 Prompt 构建器
 """
 
 from __future__ import annotations
-import json, os, re, urllib.request, ssl
+import json, os, re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from .contracts import FailurePatternLesson, BUILTIN_LESSONS
@@ -70,23 +70,67 @@ class _LocalMemoryStore:
 
 
 class MetaReflectorAgent:
-    def __init__(self, db_client=None, api_key=None, base_url=None):
-        self.api_key = api_key or os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
-        self.base_url = base_url or os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
+    def __init__(self, db_client=None, api_key=None, base_url=None, llm_provider=None):
+        # Phase 4.7 — LLMProvider takes priority over raw api_key/base_url
+        if llm_provider is not None:
+            self._llm_provider = llm_provider
+            self.api_key = ""
+            self.base_url = ""
+        else:
+            self._llm_provider = None
+            self.api_key = api_key or os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
+            self.base_url = base_url or os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
         self.collection = db_client or _LocalMemoryStore()
 
     def distill_accident(self, node_id, accident_payload):
-        if self.api_key: return self._llm_distill(node_id, accident_payload)
+        if self._llm_provider is not None:
+            return self._llm_distill_via_provider(node_id, accident_payload)
+        if self.api_key:
+            return self._llm_distill(node_id, accident_payload)
         return self._rule_distill(node_id, accident_payload)
 
+    def _llm_distill_via_provider(self, node_id, payload):
+        """Phase 4.7 — Use LLMProvider instead of raw HTTP."""
+        prompt = f"Analyze failure [{node_id}]. Return JSON: error_type,problem_context,root_cause_analysis,anti_pattern_code,golden_patch_code,abstract_lint_rule\nPayload:{json.dumps(payload,ensure_ascii=False)}"
+        try:
+            response = self._llm_provider.generate(
+                prompt=prompt,
+                system_prompt="You are a failure analysis expert. Output ONLY valid JSON, no markdown.",
+                temperature=0.1,
+                max_tokens=1024,
+            )
+            if not response.success:
+                return self._rule_distill(node_id, payload)
+            data = json.loads(self._parse_json_content(response.content))
+            data["node_id"] = node_id
+            return FailurePatternLesson.from_dict(data)
+        except Exception:
+            return self._rule_distill(node_id, payload)
+
+    @staticmethod
+    def _parse_json_content(content: str) -> str:
+        """Strip markdown fences from JSON content."""
+        content = content.strip()
+        if content.startswith("```"):
+            lines = content.split("\n")
+            content = "\n".join(lines[1:])
+            if content.endswith("```"):
+                content = content[:-3]
+        return content.strip()
+
     def _llm_distill(self, node_id, payload):
+        """Legacy: direct HTTP call (kept for backward compat when no LLMProvider)."""
+        import urllib.request, ssl
         prompt = f"Analyze failure [{node_id}]. Return JSON: error_type,problem_context,root_cause_analysis,anti_pattern_code,golden_patch_code,abstract_lint_rule\nPayload:{json.dumps(payload,ensure_ascii=False)}"
         body = json.dumps({"model": os.environ.get("LLM_MODEL", "spark-pro"), "messages": [{"role": "user", "content": prompt}], "temperature": 0.1, "response_format": {"type": "json_object"}}).encode()
         req = urllib.request.Request(f"{self.base_url}/chat/completions", data=body, headers={"Authorization":f"Bearer {self.api_key}","Content-Type":"application/json"}, method="POST")
-        with urllib.request.urlopen(req, context=ssl.create_default_context(), timeout=60) as r:
-            data = json.loads(json.loads(r.read())["choices"][0]["message"]["content"])
-            data["node_id"] = node_id
-            return FailurePatternLesson.from_dict(data)
+        try:
+            with urllib.request.urlopen(req, context=ssl.create_default_context(), timeout=60) as r:
+                data = json.loads(json.loads(r.read())["choices"][0]["message"]["content"])
+                data["node_id"] = node_id
+                return FailurePatternLesson.from_dict(data)
+        except Exception:
+            return self._rule_distill(node_id, payload)
 
     def _rule_distill(self, node_id, payload):
         et = payload.get("error_type", payload.get("error", "Unknown"))

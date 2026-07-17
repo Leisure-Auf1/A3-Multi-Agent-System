@@ -94,6 +94,9 @@ class WorkflowResult:
     memory_saved: bool = False
     """MemoryManager 是否成功持久化本次会话"""
 
+    meta_reflection: Optional[Dict[str, Any]] = None
+    """Phase 4.6 — MetaReflector 输出: {mistake, root_cause, improvement, future_strategy, severity, concept, node_id}"""
+
     # ── 向后兼容别名 ──
     @property
     def plan(self) -> Optional[Dict[str, Any]]:
@@ -103,6 +106,14 @@ class WorkflowResult:
     @plan.setter
     def plan(self, value: Optional[Dict[str, Any]]) -> None:
         self.learning_plan = value
+
+    # ── Phase 4.4 — Explanations ──
+    @property
+    def explanations(self) -> Optional[List[Dict[str, Any]]]:
+        """决策解释列表 — 从 evaluation['explanations'] 提取."""
+        if self.evaluation and isinstance(self.evaluation, dict):
+            return self.evaluation.get("explanations")
+        return None
 
     # ── 序列化 ──
 
@@ -119,6 +130,7 @@ class WorkflowResult:
             "reflection": self.reflection,
             "trace": self.trace,
             "memory_saved": self.memory_saved,
+            "meta_reflection": self.meta_reflection,
             "total_duration_ms": self.total_duration_ms,
             "errors": self.errors,
             "completed_at": self.completed_at,

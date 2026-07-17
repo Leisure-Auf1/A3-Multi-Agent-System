@@ -25,6 +25,10 @@ from src.agents.resource_agent import ResourceAgent, ResourceRecommendation
 from src.agents.reflection_agent import ReflectionAgent, ReflectionResult
 from src.memory.memory_manager import MemoryManager
 
+# Phase 4.6 — MetaReflector integration
+from src.core.meta_reflector import MetaReflectorAgent
+from src.core.meta_reflection_adapter import MetaReflectionAdapter
+
 from .result import WorkflowContext, WorkflowResult
 
 
@@ -55,15 +59,36 @@ class A3Workflow:
         planner_agent: Optional[PlannerAgent] = None,
         resource_agent: Optional[ResourceAgent] = None,
         reflection_agent: Optional[ReflectionAgent] = None,
+        meta_reflector: Optional[MetaReflectorAgent] = None,  # Phase 4.6
         student_id: str = "demo_student",
+        llm_provider: Any = None,
+        bus: Optional[AgentEventBus] = None,
     ):
         self.memory = memory_manager or MemoryManager()
         self.profile_agent = profile_agent or ProfileAgent()
         self.planner_agent = planner_agent or PlannerAgent()
         self.resource_agent = resource_agent or ResourceAgent()
         self.reflection_agent = reflection_agent or ReflectionAgent()
+        self.meta_reflector = meta_reflector  # Phase 4.6
         self.student_id = student_id
-        self._bus = AgentEventBus.get_instance()
+
+        # Phase 4.6 — Wire MetaReflector to ExperienceMemory
+        self._meta_adapter = MetaReflectionAdapter()
+        if self.meta_reflector is not None:
+            self.meta_reflector.set_experience_store(self.memory.experience)
+
+        # Phase 4.2.6 — EventBus: 外部注入实例优先, 否则使用全局单例
+        #   API 请求:     传入独立 EventBus() → 请求级隔离
+        #   Streamlit:     不传 → 使用全局单例 (保持向后兼容)
+        self._bus = bus if bus is not None else AgentEventBus.get_instance()
+        self._owns_bus = bus is not None  # True = 注入实例, False = 全局单例
+
+        # Phase 4.2 — LLM Provider 注入 (None = 纯规则模式)
+        self.llm_provider = llm_provider
+        if llm_provider is not None:
+            self.profile_agent.set_llm_provider(llm_provider)
+            self.planner_agent.set_llm_provider(llm_provider)
+            self.reflection_agent.set_llm_provider(llm_provider)
 
     # ── 主入口 ────────────────────────────────
 
@@ -99,20 +124,31 @@ class A3Workflow:
             knowledge_gaps=knowledge_gaps or [],
         )
 
-        # 重置 EventBus — 使用类方法确保单例一致性
-        AgentEventBus.reset_instance()
-        self._bus = AgentEventBus.get_instance()
+        # 重置 EventBus
+        # Phase 4.2.6 — API 请求使用独立实例时只 clear，不触碰全局单例
+        if self._owns_bus:
+            # 注入的独立 EventBus — 只清空自己的事件
+            self._bus.clear()
+        else:
+            # 全局单例 — 需要 reset 以清理之前的 session (Streamlit 兼容)
+            AgentEventBus.reset_instance()
+            self._bus = AgentEventBus.get_instance()
         self._bus.start_session(session_id)
 
         result = WorkflowResult(context=context)
 
         # ── Step 1: ProfileAgent — 分析学习者 ──
         try:
+            _t0 = time.time()
             profile_result = self._run_profile_agent(user_goal, user_profile)
             result.profile = profile_result.to_dict() if hasattr(profile_result, "to_dict") else profile_result
+            _profile_d = result.profile or {}
+            _source = _profile_d.get("source", "rule")
             self._emit("ProfileAgent", "profile_extracted",
                        f"目标: {user_goal[:60]}",
-                       f"画像: {result.profile.get('profile', {}).get('knowledge_base', 'unknown')}")
+                       f"画像: {_profile_d.get('profile', {}).get('knowledge_base', 'unknown')} "
+                       f"(mode={_source})",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"ProfileAgent: {e}")
             self._emit("ProfileAgent", "profile_extracted",
@@ -120,12 +156,15 @@ class A3Workflow:
 
         # ── Step 2: PlannerAgent — 生成学习路径 ──
         try:
+            _t0 = time.time()
             plan_result = self._run_planner_agent(user_goal, result.profile)
             result.learning_plan = plan_result.to_dict() if hasattr(plan_result, "to_dict") else plan_result
             node_count = len(result.learning_plan.get("nodes", [])) if result.learning_plan else 0
+            _mode = (result.learning_plan or {}).get("metadata", {}).get("planning_mode", "rule")
             self._emit("PlannerAgent", "plan_generated",
                        f"目标: {user_goal[:60]}",
-                       f"路径: {node_count} 个节点")
+                       f"路径: {node_count} 个节点 (mode={_mode})",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"PlannerAgent: {e}")
             self._emit("PlannerAgent", "plan_generated",
@@ -133,6 +172,7 @@ class A3Workflow:
 
         # ── Step 3: ResourceAgent — 推荐资源 ──
         try:
+            _t0 = time.time()
             profile_dict = self._extract_profile_dict(result.profile)
             resource_result = self._run_resource_agent(
                 profile_dict, user_goal, knowledge_gaps
@@ -144,7 +184,8 @@ class A3Workflow:
             res_count = len(result.resources) if result.resources else 0
             self._emit("ResourceAgent", "resources_recommended",
                        f"目标: {user_goal[:60]} | 缺口: {knowledge_gaps}",
-                       f"推荐: {res_count} 项资源")
+                       f"推荐: {res_count} 项资源",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"ResourceAgent: {e}")
             self._emit("ResourceAgent", "resources_recommended",
@@ -152,8 +193,14 @@ class A3Workflow:
 
         # ── Step 4: Review + Step 5: Reflection ──
         try:
-            feedback = self._simulate_review(result.learning_plan, result.resources or [])
-            result.evaluation = feedback  # ★ 新字段
+            _t0 = time.time()
+            # Phase 4.4 — Use EvaluationManager (rule-based scoring + explanations)
+            # Falls back to _simulate_review on any error
+            feedback = self._run_evaluation(
+                result.learning_plan, result.resources or [],
+                result.profile, user_goal, self.student_id,
+            )
+            result.evaluation = feedback
             score = feedback.get("score", 75)
 
             reflection_input = {
@@ -163,23 +210,56 @@ class A3Workflow:
             }
             self._emit("ReviewAgent", "review_completed",
                        f"评审 {len(result.resources or [])} 项资源",
-                       f"评分: {score}")
+                       f"评分: {score}",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
 
+            _t0 = time.time()
             refl_result = self._run_reflection_agent(user_goal, reflection_input)
             result.reflection = (
                 refl_result.to_dict() if hasattr(refl_result, "to_dict")
                 else refl_result
             )
+            _refl_source = (result.reflection or {}).get("source", "rule")
             self._emit("ReflectionAgent", "reflection_completed",
                        f"目标: {user_goal[:60]}",
-                       str(result.reflection.get("summary", ""))[:150])
+                       f"(mode={_refl_source}) " + str((result.reflection or {}).get("summary", ""))[:130],
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"Review/Reflection: {e}")
             self._emit("ReflectionAgent", "reflection_completed",
                        "反思失败", str(e), "error")
 
+        # ── Phase 4.6 — MetaReflector Trigger ──
+        if self.meta_reflector is not None:
+            try:
+                if self._meta_adapter.should_trigger(result.evaluation):
+                    _t0 = time.time()
+                    failure_context = self._meta_adapter.build_failure_context(
+                        result.evaluation, result.reflection, self.student_id,
+                    )
+                    concept = self._meta_adapter.extract_concept(
+                        result.reflection, result.learning_plan,
+                    )
+                    severity = self._meta_adapter.determine_severity(result.evaluation)
+
+                    meta_result = self.meta_reflector.reflect(
+                        node_id=f"pipeline_{session_id[:12]}",
+                        failure_context=failure_context,
+                        concept=concept,
+                        severity=severity,
+                    )
+                    if meta_result is not None:
+                        result.meta_reflection = meta_result.to_dict()
+                        self._emit("MetaReflector", "meta_reflection_completed",
+                                   f"概念: {concept[:40]}",
+                                   f"severity={severity} | {meta_result.root_cause[:60]}",
+                                   duration_ms=round((time.time() - _t0) * 1000, 1))
+            except Exception as e:
+                errors.append(f"MetaReflector: {e}")
+
         # ── Step 6: Memory — 保存体验 ──
         try:
+            _t0 = time.time()
             self._save_to_memory(
                 student_id=self.student_id,
                 user_goal=user_goal,
@@ -191,7 +271,8 @@ class A3Workflow:
             result.memory_saved = True  # ★ 新字段
             self._emit("Memory", "experience_saved",
                        f"Session: {session_id}",
-                       "Memory 已更新")
+                       "Memory 已更新",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
         except Exception as e:
             errors.append(f"Memory: {e}")
 
@@ -233,7 +314,9 @@ class A3Workflow:
             )
             return ProfileExtractionResult(profile=profile, source="preset", confidence=1.0)
 
-        # 从目标文本提取
+        # 从目标文本提取 — LLM 优先 (Phase 4.2), provider=None 时自动走规则模式
+        if self.llm_provider is not None:
+            return self.profile_agent.extract_with_provider(user_goal)
         return self.profile_agent.extract(user_goal)
 
     def _run_planner_agent(
@@ -282,15 +365,40 @@ class A3Workflow:
             knowledge_gaps=knowledge_gaps or [],
         )
 
+    def _run_evaluation(
+        self,
+        plan: Optional[Dict[str, Any]],
+        resources: List[Dict[str, Any]],
+        profile: Optional[Dict[str, Any]],
+        user_goal: str,
+        student_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Step 4: 质量评估 (Phase 4.4 — EvaluationManager + fallback).
+
+        Uses EvaluationManager for rule-based scoring + decision explanations.
+        Falls back to simple rule-based scoring on any error.
+        """
+        try:
+            from src.evaluation.evaluator import EvaluationManager
+            evaluator = EvaluationManager()
+            return evaluator.evaluate(
+                learning_plan=plan,
+                resources=resources,
+                profile=profile,
+                user_goal=user_goal,
+                student_id=student_id,
+            )
+        except Exception:
+            return self._simulate_review(plan, resources)
+
     def _simulate_review(
         self,
         plan: Optional[Dict[str, Any]],
         resources: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
-        """Step 4: 质量评审 (模拟)"""
-        # 基于资源覆盖度和路径合理性模拟评分
-        score = 75  # 基础分
-
+        """Fallback quality scoring — used when EvaluationManager is unavailable."""
+        score = 75
         if plan:
             nodes = plan.get("nodes", [])
             if len(nodes) >= 3:
@@ -298,14 +406,12 @@ class A3Workflow:
             total_min = plan.get("total_minutes", 0)
             if 40 <= total_min <= 180:
                 score += 5
-
         if resources:
             if len(resources) >= 2:
                 score += 5
             types = {r.get("type", "") for r in resources}
             if len(types) >= 2:
                 score += 5
-
         return {
             "score": min(score, 100),
             "issues": [],
@@ -395,6 +501,7 @@ class A3Workflow:
         input_summary: str,
         output_summary: str,
         status: str = "success",
+        duration_ms: float = 0.0,
     ):
         """发送事件到 EventBus"""
         try:
@@ -404,6 +511,7 @@ class A3Workflow:
                 input_summary=input_summary,
                 output_summary=output_summary,
                 status=status,
+                duration_ms=duration_ms,
             )
         except Exception:
             pass
@@ -415,3 +523,176 @@ class A3Workflow:
     def get_timeline_json(self) -> str:
         """获取 JSON 格式时间线"""
         return self._bus.to_json()
+
+    # ── Phase 4.8 — Runtime Engine Bridge ─────
+
+    def run_via_runtime(
+        self,
+        user_goal: str,
+        user_profile: Optional[Dict[str, Any]] = None,
+        knowledge_gaps: Optional[List[str]] = None,
+        session_id: str = "",
+    ) -> "WorkflowResult":
+        """
+        Execute the pipeline via RuntimeEngine (state machine).
+
+        Produces the same WorkflowResult as run().
+        Delegates agent calls to RuntimeEngine handlers bound to this workflow.
+
+        This is the Phase 4.8 migration path — run() is preserved for backward compat.
+        """
+        from src.runtime import RuntimeEngine, RuntimeContext
+
+        session_id = session_id or f"a3_rt_{int(time.time())}"
+
+        # Init EventBus
+        if self._owns_bus:
+            self._bus.clear()
+        else:
+            AgentEventBus.reset_instance()
+            self._bus = AgentEventBus.get_instance()
+        self._bus.start_session(session_id)
+
+        # Build context
+        ctx = RuntimeContext(
+            session_id=session_id,
+            user_goal=user_goal,
+            user_profile=user_profile or {},
+            knowledge_gaps=knowledge_gaps or [],
+            student_id=self.student_id,
+            meta_reflector=self.meta_reflector,
+            meta_adapter=self._meta_adapter,
+        )
+
+        # Build engine
+        engine = RuntimeEngine(session_id=session_id)
+        self._bind_runtime_handlers(engine, ctx)
+
+        # Execute
+        _ = engine.run(ctx)
+
+        # Convert to WorkflowResult
+        result = WorkflowResult(
+            context=WorkflowContext(
+                session_id=session_id,
+                user_goal=user_goal,
+                user_profile=user_profile or {},
+                knowledge_gaps=knowledge_gaps or [],
+            ),
+        )
+        result.profile = ctx.profile
+        result.learning_plan = ctx.learning_plan
+        result.resources = ctx.resources
+        result.evaluation = ctx.evaluation
+        result.reflection = ctx.reflection
+        result.meta_reflection = ctx.meta_reflection
+        result.errors = ctx.errors
+        result.success = len(ctx.errors) == 0
+        result.memory_saved = True  # runtime handler handles memory
+        result.completed_at = datetime.now(timezone.utc).isoformat()
+
+        # Trace from EventBus
+        collector = TraceCollector(bus=self._bus)
+        result.trace = collector.to_dict_list()
+
+        return result
+
+    def _bind_runtime_handlers(self, engine: Any, ctx: Any) -> None:
+        """Bind this workflow's step methods as RuntimeEngine handlers."""
+        from src.runtime import AgentState
+
+        wf = self
+
+        engine.register_handler(AgentState.INIT, lambda c: None)
+
+        engine.register_handler(AgentState.PROFILE, lambda c: _set_ctx(
+            c, 'profile',
+            wf._run_profile_agent(c.user_goal, c.user_profile).to_dict()
+            if hasattr(wf._run_profile_agent(c.user_goal, c.user_profile), 'to_dict')
+            else wf._run_profile_agent(c.user_goal, c.user_profile)
+        ))
+
+        engine.register_handler(AgentState.PLAN, lambda c: _set_ctx(
+            c, 'learning_plan',
+            wf._run_planner_agent(c.user_goal, c.profile).to_dict()
+            if hasattr(wf._run_planner_agent(c.user_goal, c.profile), 'to_dict')
+            else wf._run_planner_agent(c.user_goal, c.profile)
+        ))
+
+        engine.register_handler(AgentState.EXECUTE, lambda c: _set_ctx(
+            c, 'resources',
+            wf._run_resource_agent(
+                wf._extract_profile_dict(c.profile),
+                c.user_goal, c.knowledge_gaps,
+            ).to_dict().get("resources", [])
+            if hasattr(wf._run_resource_agent(
+                wf._extract_profile_dict(c.profile), c.user_goal, c.knowledge_gaps
+            ), 'to_dict')
+            else wf._run_resource_agent(
+                wf._extract_profile_dict(c.profile), c.user_goal, c.knowledge_gaps
+            ).get("resources", [])
+        ))
+
+        engine.register_handler(AgentState.EVALUATE, lambda c: _set_ctx(
+            c, 'evaluation',
+            wf._run_evaluation(
+                c.learning_plan, c.resources or [],
+                c.profile, c.user_goal, c.student_id,
+            )
+        ))
+
+        engine.register_handler(AgentState.REFLECT, lambda c: _set_ctx(
+            c, 'reflection',
+            wf._run_reflection_agent(
+                c.user_goal,
+                {"plan": c.learning_plan, "resources": c.resources, "feedback": c.evaluation},
+            ).to_dict()
+            if hasattr(wf._run_reflection_agent(c.user_goal, {
+                "plan": c.learning_plan, "resources": c.resources, "feedback": c.evaluation,
+            }), 'to_dict')
+            else wf._run_reflection_agent(c.user_goal, {
+                "plan": c.learning_plan, "resources": c.resources, "feedback": c.evaluation,
+            })
+        ))
+
+        engine.register_handler(AgentState.META_REFLECT, lambda c: _meta_reflect_handler(wf, c))
+
+        engine.register_handler(AgentState.MEMORY_UPDATE, lambda c: wf._save_to_memory(
+            student_id=c.student_id,
+            user_goal=c.user_goal,
+            profile=c.profile,
+            plan=c.learning_plan,
+            resources=c.resources,
+            reflection=c.reflection,
+        ))
+
+
+def _set_ctx(ctx, name: str, value):
+    """Set attribute on context, returning None (for handler compatibility)."""
+    setattr(ctx, name, value)
+
+
+def _meta_reflect_handler(wf, ctx) -> None:
+    """MetaReflector handler — mirrors Phase 4.6 trigger logic."""
+    if wf.meta_reflector is None:
+        return
+    if not wf._meta_adapter.should_trigger(ctx.evaluation):
+        return
+
+    failure_context = wf._meta_adapter.build_failure_context(
+        ctx.evaluation, ctx.reflection, ctx.student_id,
+    )
+    concept = wf._meta_adapter.extract_concept(ctx.reflection, ctx.learning_plan)
+    severity = wf._meta_adapter.determine_severity(ctx.evaluation)
+
+    meta_result = wf.meta_reflector.reflect(
+        node_id=f"rt_{ctx.session_id[:12]}",
+        failure_context=failure_context,
+        concept=concept,
+        severity=severity,
+    )
+    if meta_result is not None:
+        ctx.meta_reflection = meta_result.to_dict()
+        wf._emit("MetaReflector", "meta_reflection_completed",
+                   f"概念: {concept[:40]}",
+                   f"severity={severity} | {meta_result.root_cause[:60]}")

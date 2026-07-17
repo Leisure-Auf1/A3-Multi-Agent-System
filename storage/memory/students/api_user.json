@@ -1,0 +1,197 @@
+{
+  "student_id": "api_user",
+  "profile_history": [
+    {
+      "knowledge_base": "junior_dev",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "normal",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:42:44.944536+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:42:44.949036+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.833596+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.839048+00:00"
+    },
+    {
+      "knowledge_base": "junior_dev",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "normal",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.846062+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.854909+00:00"
+    },
+    {
+      "knowledge_base": "junior_dev",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "normal",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.876054+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:41.880639+00:00"
+    },
+    {
+      "knowledge_base": "junior_dev",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "normal",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:44.800039+00:00"
+    },
+    {
+      "knowledge_base": "mid_level",
+      "cognitive_style": "visual_dominant",
+      "error_prone_bias": "magic_syntax_blind",
+      "learning_pace": "fast_track",
+      "interaction_preference": "code_sandbox",
+      "frustration_threshold": "medium",
+      "timestamp": "2026-07-17T04:52:44.805920+00:00"
+    }
+  ],
+  "weak_points": [],
+  "learning_behavior": {
+    "avg_pace": "fast_track",
+    "preferred_style": "visual_dominant",
+    "frustration_pattern": "medium",
+    "interaction_count": 247,
+    "avg_score": 0.0,
+    "time_of_day_preference": ""
+  },
+  "mastery_map": {
+    "prompt_engineering": 0.59,
+    "llm_interaction": 0.59,
+    "agent_loop": 0.59,
+    "tool_calling": 0.59,
+    "agent_planning": 0.59,
+    "agent_roles": 0.59,
+    "agent_communication": 0.59,
+    "task_decomposition": 0.59,
+    "eventbus_arch": 0.59,
+    "memory_management": 0.59,
+    "state_persistence": 0.59,
+    "trace_observability": 0.59,
+    "evaluation_systems": 0.59,
+    "reflection_loop": 0.59,
+    "system_optimization": 0.59,
+    "llm_basics": 0.59
+  },
+  "feedback_history": [],
+  "session_summaries": [
+    {
+      "course_id": "",
+      "nodes_completed": 16,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:42:44.945524+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:42:44.949268+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.834032+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.839337+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 16,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.846483+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.855173+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 16,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.876308+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:41.881133+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 16,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:44.801150+00:00"
+    },
+    {
+      "course_id": "",
+      "nodes_completed": 15,
+      "total_score": 100,
+      "time_spent": 0,
+      "timestamp": "2026-07-17T04:52:44.806160+00:00"
+    }
+  ],
+  "created_at": "2026-07-16T23:02:12.936268+00:00",
+  "updated_at": "2026-07-17T04:52:44.806162+00:00"
+}
