@@ -97,7 +97,21 @@ POST /api/v2/evaluation/quiz/score
 
 ---
 
-## Quick Start
+## Docker Quick Start 🐳
+
+```bash
+git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
+cd A3-Multi-Agent-System
+docker compose up -d
+# Dashboard: http://localhost:8501
+# API Docs:  http://localhost:8000/docs
+```
+
+No Python required on host. Zero API keys needed — runs fully offline with mock providers. See [docs/docker-quickstart.md](docs/docker-quickstart.md) for details.
+
+---
+
+## Quick Start (Local)
 
 ```bash
 git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git

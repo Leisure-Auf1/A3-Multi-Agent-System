@@ -1,56 +1,90 @@
 # docker-compose.yml — A3 Production Stack
 #
-# Start:  docker compose up -d
-# Logs:   docker compose logs -f api
-# Stop:   docker compose down
+# Quick Start:
+#   docker compose up -d
+#   http://localhost:8501  (Dashboard)
+#   http://localhost:8000/docs  (API)
+#
+# Production:
+#   docker compose --profile production up -d
 
 services:
-  # ── FastAPI Backend ───────────────────────────────────
+  # ═══════════════════════════════════════════════════════
+  # FastAPI Backend
+  # ═══════════════════════════════════════════════════════
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: a3-api:latest
     container_name: a3-api
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - A3_ENV=production
+      - A3_ENV=${A3_ENV:-production}
       - LLM_PROVIDER=${LLM_PROVIDER:-mock}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - FAL_KEY=${FAL_KEY:-}
       - A3_PROVIDER=${A3_PROVIDER:-mock}
       - DATABASE_URL=${DATABASE_URL:-sqlite:///storage/a3.db}
+      - DEFAULT_USER_TIER=${DEFAULT_USER_TIER:-free}
     volumes:
       - a3_data:/app/storage
       - a3_kb:/app/knowledge_base:ro
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEMORY_LIMIT:-512M}
+          cpus: "${API_CPU_LIMIT:-1.0}"
     command: >
       uvicorn src.api.server:app
       --host 0.0.0.0
       --port 8000
-      --workers 1
-      --log-level info
+      --workers ${API_WORKERS:-1}
+      --log-level ${LOG_LEVEL:-info}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\"",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # ── Streamlit Frontend ────────────────────────────────
+  # ═══════════════════════════════════════════════════════
+  # Streamlit Frontend
+  # ═══════════════════════════════════════════════════════
   dashboard:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: a3-dashboard:latest
     container_name: a3-dashboard
     ports:
-      - "8501:8501"
+      - "${STREAMLIT_PORT:-8501}:8501"
     environment:
       - PYTHONUNBUFFERED=1
-      - A3_API_URL=http://api:8000
+      - A3_API_URL=${A3_API_URL:-http://api:8000}
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
     volumes:
       - a3_data:/app/storage
     depends_on:
       api:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: ${DASHBOARD_MEMORY_LIMIT:-256M}
+          cpus: "${DASHBOARD_CPU_LIMIT:-0.5}"
     command: >
       streamlit run app.py
       --server.port 8501
@@ -58,9 +92,42 @@ services:
       --server.headless true
       --browser.gatherUsageStats false
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ═══════════════════════════════════════════════════════
+  # PostgreSQL (Optional — for production scale)
+  # ═══════════════════════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: a3-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-a3}
+      - POSTGRES_USER=${POSTGRES_USER:-a3}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-a3_secret}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    profiles:
+      - production
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   a3_data:
     name: a3_data
+    driver: local
   a3_kb:
     name: a3_kb
+    driver: local
+  pg_data:
+    name: a3_pg_data
+    driver: local
