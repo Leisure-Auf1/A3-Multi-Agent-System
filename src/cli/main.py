@@ -20,7 +20,7 @@ import sys
 import argparse
 from typing import List, Optional
 
-from .commands import run, status, trace, plugins
+from .commands import run, status, trace, plugins, demo
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -47,6 +47,7 @@ def create_parser() -> argparse.ArgumentParser:
     status.register_parser(subparsers)
     trace.register_parser(subparsers)
     plugins.register_parser(subparsers)
+    demo.register_parser(subparsers)
 
     return parser
 
