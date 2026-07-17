@@ -2,7 +2,7 @@
 
 # Run all tests
 test:
-	python -m pytest tests/ -v --tb=short
+	/usr/bin/python -m pytest tests/ -v --tb=short
 
 # Run tests with coverage
 test-cov:
