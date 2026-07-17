@@ -40,9 +40,9 @@ USER a3
 # Expose API + Streamlit ports
 EXPOSE 8000 8501
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# Health check via FastAPI endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -sf http://localhost:8000/health || exit 1
 
 # Default: run both services via start script
 CMD ["/app/scripts/start.sh"]
