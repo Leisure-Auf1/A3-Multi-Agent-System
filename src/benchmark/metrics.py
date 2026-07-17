@@ -231,3 +231,100 @@ class BenchmarkMetrics:
             "recovery_rate": f"{self.recovery_rate_pct():.1f}%",
             "avg_latency": f"{self.avg_latency_ms():.1f}ms",
         }
+
+
+# ══════════════════════════════════════════════
+# Phase 5.7 — Explainability Metrics
+# ══════════════════════════════════════════════
+
+
+class ExplainabilityMetrics:
+    """
+    Tracks explainability of runtime decisions across benchmark runs.
+
+    Measures how transparent and auditable the decision-making is:
+      - What fraction of decisions have structured reasons
+      - Decision diversity (variety of actions taken)
+      - Recovery decision coverage
+      - Chain completeness
+    """
+
+    def __init__(self, label: str = ""):
+        self.label = label
+        self._scores: List[float] = []
+        self._diversities: List[float] = []
+        self._recovery_rates: List[float] = []
+        self._total_decisions: int = 0
+        self._total_runs: int = 0
+
+    def record_from_recorder(self, recorder: Any) -> None:
+        """
+        Record explainability metrics from an ExplanationRecorder.
+
+        Args:
+            recorder: ExplanationRecorder after engine.run() completed.
+        """
+        summary = recorder.to_summary()
+        self._scores.append(summary["explainability_score"])
+        self._diversities.append(summary["decision_diversity"])
+        self._recovery_rates.append(summary["recovery_success_rate"])
+        self._total_decisions += summary["total_decisions"]
+        self._total_runs += 1
+
+    def record_raw(self, explain_score: float, diversity: float, recovery_rate: float) -> None:
+        """Record explainability metrics directly."""
+        self._scores.append(explain_score)
+        self._diversities.append(diversity)
+        self._recovery_rates.append(recovery_rate)
+        self._total_runs += 1
+
+    # ── Aggregates ────────────────────────────
+
+    def avg_explainability(self) -> float:
+        if not self._scores:
+            return 0.0
+        return sum(self._scores) / len(self._scores)
+
+    def avg_diversity(self) -> float:
+        if not self._diversities:
+            return 0.0
+        return sum(self._diversities) / len(self._diversities)
+
+    def avg_recovery_rate(self) -> float:
+        if not self._recovery_rates:
+            return 0.0
+        return sum(self._recovery_rates) / len(self._recovery_rates)
+
+    @property
+    def total_decisions(self) -> int:
+        return self._total_decisions
+
+    @property
+    def total_runs(self) -> int:
+        return self._total_runs
+
+    def avg_decisions_per_run(self) -> float:
+        if not self._total_runs:
+            return 0.0
+        return self._total_decisions / self._total_runs
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "label": self.label,
+            "total_runs": self.total_runs,
+            "total_decisions": self.total_decisions,
+            "avg_decisions_per_run": round(self.avg_decisions_per_run(), 1),
+            "avg_explainability_score": round(self.avg_explainability(), 3),
+            "avg_decision_diversity": round(self.avg_diversity(), 3),
+            "avg_recovery_explainability": round(self.avg_recovery_rate(), 3),
+        }
+
+    def to_summary(self) -> Dict[str, Any]:
+        return {
+            "label": self.label,
+            "runs": self.total_runs,
+            "decisions": self.total_decisions,
+            "explainability": f"{self.avg_explainability():.1%}",
+            "diversity": f"{self.avg_diversity():.1%}",
+            "recovery_rate": f"{self.avg_recovery_rate():.1%}",
+        }
