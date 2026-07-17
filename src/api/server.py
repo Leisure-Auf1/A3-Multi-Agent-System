@@ -22,7 +22,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import HealthResponse
-from src.api.routes import learning_router, runtime_router  # Phase 5.0
+from src.api.routes import learning_router, runtime_router, auth_router  # Phase 9.1
 
 app = FastAPI(
     title="A3 Multi-Agent Learning System — API",
@@ -47,6 +47,7 @@ app.add_middleware(
 
 app.include_router(learning_router)
 app.include_router(runtime_router)  # Phase 5.0
+app.include_router(auth_router)  # Phase 9.1
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
