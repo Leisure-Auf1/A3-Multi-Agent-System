@@ -1,0 +1,66 @@
+# docker-compose.yml — A3 Production Stack
+#
+# Start:  docker compose up -d
+# Logs:   docker compose logs -f api
+# Stop:   docker compose down
+
+services:
+  # ── FastAPI Backend ───────────────────────────────────
+  api:
+    build: .
+    container_name: a3-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - A3_ENV=production
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - FAL_KEY=${FAL_KEY:-}
+      - A3_PROVIDER=${A3_PROVIDER:-mock}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///storage/a3.db}
+    volumes:
+      - a3_data:/app/storage
+      - a3_kb:/app/knowledge_base:ro
+    command: >
+      uvicorn src.api.server:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 1
+      --log-level info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Streamlit Frontend ────────────────────────────────
+  dashboard:
+    build: .
+    container_name: a3-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - A3_API_URL=http://api:8000
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    volumes:
+      - a3_data:/app/storage
+    depends_on:
+      api:
+        condition: service_healthy
+    command: >
+      streamlit run app.py
+      --server.port 8501
+      --server.address 0.0.0.0
+      --server.headless true
+      --browser.gatherUsageStats false
+    restart: unless-stopped
+
+volumes:
+  a3_data:
+    name: a3_data
+  a3_kb:
+    name: a3_kb
