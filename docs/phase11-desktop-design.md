@@ -61,40 +61,177 @@
 |:------|:-----------|:----------|
 | Shell | Electron 30+ | Cross-platform, native menus, system tray, auto-update |
 | WebView | Streamlit (existing) | Zero rewrite — reuse entire web UI |
-| Backend | Docker Compose (existing) | Container lifecycle, health checks, volumes |
+| Backend | Docker (single container) | Start script runs both uvicorn + streamlit |
 | Packaging | electron-builder | Windows .exe, macOS .dmg, Linux .AppImage |
 | Updates | electron-updater | Auto-download new releases from GitHub |
-| Installer | NSIS (Windows) | Custom install wizard, Docker Desktop check |
 
-### 1.3 Why Electron + Docker
+### 1.3 Technology Evaluation — Why Electron
+
+| Option | Size | Native Features | Docker Interop | Complexity | Verdict |
+|:-------|:----:|:---------------:|:--------------:|:----------:|:-------|
+| **Electron** | ~150MB | ✅ tray, menu, notifications | ✅ child_process | Medium | **Selected** |
+| PyWebView | ~30MB | ❌ no tray, no notifications | ⚠️ subprocess only | Low | Too limited |
+| Tauri | ~10MB | ✅ tray, menu | ❌ Rust-side only | High | No Node.js ecosystem |
+| Nativefier | ~100MB | ❌ wrapper only | ❌ none | Very Low | No lifecycle control |
+
+**Decision:** Electron — the only option that provides both native desktop features AND full control over Docker lifecycle via Node.js `child_process`.
+
+### 1.4 Single-Container Architecture
 
 ```
-Decision: Electron wrapper + Docker backend
+Desktop uses ONE container (vs server's two):
 
-Rationale:
-  ✅ Reuse entire Streamlit UI — zero frontend rewrite
-  ✅ Docker already production-ready (Phase 10.3)
-  ✅ Cross-platform (Windows, macOS, Linux) with single codebase
-  ✅ Native features: tray, notifications, file dialogs
-  ✅ Auto-update via electron-updater
-  ✅ User data persists outside container
+Server (docker-compose.yml):       Desktop (docker-compose.desktop.yml):
+  api container :8000                 a3-app container
+  dashboard container :8501           ├── uvicorn src.api.server:app :8000
+  ─ separate for scaling              ├── streamlit run app.py :8501
+                                      └── both via scripts/start.sh
 
-Trade-offs:
-  ⚠️ App size: ~200 MB (Electron ~150 + Docker image ~300 pulled separately)
-  ⚠️ Requires Docker Desktop on Windows/macOS
-  ⚠️ Startup: ~10s cold (Docker container start)
-
-Alternatives considered:
-  • Tauri: Smaller (~10MB) but limited WebView features, no Docker interop
-  • PyWebView: Lighter but no tray/notifications/auto-update
-  • Nativefier: Quick wrapper, no lifecycle management
+Why single container for desktop:
+  ✅ Simpler lifecycle (start/stop ONE container)
+  ✅ No Docker network needed (both on localhost)
+  ✅ Lower resource usage (~300MB vs ~500MB for two)
+  ✅ Matches existing start.sh (already runs both)
 ```
 
 ---
 
 ## 2. Electron + Docker Integration
 
-### 2.1 Lifecycle State Machine
+### 1.5 docker-compose.desktop.yml
+
+Single-container desktop deployment:
+
+```yaml
+# docker-compose.desktop.yml — Desktop single-container deployment
+# Bundled with Electron app at: resources/docker-compose.desktop.yml
+
+services:
+  a3-app:
+    image: leisureauf1/a3-multi-agent-system:${A3_VERSION:-latest}
+    container_name: a3-desktop
+    ports:
+      - "${A3_API_PORT:-18000}:8000"
+      - "${A3_UI_PORT:-18501}:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - FAL_KEY=${FAL_KEY:-}
+      - DEFAULT_USER_TIER=${DEFAULT_USER_TIER:-free}
+    volumes:
+      - ${A3_DATA_DIR}:/app/storage        # Persistent user data
+      - ${A3_KB_DIR:-./knowledge_base}:/app/knowledge_base:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+```
+
+**Key differences from server `docker-compose.yml`:**
+- Single service (not api + dashboard)
+- Different default ports (18000/18501) to avoid conflicts
+- `${A3_DATA_DIR}` for platform-specific path
+- Security hardening (read_only, cap_drop, no-new-privileges)
+- Version tag from env var for update control
+
+### 1.6 Platform-Specific Data Paths
+
+| Platform | Data Directory | Env Var |
+|:---------|:---------------|:--------|
+| Windows | `%APPDATA%/A3/data/` | `A3_DATA_DIR=C:\Users\<user>\AppData\Roaming\A3\data` |
+| macOS | `~/Library/Application Support/A3/data/` | `A3_DATA_DIR=/Users/<user>/Library/Application Support/A3/data` |
+| Linux | `~/.local/share/A3/data/` | `A3_DATA_DIR=/home/<user>/.local/share/A3/data` |
+
+All platforms: auto-created on first launch. Portable between platforms (SQLite + JSON).
+
+---
+
+## 2. Docker Prerequisites Handling
+
+### 2.1 Docker Detection Flow
+
+```
+App launched
+     │
+     ▼
+┌──────────────────────────────────────────┐
+│ Check: docker --version                   │
+└──────────────┬───────────────────────────┘
+               │
+     ┌─────────┼─────────┐
+     ▼         ▼         ▼
+  [Found]   [Not Found]  [Error]
+     │         │           │
+     ▼         ▼           ▼
+  Start     ┌────────────────────────────┐
+  container │  Docker Not Found           │
+            │                            │
+            │  A3 requires Docker to run │
+            │  the learning engine.       │
+            │                            │
+            │  [Download Docker Desktop]  │
+            │  [I already have Docker]    │
+            │  [Quit]                    │
+            └────────────────────────────┘
+                 │ user clicks download
+                 ▼
+            Open: https://docs.docker.com/get-docker/
+```
+
+### 2.2 Docker Not Running Recovery
+
+```
+Container start fails (docker daemon not running)
+     │
+     ▼
+┌──────────────────────────────────────────┐
+│  Docker Engine Not Running                │
+│                                          │
+│  The Docker engine needs to be started   │
+│  before A3 can launch.                   │
+│                                          │
+│  • Windows: Docker Desktop should start  │
+│    automatically. If not, open it from   │
+│    the Start Menu.                       │
+│  • macOS: Check the Docker icon in the   │
+│    menu bar.                             │
+│  • Linux: Run `sudo systemctl start      │
+│    docker`                               │
+│                                          │
+│  [Retry]  [Open Docker Desktop]  [Quit]  │
+└──────────────────────────────────────────┘
+```
+
+### 2.3 Port Conflict Handling
+
+```
+Port 18000 or 18501 already in use
+     │
+     ▼
+┌──────────────────────────────────────────┐
+│  Port Conflict                           │
+│                                          │
+│  Port 18000 is already in use.           │
+│                                          │
+│  A3 can use alternative ports:           │
+│  [Use 18001/18502]  [Let me choose]      │
+│                                          │
+│  (Settings are saved for next launch)    │
+└──────────────────────────────────────────┘
+```
 
 ```
                     ┌──────────┐
@@ -126,70 +263,37 @@ Error states:
   RUNNING  → ERROR (container crashed, health check failed)
 ```
 
-### 2.2 Electron Main Process
+### 3.1 Electron Main Process (Interface Description)
 
-```javascript
-// main.js — Electron main process (design reference)
+```
+Main Process Responsibilities:
 
-const { app, BrowserWindow, Tray, Menu, dialog, ipcMain } = require('electron');
-const { spawn, execSync } = require('child_process');
-const path = require('path');
+1. ContainerManager
+   - checkDockerInstalled() → bool
+   - startContainer(composeFile) → Promise<void>
+   - stopContainer() → Promise<void>
+   - getStatus() → 'stopped' | 'starting' | 'running' | 'error'
+   - pullImage(version) → Promise<void>
+   Implementation: child_process.exec('docker compose ...')
 
-// ── Container Manager ──────────────────────────────────
-class ContainerManager {
-  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+2. WindowManager
+   - createMainWindow() → loads localhost:18501
+   - showLoadingScreen() → while container starting
+   - showErrorScreen(message) → Docker/prereq errors
 
-  async start() {
-    // 1. Check Docker is installed
-    this._checkDocker();
+3. TrayManager
+   - createTray() → system tray icon + menu
+   - updateStatus(status)
+   - showNotification(title, body)
 
-    // 2. Pull latest image (optional, configurable)
-    if (config.autoUpdate) {
-      await exec('docker pull leisureauf1/a3-multi-agent-system:latest');
-    }
-
-    // 3. Start containers
-    this.status = 'starting';
-    await exec('docker compose -f /path/to/docker-compose.yml up -d');
-
-    // 4. Wait for health check
-    await this._waitForHealth('http://localhost:8000/health', 30000);
-
-    this.status = 'running';
-  }
-
-  async stop() {
-    this.status = 'stopping';
-    await exec('docker compose -f /path/to/docker-compose.yml down');
-    this.status = 'stopped';
-  }
-
-  async _checkDocker() {
-    try { execSync('docker --version'); }
-    catch { throw new Error('Docker not installed'); }
-  }
-}
-
-// ── Window Manager ─────────────────────────────────────
-class WindowManager {
-  createMainWindow() {
-    const win = new BrowserWindow({
-      width: 1280, height: 800,
-      webPreferences: { nodeIntegration: false },
-    });
-
-    // Load Streamlit UI (localhost — managed by Docker)
-    win.loadURL('http://localhost:8501');
-
-    // Show loading screen until healthy
-    win.webContents.on('did-fail-load', () => {
-      win.loadFile('loading.html');  // "Starting A3..."
-    });
-  }
-}
+4. UpdateManager
+   - checkForUpdates() → GitHub Releases API
+   - downloadUpdate(version) → Promise<void>
+   - applyUpdate() → restart app
+   Implementation: electron-updater
 ```
 
-### 2.3 IPC Channels
+### 3.2 IPC Channels (Interface)
 
 ```
 Renderer (Streamlit)  ←──IPC──→  Main Process (Electron)
@@ -405,57 +509,66 @@ setInterval(async () => {
 
 ## 6. Auto Update Strategy
 
-### 6.1 Update Flow
+### 6.1 Unified Update Model
+
+A3 Desktop has ONE release artifact: the GitHub Release. When a new release is published:
 
 ```
-GitHub Release (new tag)
-        │
-        ▼
-electron-updater checks on app start + every 4 hours
-        │
-        ▼
-┌──────────────────────────────────────────┐
-│  🔄 Update Available                     │
-│                                          │
-│  A3 Desktop v1.1.0 is available.         │
-│                                          │
-│  What's new:                             │
-│  • New EvaluationAgent v2               │
-│  • Faster resource generation            │
-│  • Bug fixes                             │
-│                                          │
-│  [Update Now]  [Remind Later]  [Skip]    │
-└──────────────────────────────────────────┘
-        │
-        ▼
-┌──────────────────────────────────────────┐
-│  ⬇️ Downloading Update...                 │
-│  ████████████░░░░  75%  (45 MB / 60 MB)  │
-└──────────────────────────────────────────┘
-        │
-        ▼
-┌──────────────────────────────────────────┐
-│  ✅ Update ready. Restart to apply.       │
-│  [Restart Now]  [Later]                  │
-└──────────────────────────────────────────┘
+GitHub Release v1.1.0
+  ├── A3-Setup-1.1.0.exe        (Electron shell, ~80 MB)
+  ├── A3-1.1.0.dmg              (macOS)
+  ├── A3-1.1.0.AppImage         (Linux)
+  └── Release notes → changelog
 ```
 
-### 6.2 Version Sources
+**Key principle:** The Docker image tag is EMBEDDED in the Electron release. When the Electron shell updates, it knows which Docker image version to use.
 
-| Component | Update Method | Frequency |
-|:----------|:--------------|:----------|
-| Electron shell | electron-updater → GitHub Releases | On app start + periodic |
-| Docker image | `docker pull` on restart | On app start |
-| Course content | Git pull knowledge_base/ | Weekly |
-| Veritas-Core | Baked into Docker image | With image update |
-
-### 6.3 Rollback
+### 6.2 Version Compatibility
 
 ```
-If update fails:
-  1. Electron: Keep previous version in `%LOCALAPPDATA%/a3-updater/pending/`
-  2. Docker: Keep previous image tag; `docker tag ... :previous`
-  3. Data: Never roll back user data (always forward-compatible)
+Electron v1.1.0  ──requires──▶  Docker image v1.1.0
+Electron v1.0.0  ──requires──▶  Docker image v1.0.0
+
+Defined in: electron-builder.yml → extraMetadata.version
+Docker tag:   A3_VERSION env var in docker-compose.desktop.yml
+```
+
+### 6.3 Update Flow
+
+```
+App starts
+    │
+    ▼
+Check GitHub Releases API for latest version
+    │
+    ├─ Same version → skip
+    │
+    ▼ New version available
+┌──────────────────────────────────────────┐
+│  🔄 Update Available: v1.1.0             │
+│  [Update Now]  [Remind Later]            │
+└──────────────────────────────────────────┘
+    │
+    ▼ Update Now
+1. Stop Docker container
+2. Download new Electron .exe (electron-updater)
+3. Pull new Docker image: docker pull leisureauf1/a3:1.1.0
+4. Install Electron update (auto-replace on restart)
+5. Restart app
+    │
+    ▼ App restarts
+6. Start Docker container with A3_VERSION=1.1.0
+7. Health check → Dashboard ready
+```
+
+### 6.4 Rollback
+
+```
+If v1.1.0 fails (container won't start, health check fails):
+  1. Electron: electron-updater keeps v1.0.0 backup → auto-restore
+  2. Docker: docker tag leisureauf1/a3:1.0.0 leisureauf1/a3:latest
+  3. User data: NEVER rolled back (forward-compatible SQLite schema)
+  4. Notification: "Update failed. Reverted to v1.0.0."
 ```
 
 ---
