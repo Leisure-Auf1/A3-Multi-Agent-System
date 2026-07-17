@@ -1,0 +1,3 @@
+"""
+veritas init — Package init
+"""
