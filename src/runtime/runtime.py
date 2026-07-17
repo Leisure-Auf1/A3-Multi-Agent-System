@@ -90,10 +90,12 @@ class RuntimeEngine:
         session_id: str = "",
         enable_meta_reflect: bool = True,
         policy_engine: Optional[RuntimePolicyEngine] = None,  # Phase 5.2
+        recovery_manager: Optional[Any] = None,  # Phase 5.4
     ):
         self.session_id = session_id or f"rt_{int(time.time())}"
         self.enable_meta_reflect = enable_meta_reflect
         self._policy_engine = policy_engine  # Phase 5.2
+        self._recovery_manager = recovery_manager  # Phase 5.4
 
         self._handlers: Dict[AgentState, StateHandler] = {}
         self._table = TransitionTable()
@@ -169,7 +171,22 @@ class RuntimeEngine:
                 if post_decision.action == "TERMINATE":
                     current = next_state
                     break
-                if post_decision.action in ("RETRY", "REFLECT", "META_REFLECT"):
+                if post_decision.action == "RETRY":
+                    # Phase 5.4 — Recovery Manager handles retry execution
+                    if self._recovery_manager is not None:
+                        failure = self._extract_failure(transition, ctx)
+                        recovery_result = self._recovery_manager.execute_recovery(
+                            failure, ctx, self._handlers.get(next_state),
+                        )
+                        if not recovery_result.success:
+                            # Recovery exhausted → terminate
+                            current = next_state
+                            break
+                    if post_decision.to_state and post_decision.to_state != next_state:
+                        current = post_decision.to_state
+                        transitions += 1
+                        continue
+                if post_decision.action in ("REFLECT", "META_REFLECT"):
                     if post_decision.to_state and post_decision.to_state != next_state:
                         current = post_decision.to_state
                         transitions += 1
@@ -250,6 +267,13 @@ class RuntimeEngine:
                 pass
 
         return transition
+
+    @staticmethod
+    def _extract_failure(transition: StateTransition, ctx: RuntimeContext) -> Optional[Any]:
+        """Extract a FailureEvent from a transition for recovery (Phase 5.4)."""
+        from .failure_detector import FailureDetector
+        detector = FailureDetector()
+        return detector.detect_from_transition(transition, ctx)
 
     @staticmethod
     def _output_summary(ctx: RuntimeContext, state: AgentState) -> str:
