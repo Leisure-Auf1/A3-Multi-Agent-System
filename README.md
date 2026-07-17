@@ -1,103 +1,99 @@
-# A3 — Multi-Agent Personalized Learning System
+# A3 — AI Personalized Learning System
 
-> **Research Prototype v3.0** | 12 Agents + Workflow Orchestrator | 283 Tests | 15k+ LOC
->
-> *"Students describe what they want to learn. A team of AI agents does the rest."*
+> **Product-Ready AI Learning Software** | 9 Agents | 1130 Tests | Phase 9.5  
+> **Built on:** [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) (Agent Runtime Framework)
 
----
-
-## 🔗 Project Navigation
-
-| Role | Repository | Description |
-|:-----|:-----------|:------------|
-| 🏠 Portfolio Hub | [Terence-Agent](https://github.com/Leisure-Auf1/Terence-Agent) | AI Agent Research Portfolio |
-| 🏗️ Next Evolution | [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) | Production-grade Agent Infrastructure |
-
-```
-A3-Multi-Agent-System
-        │
-        │  Research Prototype
-        │  Multi-agent experimentation
-        │  Prototype validation
-        ↓
-Veritas-Core
-```
-
-**A3 is the research foundation. Veritas-Core is the architectural evolution.**
+*"Students describe what they want to learn. A team of 9 AI agents does the rest — generating personalized resources, tutoring interactively, and evaluating progress."*
 
 ---
 
 ## What is A3?
 
-A3 is a research prototype exploring **multi-agent collaboration for personalized learning**. Instead of using a single LLM, A3 deploys a **team of 12 specialized agents** — each with a focused role — collaborating through shared memory and an EventBus.
-
-A3 focuses on:
-- Multi-agent experimentation
-- Agent collaboration patterns
-- Event-driven architecture
-- Prototype validation
-
-The architectural ideas discovered here continue into [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core).
+A3 is a **complete AI-powered learning application** that combines 9 specialized agents to deliver personalized education. Unlike generic AI chatbots, A3 builds a 6-dimension student profile, generates tailored learning paths, creates 7 types of multimodal resources, tutors interactively, and evaluates understanding — all through a ChatGPT-style streaming interface.
 
 ---
 
 ## Architecture
 
 ```
-Student Input (Natural Language)
-         │
-         ▼
-┌─────────────────────────────────────────────┐
-│          Multi-Agent Runtime                 │
-│                                              │
-│  ProfileAgent → PlannerAgent → ResourceRec  │
-│  ResourceGenAgent → ContentAgent            │
-│       │              │              │        │
-│       └──────────────┼──────────────┘        │
-│                      ▼                       │
-│              AgentEvaluator                  │
-│                      │                       │
-│          ┌───────────┴───────────┐           │
-│          ▼                       ▼           │
-│   MetaReflector          ImprovementLoop     │
-├──────────────────────────────────────────────┤
-│  Infrastructure: EventBus | Memory | Trace   │
-│  LLMProvider | ReviewGate | DecisionExplainer│
-└──────────────────────────────────────────────┘
-         │
-         ▼
-    Dashboard (6-panel Streamlit)
+                            Student
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    A3 Application Layer                       │
+│                                                              │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ Web UI   │  │  REST API v2 │  │   9 AI Agents         │   │
+│  │ (Stream) │  │  (FastAPI)   │  │                       │   │
+│  │          │  │              │  │ Profile → Planner →   │   │
+│  │ ChatGPT  │  │ 20 endpoints │  │ Resource → Tutor →    │   │
+│  │ style    │  │              │  │ Evaluation            │   │
+│  └──────────┘  └──────────────┘  └───────────┬───────────┘   │
+│                                              │               │
+│  ┌───────────────────────────────────────────┼───────────┐   │
+│  │          Multimodal Gateway (Phase 9.5)                │   │
+│  │  📄 Document · 🧠 Mindmap · ✏️ Exercise · 💻 Code     │   │
+│  │  📊 Slides · 🖼️ Illustration · 🎬 Video Script        │   │
+│  └───────────────────────────┬───────────────────────────┘   │
+│                              │                               │
+│  ┌───────────────────────────┼───────────────────────────┐   │
+│  │          Data Layer (SQLite)                           │   │
+│  │  users · profiles · resources · learning_records      │   │
+│  └───────────────────────────────────────────────────────┘   │
+└──────────────────────────────┬───────────────────────────────┘
+                               │ pip install veritas-core
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Veritas-Core 7.0.0 (Framework)                   │
+│  RuntimeEngine · SDK · Plugins · Recovery · Lifecycle        │
+│  Security · Memory · Distributed · Benchmark · CLI           │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Core Features
+## Key Features
 
-### Multi-Agent Collaboration
-12 specialized agents with single responsibilities, communicating through a Singleton EventBus.
+### 🎯 Personalized Learning
+- **6-dimension student profile**: knowledge base, cognitive style, error patterns, learning pace, interaction preference, frustration threshold
+- **Adaptive difficulty**: content matches student level automatically
+- **3 profile creation methods**: natural language, conversation, quick quiz
 
-### Student Profiling
-6-dimension profiles extracted from natural language via rule engine (70% confidence) and LLM (85% confidence).
+### 💬 AI Tutor (Phase 9.2)
+- ChatGPT-style streaming chat via SSE
+- 5 teaching styles (explanation, Socratic, example-driven, analogy, step-by-step)
+- Learning style adaptation (visual, code, reading, auditory)
+- Thread-based conversation history
 
-### Personalized Learning Paths
-Course auto-detection + pace/cognitive/mastery adjustments produce different paths for different students.
+### 📚 Multimodal Resources (Phase 9.5)
+- **7 resource types**: documents, mind maps, exercises, code labs, PPT slides, illustrations, video scripts
+- **3-level fallback**: API → rule-based → mock (works without API keys)
+- **Cost control**: free/pro tiers with daily quotas
 
-### Resource Generation (6 types)
-- 📄 Course Notes (Markdown)
-- 🧠 Mind Maps (Mermaid)
-- ✏️ Exercises (3 difficulty levels)
-- 💻 Code Labs (runnable Python)
-- 🎬 Video Scripts (scene-by-scene)
-- 📖 Extended Reading
+### ✏️ Smart Evaluation (Phase 9.2)
+- Auto-generated quizzes with multiple-choice and open-ended questions
+- Instant scoring with weak area detection
+- Adaptive recommendations based on performance
 
-### Self-Improvement Loop
-Evaluation → MetaReflector → ExperienceMemory → ImprovementLoop → Strategy injection
+### 🔄 Learning Loop
+```
+Profile → Plan → Learn → Evaluate → Reflect → (loop)
+```
 
-### Content Safety (3-Gate ReviewGate)
-Gate 1: AST static syntax check → Gate 2: Pytest dynamic validation → Gate 3: LLM-as-Judge quality scoring
+---
 
-### Explainable Decisions
-DecisionExplainer produces evidence chains, confidence scores, and reasoning for every agent action.
+## Product API (v2)
+
+```
+POST /api/v2/auth/register           POST /api/v2/chat/stream
+POST /api/v2/auth/login              POST /api/v2/chat/message
+POST /api/v2/auth/guest              GET  /api/v2/chat/threads
+GET  /api/v2/profile                 POST /api/v2/learning/plan
+PUT  /api/v2/profile                 GET  /api/v2/learning/history
+POST /api/v2/resources/generate      GET  /api/v2/learning/stats
+POST /api/v2/evaluation/quiz/generate
+POST /api/v2/evaluation/quiz/score
+```
 
 ---
 
@@ -107,172 +103,54 @@ DecisionExplainer produces evidence chains, confidence scores, and reasoning for
 git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
 cd A3-Multi-Agent-System
 
-# Install
-pip install -r web/requirements.txt
+# Install Veritas-Core (framework dependency)
+pip install git+https://github.com/Leisure-Auf1/Veritas-Core.git@main
 
-# Run tests
-python -m pytest tests/ -q
+# Install A3 dependencies
+pip install -r requirements.txt
 
-# Launch Dashboard
-streamlit run web/app_v3.py
+# Run API server
+uvicorn src.api.server:app --reload --port 8000
+
+# Run Streamlit UI (in another terminal)
+streamlit run app.py --server.port 8501
 ```
+
+### Run without API keys
+A3 works fully offline with rule-based generators. No LLM API key required. Check `docs/phase9.5-multimodal-implementation.md` for details.
 
 ---
 
-## Knowledge Base
-
-```
-knowledge_base/artificial_intelligence_multi_agent_course/
-├── course_intro.md
-├── chapters/           # 6 chapters (AI intro, LLM, Prompt, RAG, Agent, Evaluation)
-├── resources.json      # External references
-└── exercises.json      # 24 exercises across 6 chapters
-```
-
----
-
-## Metrics
-
-| Metric | Value |
-|:-------|:------|
-| Agents | 12 |
-| Source Lines | 13,048 Python |
-| Tests | 283/287 (98.6%) |
-| Resource Types | 6 |
-| Profile Dimensions | 6 |
-| Knowledge Concepts | 46 |
-| Experience Lessons | 5→13+ self-growing |
-| Dashboard Panels | 6 |
-
----
-
-## Complete Agent Workflow
-
-A3 demonstrates: **"From user intent to personalized execution through multi-agent collaboration."**
+## Testing
 
 ```bash
-python examples/full_pipeline_demo.py
+make test       # 1130 tests
 ```
-
-### Pipeline Architecture
-
-```
-User Goal ("Learn Python Network Programming")
-    │
-    ▼
-┌─────────────────────────────────────────────────────────┐
-│                  A3Workflow Orchestrator                 │
-│                                                         │
-│  ① ProfileAgent    — Extract learner profile            │
-│        │                                                │
-│        ▼                                                │
-│  ② PlannerAgent    — Generate personalized learning path│
-│        │                                                │
-│        ▼                                                │
-│  ③ ResourceAgent   — Recommend matching resources       │
-│        │                                                │
-│        ▼                                                │
-│  ④ ReviewGate      — Evaluate quality & relevance       │
-│        │                                                │
-│        ▼                                                │
-│  ⑤ ReflectionAgent — Analyze success & improvements     │
-│        │                                                │
-│        ▼                                                │
-│  ⑥ Memory          — Save learning experience           │
-├─────────────────────────────────────────────────────────┤
-│  Infrastructure: EventBus | TraceCollector | MemoryManager│
-└─────────────────────────────────────────────────────────┘
-    │
-    ▼
- WorkflowResult { profile, plan, resources, reflection }
-```
-
-### What happens at each step
-
-| Step | Agent | Input | Output |
-|:-----|:------|:------|:-------|
-| 1 | **ProfileAgent** | Natural language goal | 6-dim DynamicProfile |
-| 2 | **PlannerAgent** | Profile + course KB | LearningPlan (nodes + strategies) |
-| 3 | **ResourceAgent** | Profile + goal + knowledge gaps | Personalized resources (5 types) |
-| 4 | **ReviewGate** | Plan + resources | Quality score + issues |
-| 5 | **ReflectionAgent** | Execution results | Success evaluation + improvements |
-| 6 | **Memory** | All outputs | Persistent student memory |
-
-### Running the demo
-
-```
-================================
-A3 Multi-Agent Demo
-================================
-
-User Goal:
-  Learn Python Network Programming
-
-[ProfileAgent]
-  Analyzing learner profile...
-
-[PlannerAgent]
-  Generating personalized learning path...
-
-[ResourceAgent]
-  Finding matching resources...
-
-[ReviewAgent]
-  Evaluating quality...
-
-[ReflectionAgent]
-  Post-execution reflection...
-
-[Memory]
-  Saving learning experience...
-
-================================
-Completed — Score: 95/100 ✅
-================================
-```
-
-### Key innovations demonstrated
-
-- **Agent communication through EventBus** — Every agent action is traced and visible
-- **Shared memory usage** — Profile history, mastery tracking, experience recall
-- **Intermediate results** — Plan nodes, resource recommendations, quality scores
-- **Final reflection** — Post-execution analysis of what worked and what to improve
-
-New in v3.0:
-- `src/agents/resource_agent.py` — Simplified resource recommendation for pipeline demo
-- `src/agents/reflection_agent.py` — Post-execution success/improvement analysis
-- `src/workflow/` — A3Workflow orchestrator with full pipeline coordination
-- `src/core/event_trace.py` — Enhanced TraceCollector with timeline rendering
-- `examples/full_pipeline_demo.py` — Runnable demo showing the complete collaboration
-- `tests/integration/test_full_pipeline.py` — 42 integration tests (pipeline + EventBus + memory)
 
 ---
 
-## Project Evolution
+## Repository Relationship
 
-```
-A3-Multi-Agent-System
-        │
-        │  Research Foundation
-        │  Multi-agent experimentation
-        │  Prototype validation
-        ↓
-Veritas-Core
-        │
-        │  Engineering Evolution
-        │  Production-grade infrastructure
-        │  Runtime + Trust + Memory
-```
+| Repository | Role | Tests |
+|:-----------|:-----|:-----:|
+| [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) | Agent Runtime Framework (dependency) | 558 |
+| **A3-Multi-Agent-System** | AI Learning Application | 1130 |
+| [Terence-Agent](https://github.com/Leisure-Auf1/Terence-Agent) | Engineering Governance | — |
 
-A3 is the **research prototype** where we explored multi-agent learning concepts. [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) is the **architectural evolution** that introduces:
+---
 
-- Agent Runtime State Machine
-- RAG-enhanced knowledge retrieval
-- 3-tier memory (Redis/PostgreSQL/ChromaDB)
-- Trust Layer (memory validation, permissions, injection defense)
-- Agent+Tool architecture
+## Development Phases
 
-**A3 and Veritas-Core are independent repositories — not a rename, but an evolution.**
+| Phase | Milestone | Status |
+|:------|:----------|:------:|
+| 1–6 | Runtime Engine + SDK + Recovery + Lifecycle | ✅ |
+| 7.0 | Repository Independence (Veritas-Core extraction) | ✅ |
+| 8.0 | Productization Audit | ✅ |
+| 9.1 | Data Layer (Auth + SQLite) | ✅ |
+| 9.2 | TutorAgent + EvaluationAgent | ✅ |
+| 9.3 | Multimodal Gateway Design | ✅ |
+| 9.4 | Product API v2 + UI Design | ✅ |
+| 9.5 | Multimodal Generation Implementation | ✅ |
 
 ---
 
