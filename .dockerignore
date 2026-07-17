@@ -1,0 +1,56 @@
+# .dockerignore — Exclude files not needed in Docker image
+# Keeps image small and build cache efficient
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+env/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Test/Dev artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Storage (mounted as volumes)
+storage/a3.db
+storage/memory/
+
+# Docs (not needed at runtime)
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+notebooks/
+outputs/
+checkpoints/

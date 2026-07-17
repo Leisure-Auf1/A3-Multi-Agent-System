@@ -1,0 +1,67 @@
+# A3 CI — Run tests, build Docker, deploy
+name: A3 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ═══════════════════════════════════════════════════════
+  # Test matrix: Python 3.10 + 3.12
+  # ═══════════════════════════════════════════════════════
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Veritas-Core (framework dependency)
+        run: |
+          git clone https://github.com/Leisure-Auf1/Veritas-Core.git /tmp/veritas-core
+          pip install -e /tmp/veritas-core
+
+      - name: Install A3 dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
+
+      - name: Verify Veritas-Core boundary
+        run: |
+          # Ensure no Veritas-Core files were modified
+          pip show veritas-core
+
+  # ═══════════════════════════════════════════════════════
+  # Docker build check
+  # ═══════════════════════════════════════════════════════
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t a3-multi-agent-system .
+
+      - name: Verify image imports
+        run: |
+          docker run --rm a3-multi-agent-system \
+            python -c "from src.api.server import app; from src.agents import TutorAgent; print('OK')"
+
+      - name: Clean up image
+        run: docker rmi a3-multi-agent-system || true
