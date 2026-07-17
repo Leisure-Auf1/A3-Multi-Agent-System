@@ -1,0 +1,244 @@
+# Ownership Rules — Multi-Repository Governance
+# =============================================
+# Version: 1.0
+# Phase: 6.0 freeze
+# Date: 2026-07-17
+#
+# This file defines which repository owns which code paths.
+# It is the authoritative source for:
+#   - Where new code should be added
+#   - Where modifications are allowed
+#   - What cross-repo dependency rules apply
+#
+# Validation: CI/preflight should check that no code violates these rules.
+
+repositories:
+
+  # ════════════════════════════════════════════════════════════
+  # Veritas-Core — Agent Runtime Framework
+  # ════════════════════════════════════════════════════════════
+  Veritas-Core:
+    description: >
+      Standalone Agent Runtime Framework. Provides the runtime engine,
+      public SDK, plugin system, security layer, memory management,
+      distributed execution, and benchmark tools. Framework-neutral —
+      no application-specific code allowed.
+
+    repository: github.com/Leisure-Auf1/Veritas-Core
+
+    status: PLANNED
+    # Current: empty stub | Target: pip install veritas-core
+
+    responsibility:
+      - runtime infrastructure
+      - public SDK / contract layer
+      - plugin system
+      - security layer
+      - memory management
+      - distributed execution
+      - benchmark framework
+      - decision explainability
+      - recovery system
+      - lifecycle management
+
+    paths:
+      # These paths will exist in Veritas-Core after extraction.
+      # Currently they live in A3-Multi-Agent-System.
+      - src/runtime/          # State machine, hooks, events, observers
+      - src/runtime/recovery/ # Retry, rollback, fallback, repair
+      - src/runtime/lifecycle/ # Agent lifecycle, session management
+      - src/runtime/explain/  # Decision trace, structured reasons
+      - src/runtime/plugins/  # Pluggable extensions, hook bridge
+      - src/runtime/distributed/ # Nodes, registry, remote exec
+      - src/sdk/              # RuntimeClient, TaskRequest, TaskResult
+      - src/security/         # Permission, tool gateway, prompt guard, audit
+      - src/memory/           # Student memory, experience extractor
+      - src/benchmark/        # Failure injection, metrics, reporting
+
+    forbidden_imports:
+      - "from src.agents"     # Must not depend on A3 agents
+      - "from src.workflow"   # Must not depend on A3 workflow
+      - "from src.api"        # Must not depend on A3 API
+      - "from src.evaluation" # Must not depend on A3 evaluation
+
+    allowed_consumers:
+      - A3-Multi-Agent-System # Application layer
+      - Any future agent app  # Coding agent, research agent, etc.
+
+    modification_rules:
+      - "API changes require version bump (semver)"
+      - "SDK (src/sdk/) is frozen post-Phase 6.0 — no breaking changes"
+      - "New runtime features go through RFC in docs/designs/"
+      - "Plugin API is stable — new plugins are additive only"
+
+  # ════════════════════════════════════════════════════════════
+  # A3-Multi-Agent-System — Application Layer
+  # ════════════════════════════════════════════════════════════
+  A3-Multi-Agent-System:
+    description: >
+      Multi-agent personalized learning application. Consumes Veritas-Core
+      as a framework dependency. Contains learning agents, workflow
+      orchestrator, API server, and dashboard.
+
+    repository: github.com/Leisure-Auf1/A3-Multi-Agent-System
+
+    status: ACTIVE
+    # Post-extraction, this repo should NOT contain runtime code.
+
+    responsibility:
+      - learning application
+      - agent definitions
+      - user workflow
+      - dashboard / UI
+      - API server
+      - evaluation pipeline
+      - recommendation engine
+
+    paths:
+      # These paths STAY in A3 after extraction.
+      - src/agents/           # ProfileAgent, PlannerAgent, etc.
+
+    dependencies:
+      - package: veritas-core
+        version: ">=6.0"
+        reason: "Runtime infrastructure"
+
+    forbidden_imports_post_extraction:
+      - "from src.runtime"    # Must use SDK instead
+      - "from src.security"   # Must use veritas.security
+      - "from src.memory"     # Must use veritas.memory
+
+    modification_rules:
+      - "Agent logic changes: free to modify"
+      - "Workflow changes: free to modify"
+      - "Runtime code: READ-ONLY after extraction"
+      - "If runtime change needed: PR to Veritas-Core, then bump dependency"
+
+  # ════════════════════════════════════════════════════════════
+  # Terence-Agent — Orchestration Layer
+  # ════════════════════════════════════════════════════════════
+  Terence-Agent:
+    description: >
+      AI development orchestration and engineering governance layer.
+      Contains skills, event reports, error registry, architecture
+      constraints, and preflight scripts. No runtime code.
+
+    repository: github.com/Leisure-Auf1/Terence-Agent
+
+    status: ACTIVE
+
+    responsibility:
+      - engineering governance
+      - architecture constraints
+      - error registry
+      - skill management
+      - event reporting
+      - task progress tracking
+      - preflight validation
+
+    paths:
+      - architecture-constraints/
+      - error-registry/
+      - event-report/
+      - task-progress/
+      - skill-manager/
+      - agent-team/
+      - scripts/
+
+    forbidden_imports:
+      - "any Python import of repo code"  # Governance must not execute runtime
+
+    modification_rules:
+      - "Skills: free to create/update"
+      - "Error registry: append-only (errors are immutable once registered)"
+      - "Architecture constraints: RFC required for changes"
+      - "Event reports: daily append, never delete"
+      - "Preflight: backward compatible — must not break existing workflows"
+
+
+# ════════════════════════════════════════════════════════════
+# Dependency Validation Rules
+# ════════════════════════════════════════════════════════════
+
+dependency_rules:
+
+  - rule: "no_circular_imports"
+    description: "Import graph must be acyclic"
+    check: "grep -rn 'from src\\.' src/ | sort | uniq"
+    severity: CRITICAL
+
+  - rule: "veritas_no_app_imports"
+    description: "Veritas-Core must not import from A3 application layer"
+    check: "grep -rn 'from src\\.agents\\|from src\\.workflow' src/runtime/ src/sdk/ src/security/"
+    severity: CRITICAL
+
+  - rule: "a3_no_runtime_direct"
+    description: "A3 agents must use SDK, not runtime internals (post-extraction)"
+    check: "grep -rn 'from src\\.runtime' src/agents/ src/workflow/"
+    severity: HIGH
+    phase: "post-extraction only"
+
+  - rule: "terence_agent_no_code"
+    description: "Terence-Agent must not contain or import application/runtime code"
+    check: "find Terence-Agent/ -name '*.py' | grep -v '.hermes/'"
+    severity: CRITICAL
+
+
+# ════════════════════════════════════════════════════════════
+# Future Migration Rules
+# ════════════════════════════════════════════════════════════
+
+migration_rules:
+
+  extraction:
+    description: "Rules for extracting Veritas-Core from A3-Multi-Agent-System"
+    requirements:
+      - "All 1000 tests pass before extraction"
+      - "git filter-branch preserves commit history for runtime files"
+      - "Import paths updated via automated script (not manual)"
+      - "Both repos pass CI independently before merge"
+      - "A3 pins exact Veritas-Core version (not floating)"
+
+  versioning:
+    description: "How versions are managed across repos"
+    rules:
+      - "Veritas-Core uses semver (MAJOR.MINOR.PATCH)"
+      - "SDK API break → MAJOR bump"
+      - "New runtime feature → MINOR bump"
+      - "Bug fix → PATCH bump"
+      - "A3 pins MAJOR.MINOR, allows PATCH auto-update"
+
+  sync:
+    description: "How repos stay in sync"
+    rules:
+      - "No automatic sync — all changes go through PRs"
+      - "Veritas-Core releases are manual (git tag + GitHub Release)"
+      - "A3 updates dependency via explicit PR (never auto)"
+      - "Terence-Agent event-report logs every cross-repo change"
+
+
+# ════════════════════════════════════════════════════════════
+# Modification Warning Rules
+# ════════════════════════════════════════════════════════════
+
+modification_warnings:
+
+  - path_pattern: "src/runtime/**"
+    warning: "⚠️  This file will move to Veritas-Core. Coordinate changes with extraction plan."
+    phase: "pre-extraction"
+
+  - path_pattern: "src/sdk/**"
+    warning: "⚠️  Public API — breaking changes require semver MAJOR bump."
+    phase: "always"
+
+  - path_pattern: "src/agents/**"
+    warning: "✅  Application code — safe to modify."
+    phase: "always"
+
+  - path_pattern: "src/core/**"
+    warning: "⚠️  Ownership undecided. May move to Veritas-Core or stay in A3."
+    phase: "pre-extraction"
+
+  - path_pattern: "src/llm/**"
+    warning: "⚠️  Ownership undecided. Used by both runtime and agents."
+    phase: "pre-extraction"
