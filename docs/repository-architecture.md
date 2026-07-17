@@ -1,6 +1,6 @@
 # Repository Architecture — Governance Document
 
-> **Version:** 1.0 | **Phase:** 6.0 freeze | **Tests:** 1000 | **Date:** 2026-07-17
+> **Version:** 2.0 | **Phase:** 7.0 (EXTRACTION COMPLETE) | **Tests:** 1573 (558 VC + 1015 A3) | **Date:** 2026-07-17
 >
 > This document governs the relationship between the three repositories
 > in the Veritas / A3 ecosystem. It is the single source of truth for
@@ -98,19 +98,20 @@ A3-Multi-Agent-System/
 | Property | Value |
 |:---------|:------|
 | **Repository** | `github.com/Leisure-Auf1/Veritas-Core` |
-| **Role** | Future standalone Agent Runtime Framework |
+| **Role** | Standalone Agent Runtime Framework |
 | **Type** | Package (framework) |
-| **Contains code?** | **No — empty stub** |
+| **Contains code?** | **Yes — 77 .py files, 558 tests** |
 
-**Current state:**
+**Current state (Phase 7.0):**
 
-- Repository exists on GitHub
-- Contains README.md only (describes intent)
-- No `src/` directory
-- No packages, no tests, no code
-- Referenced by A3 README as "Next Evolution"
+- Repository is active on GitHub
+- Contains full runtime engine, SDK, security, memory, plugins, distributed, benchmark, CLI, LLM layer
+- 558 tests pass independently
+- `pip install -e .` works, `from veritas import RuntimeClient` works
+- A3-Multi-Agent-System now depends on veritas-core (1015 app tests pass)
+- Extracted from A3 with git filter-branch (full history preserved)
 
-**Target state:**
+**Target state (ACHIEVED ✅):**
 
 - Standalone Python package: `pip install veritas-core`
 - Contains: runtime engine, SDK, security, memory, plugins, distributed, benchmark

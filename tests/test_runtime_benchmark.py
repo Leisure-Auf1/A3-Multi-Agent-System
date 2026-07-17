@@ -23,8 +23,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import AgentState, RuntimeEngine
-from src.benchmark import (
+from veritas.runtime import AgentState, RuntimeEngine
+from veritas.benchmark import (
     FailureScenario,
     FailureInjector,
     InjectionConfig,
@@ -161,7 +161,7 @@ class TestFailureInjectorTimeout:
 class TestFailureInjectorMemory:
     def test_corrupts_context(self):
         inj = FailureInjector()
-        from src.runtime import RuntimeContext
+        from veritas.runtime import RuntimeContext
         ctx = RuntimeContext(errors=[])
 
         wrapped = inj.wrap("mem", lambda c: None, FailureScenario.MEMORY_FAILURE)
@@ -170,7 +170,7 @@ class TestFailureInjectorMemory:
 
     def test_corrupts_reflection(self):
         inj = FailureInjector()
-        from src.runtime import RuntimeContext
+        from veritas.runtime import RuntimeContext
         ctx = RuntimeContext(reflection={"success": True})
 
         wrapped = inj.wrap("mem", lambda c: None, FailureScenario.MEMORY_FAILURE)
@@ -185,7 +185,7 @@ class TestFailureInjectorMemory:
 class TestFailureInjectorLowScore:
     def test_injects_low_score(self):
         inj = FailureInjector()
-        from src.runtime import RuntimeContext
+        from veritas.runtime import RuntimeContext
         ctx = RuntimeContext()
 
         wrapped = inj.wrap("eval", lambda c: None, FailureScenario.LOW_SCORE)
@@ -194,7 +194,7 @@ class TestFailureInjectorLowScore:
 
     def test_preserves_other_context(self):
         inj = FailureInjector()
-        from src.runtime import RuntimeContext
+        from veritas.runtime import RuntimeContext
         ctx = RuntimeContext(profile={"kb": "test"})
 
         wrapped = inj.wrap("eval", lambda c: setattr(c, 'profile', {'kb': 'kept'}), FailureScenario.LOW_SCORE)

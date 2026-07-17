@@ -15,13 +15,13 @@ Also shows what happens WITHOUT recovery (baseline comparison).
 import sys, os, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine, RuntimeContext, AgentState, TransitionTable,
     RuntimePolicyEngine,
 )
-from src.runtime.recovery import RecoveryManager, RecoveryConfig
-from src.runtime.lifecycle import LifecycleManager
-from src.benchmark import FailureScenario, FailureInjector
+from veritas.runtime.recovery import RecoveryManager, RecoveryConfig
+from veritas.runtime.lifecycle import LifecycleManager
+from veritas.benchmark import FailureScenario, FailureInjector
 
 
 def run_with(label, with_recovery):

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
-from src.runtime.snapshot import RuntimeBus, RuntimeSnapshot
+from veritas.runtime import RuntimeBus, RuntimeSnapshot
 
 router = APIRouter(prefix="/api/v1/runtime", tags=["runtime"])
 

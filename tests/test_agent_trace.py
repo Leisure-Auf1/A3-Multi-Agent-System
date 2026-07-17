@@ -18,7 +18,7 @@ from core.decision_explainer import (
     DecisionExplainer, DecisionExplanation, ReflectionResult,
 )
 from core.meta_reflector import MetaReflectorAgent
-from memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 
 import shutil, json
 

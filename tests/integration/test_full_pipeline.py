@@ -18,7 +18,7 @@ from src.agents.resource_agent import ResourceAgent, ResourceRecommendation, Res
 from src.agents.reflection_agent import ReflectionAgent, ReflectionResult
 from src.core.event_bus import AgentEventBus
 from src.core.event_trace import TraceCollector, TraceEvent, create_event_trace
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 
 
 # ──────────────────────────────────────────────

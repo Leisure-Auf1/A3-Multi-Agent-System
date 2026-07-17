@@ -13,11 +13,11 @@ without modifying any core code:
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine, RuntimeContext, AgentState, TransitionTable,
     RuntimePolicyEngine,
 )
-from src.runtime.plugins import RuntimePlugin, PluginManager
+from veritas.runtime.plugins import RuntimePlugin, PluginManager
 
 
 # ── Plugin 1: Security Audit ────────────────

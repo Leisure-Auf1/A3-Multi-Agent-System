@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 from fastapi.testclient import TestClient
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     RuntimeEvent,
     RuntimeEventBus,

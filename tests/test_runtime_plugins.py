@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.runtime import (
+from veritas.runtime import (
     AgentState,
     StateTransition,
     TransitionTable,
@@ -36,7 +36,7 @@ from src.runtime import (
     RuntimeHook,
     RuntimeEvent,
 )
-from src.runtime.plugins import (
+from veritas.runtime.plugins import (
     RuntimePlugin,
     PluginState,
     PluginMetadata,
@@ -310,13 +310,13 @@ class TestPluginLoader:
         assert len(loader.load_errors) == 1
 
     def test_load_wrong_type(self, loader):
-        plugin = loader.load("src.runtime.plugins.base", "PluginState")
+        plugin = loader.load("veritas.runtime.plugins.base", "PluginState")
         # PluginState is an Enum, not a RuntimePlugin
         assert plugin is None
 
     def test_load_all_empty_module(self, loader):
         """Module with no RuntimePlugin subclasses returns empty."""
-        plugins = loader.load_all("src.runtime.plugins.registry", register=False)
+        plugins = loader.load_all("veritas.runtime.plugins.registry", register=False)
         # registry.py has PluginRegistry, not RuntimePlugin
         assert len(plugins) == 0
 

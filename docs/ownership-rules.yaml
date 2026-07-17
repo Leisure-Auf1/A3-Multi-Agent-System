@@ -26,8 +26,8 @@ repositories:
 
     repository: github.com/Leisure-Auf1/Veritas-Core
 
-    status: PLANNED
-    # Current: empty stub | Target: pip install veritas-core
+    status: ACTIVE
+    # Extracted from A3 via git filter-branch (Phase 7.0, July 2026)
 
     responsibility:
       - runtime infrastructure

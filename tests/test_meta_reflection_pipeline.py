@@ -24,7 +24,7 @@ from src.core.meta_reflection_adapter import MetaReflectionAdapter
 from src.core.decision_explainer import ReflectionResult as MetaReflectionResult
 from src.workflow import A3Workflow
 from src.workflow.result import WorkflowResult
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 from src.evaluation.evaluator import EvaluationManager
 
 GOAL = "学习 Python Agent 开发"

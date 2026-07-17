@@ -22,11 +22,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 from unittest.mock import MagicMock, patch
 
-from src.cli.main import create_parser, main
-from src.cli.formatter import Formatter, OutputFormat
-from src.sdk.contracts.task import TaskRequest, TaskResult, TaskStatus, SessionInfo
-from src.sdk.client import RuntimeClient
-from src.sdk import RuntimeClient as SDKClient
+from veritas.cli.main import create_parser, main
+from veritas.cli.formatter import Formatter, OutputFormat
+from veritas.sdk.contracts.task import TaskRequest, TaskResult, TaskStatus, SessionInfo
+from veritas.sdk.client import RuntimeClient
+from veritas.sdk import RuntimeClient as SDKClient
 
 
 # ══════════════════════════════════════════════
@@ -306,27 +306,27 @@ class TestFormatterOther:
 class TestCLItoSDKBridge:
     def test_cli_uses_runtime_client_not_engine(self):
         """CLI commands only use RuntimeClient — no RuntimeEngine imports."""
-        # Simple check: CLI modules should not import from src.runtime directly
+        # Simple check: CLI modules should not import from veritas.runtime directly
         import importlib
         mods = [
-            "src.cli.commands.run",
-            "src.cli.commands.status",
-            "src.cli.commands.trace",
-            "src.cli.commands.plugins",
-            "src.cli.main",
+            "veritas.cli.commands.run",
+            "veritas.cli.commands.status",
+            "veritas.cli.commands.trace",
+            "veritas.cli.commands.plugins",
+            "veritas.cli.main",
         ]
         for mod_name in mods:
             mod = importlib.import_module(mod_name)
             source_file = mod.__file__
             with open(source_file) as f:
                 content = f.read()
-            banned = ["from src.runtime import", "from src.runtime."]
+            banned = ["from veritas.runtime import", "from veritas.runtime."]
             for ban in banned:
                 assert ban not in content, f"{mod_name} must not import {ban}"
 
     def test_run_command_creates_task_request(self):
         """run command builds a TaskRequest from CLI args."""
-        from src.cli.commands.run import handle_run
+        from veritas.cli.commands.run import handle_run
         import argparse
         args = argparse.Namespace(
             task="test task", agent="test-agent", timeout=60.0,
@@ -344,7 +344,7 @@ class TestCLItoSDKBridge:
 class TestCLIBackwardCompat:
     def test_old_runtime_engine_still_works(self):
         """RuntimeEngine is unaffected by CLI addition."""
-        from src.runtime import RuntimeEngine, TransitionTable, AgentState
+        from veritas.runtime import RuntimeEngine, TransitionTable, AgentState
         table = TransitionTable(custom={
             AgentState.INIT: AgentState.PROFILE,
             AgentState.PROFILE: AgentState.DONE,
@@ -357,7 +357,7 @@ class TestCLIBackwardCompat:
 
     def test_sdk_imports_still_work(self):
         """SDK imports unaffected."""
-        from src.sdk import RuntimeClient, TaskRequest, TaskResult
+        from veritas.sdk import RuntimeClient, TaskRequest, TaskResult
         assert True
 
 

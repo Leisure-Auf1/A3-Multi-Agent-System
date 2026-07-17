@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.memory.experience_extractor import ExperienceExtractor, ExperienceLesson
+from veritas.memory.experience_extractor import ExperienceExtractor, ExperienceLesson
 
 
 # ──────────────────────────────────────────────

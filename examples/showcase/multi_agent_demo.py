@@ -13,11 +13,11 @@ access from the agent layer.
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine, RuntimeContext, AgentState, TransitionTable,
     RuntimeHook, RuntimePolicyEngine,
 )
-from src.runtime.recovery import RecoveryManager
+from veritas.runtime.recovery import RecoveryManager
 
 
 # ── Agent Implementations ──────────────────

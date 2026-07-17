@@ -25,8 +25,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 import time
 
-from src.runtime import RuntimeEvent, RuntimeEventBus
-from src.runtime.distributed import (
+from veritas.runtime import RuntimeEvent, RuntimeEventBus
+from veritas.runtime.distributed import (
     RuntimeNode,
     NodeStatus,
     NodeCapability,

@@ -9,9 +9,9 @@ agent execution. Demonstrates the full plugin lifecycle.
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.runtime import RuntimeEngine, TransitionTable, AgentState, RuntimePolicyEngine
-from src.runtime.plugins import RuntimePlugin, PluginManager
-from src.runtime.recovery import RecoveryManager
+from veritas.runtime import RuntimeEngine, TransitionTable, AgentState, RuntimePolicyEngine
+from veritas.runtime.plugins import RuntimePlugin, PluginManager
+from veritas.runtime.recovery import RecoveryManager
 
 
 # ── Custom Plugin ───────────────────────────

@@ -23,7 +23,7 @@ from src.agents.profile_agent import ProfileAgent, ProfileExtractionResult
 from src.agents.planner_agent import PlannerAgent, LearningPlan
 from src.agents.resource_agent import ResourceAgent, ResourceRecommendation
 from src.agents.reflection_agent import ReflectionAgent, ReflectionResult
-from src.memory.memory_manager import MemoryManager
+from veritas.memory import MemoryManager
 
 # Phase 4.6 — MetaReflector integration
 from src.core.meta_reflector import MetaReflectorAgent
@@ -541,7 +541,7 @@ class A3Workflow:
 
         This is the Phase 4.8 migration path — run() is preserved for backward compat.
         """
-        from src.runtime import RuntimeEngine, RuntimeContext
+        from veritas.runtime import RuntimeEngine, RuntimeContext
 
         session_id = session_id or f"a3_rt_{int(time.time())}"
 
@@ -599,7 +599,7 @@ class A3Workflow:
 
     def _bind_runtime_handlers(self, engine: Any, ctx: Any) -> None:
         """Bind this workflow's step methods as RuntimeEngine handlers."""
-        from src.runtime import AgentState
+        from veritas.runtime import AgentState
 
         wf = self
 

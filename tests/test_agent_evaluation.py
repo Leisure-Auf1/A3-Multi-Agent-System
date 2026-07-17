@@ -16,7 +16,7 @@ from evaluation.judge import RuleJudge, LLMJudge, JudgeResult
 from evaluation.agent_evaluator import AgentEvaluator, EvaluationResult
 from core.improvement_loop import ImprovementLoop, ImprovementSuggestion, create_improvement_loop
 from core.event_bus import AgentEventBus
-from memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 
 import shutil
 

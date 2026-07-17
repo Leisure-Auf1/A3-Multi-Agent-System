@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
 
-from src.security import (
+from veritas.security import (
     PermissionMatrix,
     Capability,
     DEFAULT_PERMISSIONS,
@@ -28,7 +28,7 @@ from src.security import (
     AuditLogger,
     AuditRecord,
 )
-from src.runtime import (
+from veritas.runtime import (
     RuntimeEngine,
     TransitionTable,
     AgentState,

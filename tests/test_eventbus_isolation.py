@@ -21,7 +21,7 @@ import pytest
 
 from src.workflow import A3Workflow
 from src.core.event_bus import AgentEventBus
-from src.memory.memory_manager import MemoryManager
+from veritas.memory.memory_manager import MemoryManager
 
 import tempfile
 
