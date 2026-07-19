@@ -328,9 +328,13 @@ class TestResourceAPI:
 
     def test_student_resources(self, client):
         headers = _auth_headers(client)
+        # Get user ID from auth
+        me = client.get("/api/v2/auth/me", headers=headers)
+        user_id = me.json()["id"]
         client.post("/api/v2/resources/generate/document", json={
             "topic": "Python", "concepts": ["A"]}, headers=headers)
-        resp = client.get("/api/v2/resources/student/test_user")
+        resp = client.get(f"/api/v2/resources/student/{user_id}",
+                          headers=headers)
         assert resp.status_code == 200
 
     def test_generate_unknown_type(self, client):

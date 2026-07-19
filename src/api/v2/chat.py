@@ -23,6 +23,7 @@ from src.agents.tutor_agent import TutorAgent, TutorContext, TutorResponse
 from src.api.dependencies import get_llm_provider
 from src.data.thread_store import (
     new_thread, list_threads, add_message, get_messages, rename_thread,
+    get_thread_by_id,
 )
 from src.data.learning_records import record_agent_action
 
@@ -192,7 +193,10 @@ def rename_thread_endpoint(
     user: AuthUser = Depends(require_auth),
 ):
     """Rename a chat thread."""
-    rename_thread(thread_id, req.title)
+    try:
+        rename_thread(thread_id, user.id, req.title)
+    except PermissionError:
+        raise HTTPException(404, "Thread not found")
     return {"success": True}
 
 
@@ -201,5 +205,8 @@ def get_thread_messages_endpoint(
     thread_id: str,
     user: AuthUser = Depends(require_auth),
 ):
-    """Get messages in a thread."""
-    return get_messages(thread_id)
+    """Get messages in a thread. Ownership-isolated via user_id + thread_id gate."""
+    messages = get_messages(thread_id, user.id)
+    if not messages and get_thread_by_id(thread_id, user.id) is None:
+        raise HTTPException(404, "Thread not found")
+    return messages

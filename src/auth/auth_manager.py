@@ -96,8 +96,14 @@ def login(req: LoginRequest) -> Optional[AuthToken]:
 
 
 def login_guest(display_name: str = "Guest") -> AuthToken:
-    """Create a guest session (no password, no persistence)."""
+    """Create a guest session (no password, persisted for FK integrity)."""
     user_id = f"guest_{uuid.uuid4().hex[:8]}"
+    # Persist guest to users table for FK compliance with sessions table
+    try:
+        create_user(user_id, f"{user_id}@guest.local", "", display_name,
+                    is_guest=True)
+    except Exception:
+        pass  # Race condition: guest already exists
     user = AuthUser(
         id=user_id, email="", display_name=display_name,
         is_guest=True,
