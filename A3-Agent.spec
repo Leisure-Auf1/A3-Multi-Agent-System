@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [('app.py', '.'), ('src', 'src'), ('web', 'web'), ('utils', 'utils'), ('desktop', 'desktop'), ('knowledge_base', 'knowledge_base'), ('storage/a3.db', 'storage'), ('demo/fixtures', 'demo/fixtures'), ('.streamlit/config.toml', '.streamlit'), ('.env.example', '.'), ('LICENSE', '.')]
 binaries = []
-hiddenimports = ['fastapi', 'uvicorn', 'streamlit', 'veritas', 'veritas.llm', 'veritas.llm.factory', 'veritas.llm.provider', 'veritas.llm.mock_provider', 'veritas.llm.deepseek_provider', 'veritas.llm.openai_provider', 'veritas.llm.xunfei_provider', 'veritas.llm.rule_provider', 'veritas.memory', 'veritas.runtime', 'keyring', 'keyring.backend', 'keyring.backends', 'keyring.errors', 'keyring.credentials', 'SecretStorage', 'jeepney', 'jaraco.classes', 'jaraco.functools']
+hiddenimports = ['desktop.config', 'fastapi', 'uvicorn', 'streamlit', 'veritas', 'veritas.llm', 'veritas.llm.factory', 'veritas.llm.provider', 'veritas.llm.mock_provider', 'veritas.llm.deepseek_provider', 'veritas.llm.openai_provider', 'veritas.llm.xunfei_provider', 'veritas.llm.rule_provider', 'veritas.memory', 'veritas.runtime', 'keyring', 'keyring.backend', 'keyring.backends', 'keyring.errors', 'keyring.credentials', 'SecretStorage', 'jeepney', 'jaraco.classes', 'jaraco.functools']
 tmp_ret = collect_all('fastapi')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 tmp_ret = collect_all('uvicorn')
@@ -15,7 +15,7 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['desktop/launcher.py'],
+    ['desktop\\launcher.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,

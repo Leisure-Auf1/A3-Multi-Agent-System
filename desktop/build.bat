@@ -25,12 +25,14 @@ pyinstaller --onedir --name A3-Agent --clean --noconfirm ^
   --add-data "src;src" ^
   --add-data "web;web" ^
   --add-data "utils;utils" ^
+  --add-data "desktop;desktop" ^
   --add-data "knowledge_base;knowledge_base" ^
   --add-data "storage/a3.db;storage" ^
   --add-data "demo/fixtures;demo/fixtures" ^
   --add-data ".streamlit/config.toml;.streamlit" ^
   --add-data ".env.example;." ^
   --add-data "LICENSE;." ^
+  --hidden-import desktop.config ^
   --hidden-import fastapi ^
   --hidden-import uvicorn ^
   --hidden-import streamlit ^

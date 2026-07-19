@@ -236,7 +236,7 @@ def main() -> None:
         # [1/5] Seed user data
         log.info("[1/5] Initializing user data...")
         seed_user_data()
-        log.info("      User data ready ✓")
+        log.info("      User data ready [OK]")
 
         # [2/5] Start FastAPI
         log.info("[2/5] Starting AI Backend (FastAPI)...")
@@ -257,7 +257,7 @@ def main() -> None:
             log.error("=" * 50)
             shutdown(processes)
             sys.exit(1)
-        log.info("      API is healthy ✓")
+        log.info("      API is healthy [OK]")
 
         # [4/5] Start Streamlit
         log.info("[4/5] Starting Learning Interface (Streamlit)...")
@@ -270,7 +270,7 @@ def main() -> None:
             sys.exit(1)
 
         # [5/5] Open browser
-        log.info("[5/5] Opening browser → %s", UI_URL)
+        log.info("[5/5] Opening browser: %s", UI_URL)
         time.sleep(BROWSER_OPEN_DELAY)
         webbrowser.open(UI_URL)
 
