@@ -5,8 +5,9 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
+[![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
 
-> **Competition-Ready AI Learning Software** · 12 Agents · 1154 Tests · 5-Layer Architecture
+> **A deployable offline multi-agent learning assistant with configurable LLM providers, explainable agent workflow, and cross-platform distribution.**
 >
 > *"Students describe what they want to learn. A team of AI agents does the rest."*
 
@@ -22,6 +23,18 @@ A3 is a **complete AI-powered learning application** that combines 12 specialize
 - 📚 **7 Resource Types** — Documents, mindmaps, exercises, code, slides, illustrations, video scripts
 - 🔐 **Zero-Config Demo** — Works fully offline with mock providers; no API key needed
 - 🏗️ **5-Layer Architecture** — Presentation → Agent → Intelligence → Trust → Data
+
+---
+
+## 🎬 Demo
+
+| 🎥 **Demo Video** | See A3 in action — 3-minute pipeline walkthrough |
+|:------------------|:-------------------------------------------------|
+| 📸 **Screenshots** | [7 UI screenshots](docs/screenshots.md) — Welcome, Dashboard, Architecture, more |
+| 🌐 **Live Demo** | [a3-agent.streamlit.app](https://a3-agent.streamlit.app) — try online (free) |
+| 🏆 **Competition Demo** | Click "比赛演示" tab → one-click full pipeline with frozen data |
+
+📖 [Demo Recording Script](docs/showcase/demo-recording-script.md) · [Screenshot Guide](docs/showcase/screenshot-checklist.md)
 
 ---
 
@@ -178,7 +191,7 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | Platform | Download |
 |:---------|:---------|
 | 🐧 Linux | `A3-Agent-v7.1.0-linux-x64.tar.gz` (76 MB) |
-| 🪟 Windows | `A3-Agent-v7.1.0-win64.zip` (coming soon — build from source: `desktop\\build.bat`) |
+| 🪟 Windows | `A3-Agent-v7.1.0-win64.zip` (54 MB) |
 
 ```bash
 # Verify checksum
