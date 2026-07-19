@@ -1,6 +1,13 @@
 # A3 Multi-Agent System — Application Dependencies
 # Depends on Veritas-Core for runtime infrastructure
-veritas-core>=7.0.0
+#
+# Veritas-Core is NOT published on PyPI — install directly from GitHub.
+# (Per docs/phase10.1-deployment-design.md §Dependency Strategy)
+# Pinned to an exact commit for deterministic, reproducible Docker builds
+# (also busts Docker layer cache whenever the pin is bumped).
+# Pin = squash-merge of PR #1 (fix: veritas.sdk.adapters wheel packaging).
+# Local dev alternative: pip install -e /path/to/Veritas-Core
+veritas-core @ git+https://github.com/Leisure-Auf1/Veritas-Core.git@29a42debc46fdbbd5fb84c4213035971986344af
 streamlit>=1.28.0
 fastapi>=0.115.0
 uvicorn>=0.30.0
