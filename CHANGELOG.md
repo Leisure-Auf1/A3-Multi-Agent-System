@@ -8,41 +8,41 @@ All notable changes to the A3-Multi-Agent-System.
 
 ### Added
 - **System keyring integration** for API key storage
-  - Windows: Credential Manager
-  - Linux: Secret Service (GNOME Keyring / KDE Wallet)
-  - macOS: Keychain
+  - Windows: Credential Manager · Linux: Secret Service · macOS: Keychain
   - Automatic fallback to local XOR encryption (headless/server)
 - **Provider capability detection** (`validate_provider_capability`)
-  - Validates API key, provider availability, model, and chat completion before saving
+  - Validates API key, provider, model, and chat completion before saving
 - **First-run onboarding wizard** (Phase 5.0)
-  - Welcome page with A3 introduction
-  - Step-by-step provider setup: select → API key → test → save
-  - "Demo mode" skip option for instant exploration
+  - Welcome page with A3 introduction + provider setup wizard
+  - "Demo mode" skip option
 - **User-friendly error messages** (Phase 5.0)
-  - Chinese error titles, reasons, and actionable solutions
-  - Covers: auth, rate limit, quota, network, server errors
-- **Linux distribution package builder** (`scripts/build-linux-package.sh`)
-  - Creates `A3-Agent-linux-x64-v7.1.0.tar.gz` with self-contained launcher
-- **Demo freeze fixtures** (`demo/fixtures/`)
-  - Sample student profile, learning trace, generated resources
-  - Stable deterministic data for competition demos
-- **Windows validation checklist** (`docs/windows-validation-checklist.md`)
-  - 23-step verification checklist for Windows .exe releases
+  - Chinese titles/reasons/solutions for 8 error categories
+- **Linux distribution package builder**
+- **Demo freeze fixtures** (sample profile, trace, resources)
+- **Competition demo UI** (Phase 8.0/9.0)
+  - Architecture overview page with 5-layer diagram
+  - Demo dashboard: KPI cards, agent timeline, explainability chain
+  - One-click competition demo mode (auto-loads fixtures, no API key)
+  - Competition docs: architecture, agent design, memory/RAG, evaluation, demo script, benchmark
+  - Competition-ready README with badges and benchmark table
+  - Release checklist (cross-platform validation)
+- **Database migration fix**
+  - Fixed `is_guest` column missing in existing databases
+  - Tests: 1154/1154 passed (resolved 65 pre-existing failures)
 
 ### Changed
 - **Version**: 7.0.0 → 7.1.0
 - **Dependencies**: Added `keyring>=25.0.0`
-- **README**: v7.1.0 badge, security note, phase table update
-- ProviderFactory priority: `user config > env var > mock > rule`
+- **README**: Competition-ready with badges, architecture diagram, benchmark
+- **Documentation**: 8 new docs in `docs/competition/` and `docs/`
+- **Streamlit UI**: 7 tabs (was 4)
 
 ### Fixed
-- Backward compatible: existing XOR-encrypted API keys in llm.json still decrypt correctly
-- Secret manager: added `delete_api_key()` for cleanup
+- SQLite schema migration: `ALTER TABLE users ADD COLUMN is_guest`
+- Backward compatible: existing XOR-encrypted keys still decrypt
 
 ### Architecture
-- 0 changes to `src/agents/`
-- 0 changes to `src/workflow/`
-- 0 changes to Veritas-Core (external dependency)
+- 0 changes to `src/agents/`, `src/workflow/`, Veritas-Core
 
 ---
 
@@ -50,41 +50,21 @@ All notable changes to the A3-Multi-Agent-System.
 
 ### Added
 - **User LLM configuration layer** (Phase 4.0)
-  - File-based config: `~/.a3-agent/config/llm.json`
-  - Windows: `%APPDATA%/A3-Agent/config/llm.json`
-  - Provider selection: DeepSeek, OpenAI, Spark, Mock, Rule
-  - Local API key encryption (XOR + base64)
-  - Settings API: `GET/POST /api/v2/settings/llm`, `POST /api/v2/settings/test`
-- **Streamlit AI settings tab** (⚙️ AI模型设置)
-  - Provider selector with model presets
-  - API key input (password-masked)
-  - Test connection button with status display
-  - First-launch demo mode notification
-
-### Changed
-- ProviderFactory: added user config priority layer
-- `src/api/server.py`: includes settings_router
-- `web/app_v3.py`: added 4th settings tab
+  - File-based config with encrypted API key storage
+  - Settings API + Streamlit AI settings tab
+- ProviderFactory: user config > env > mock > rule priority
 
 ---
 
 ## [v6.x] — 2026-06 to 2026-07
 
 ### Added
-- **Phase 9.5**: Multimodal generation (7 resource types)
-- **Phase 9.4**: Product API v2 + Streamlit UI v3
-- **Phase 9.3**: Multimodal Gateway design
-- **Phase 9.2**: TutorAgent (streaming chat) + EvaluationAgent (quiz/scoring)
-- **Phase 9.1**: Data layer (auth, SQLite, learning records)
-- **Phase 8.0**: Productization audit
-- **Phase 7.0**: Repository independence (Veritas-Core extraction)
-- **Phases 1–6**: Runtime engine, SDK, recovery, lifecycle, CLI
-
-### Architecture
-- 12-agent personalized learning pipeline
-- Veritas-Core runtime framework
-- Docker + Render deployment
-- Windows .exe packaging
+- Multimodal generation (7 resource types)
+- Product API v2 + Streamlit UI v3
+- TutorAgent (streaming chat) + EvaluationAgent (quiz/scoring)
+- Data layer (auth, SQLite, learning records)
+- Repository independence (Veritas-Core extraction)
+- Runtime engine, SDK, recovery, lifecycle, CLI
 
 ---
 
@@ -94,4 +74,3 @@ All notable changes to the A3-Multi-Agent-System.
 |:-----|:--------|
 | ✅ | Merged to main |
 | 🔴 | In review |
-| 🟡 | In progress |

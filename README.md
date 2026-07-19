@@ -1,284 +1,152 @@
 # A3 — AI Personalized Learning System
 
-> **Product-Ready AI Learning Software** | 9 Agents | 1154 Tests | v7.1.0  
-> **Built on:** [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) (Agent Runtime Framework)
+[![Version](https://img.shields.io/badge/version-7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System)
+[![Tests](https://img.shields.io/badge/tests-1154%20passed-brightgreen)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
 
-*"Students describe what they want to learn. A team of 9 AI agents does the rest — generating personalized resources, tutoring interactively, and evaluating progress."*
+> **Competition-Ready AI Learning Software** · 12 Agents · 1154 Tests · 5-Layer Architecture
+>
+> *"Students describe what they want to learn. A team of AI agents does the rest."*
 
 ---
 
 ## What is A3?
 
-A3 is a **complete AI-powered learning application** that combines 9 specialized agents to deliver personalized education. Unlike generic AI chatbots, A3 builds a 6-dimension student profile, generates tailored learning paths, creates 7 types of multimodal resources, tutors interactively, and evaluates understanding — all through a ChatGPT-style streaming interface.
+A3 is a **complete AI-powered learning application** that combines 12 specialized agents to deliver personalized education. Unlike generic AI chatbots, A3 builds a 6-dimension student profile, generates tailored learning paths, creates 7 types of multimodal resources, tutors interactively, evaluates understanding, and continuously improves — all through a professional Streamlit interface.
+
+**Key Differentiators**:
+- 🧠 **Multi-Agent Pipeline** — Not a single LLM call; 12 agents collaborate via EventBus
+- 👤 **6-Dimension Profiling** — Natural language → automatic cognitive analysis
+- 📚 **7 Resource Types** — Documents, mindmaps, exercises, code, slides, illustrations, video scripts
+- 🔐 **Zero-Config Demo** — Works fully offline with mock providers; no API key needed
+- 🏗️ **5-Layer Architecture** — Presentation → Agent → Intelligence → Trust → Data
 
 ---
 
-## Architecture
+## System Architecture
 
 ```
-                            Student
-                               │
-                               ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                    A3 Application Layer                       │
-│                                                              │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │ Web UI   │  │  REST API v2 │  │   9 AI Agents         │   │
-│  │ (Stream) │  │  (FastAPI)   │  │                       │   │
-│  │          │  │              │  │ Profile → Planner →   │   │
-│  │ ChatGPT  │  │ 20 endpoints │  │ Resource → Tutor →    │   │
-│  │ style    │  │              │  │ Evaluation            │   │
-│  └──────────┘  └──────────────┘  └───────────┬───────────┘   │
-│                                              │               │
-│  ┌───────────────────────────────────────────┼───────────┐   │
-│  │          Multimodal Gateway (Phase 9.5)                │   │
-│  │  📄 Document · 🧠 Mindmap · ✏️ Exercise · 💻 Code     │   │
-│  │  📊 Slides · 🖼️ Illustration · 🎬 Video Script        │   │
-│  └───────────────────────────┬───────────────────────────┘   │
-│                              │                               │
-│  ┌───────────────────────────┼───────────────────────────┐   │
-│  │          Data Layer (SQLite)                           │   │
-│  │  users · profiles · resources · learning_records      │   │
-│  └───────────────────────────────────────────────────────┘   │
-└──────────────────────────────┬───────────────────────────────┘
-                               │ pip install veritas-core
-                               ▼
-┌──────────────────────────────────────────────────────────────┐
-│              Veritas-Core 7.0.0 (Framework)                   │
-│  RuntimeEngine · SDK · Plugins · Recovery · Lifecycle        │
-│  Security · Memory · Distributed · Benchmark · CLI           │
+│  🖥️  Presentation    Streamlit UI · FastAPI · Desktop .exe    │
+├──────────────────────────────────────────────────────────────┤
+│  🤖  Agent Pipeline  Profile→Planner→Resource→Tutor→Eval     │
+│                       EventBus · TraceCollector              │
+├──────────────────────────────────────────────────────────────┤
+│  🧠  Intelligence    LLM Factory · RAG · Memory · Multimodal │
+├──────────────────────────────────────────────────────────────┤
+│  🔐  Trust & Security  ReviewGate · Keyring · Auth (JWT)     │
+├──────────────────────────────────────────────────────────────┤
+│  💾  Data            SQLite (WAL) · Profiles · Threads       │
 └──────────────────────────────────────────────────────────────┘
+                                │
+                        Veritas-Core 7.0
+                  (Agent Runtime Framework)
 ```
+
+📖 [Full Architecture](docs/competition/architecture.md) · [Agent Design](docs/competition/agent-design.md)
 
 ---
 
-## 🚀 First Launch Guide (Phase 5.0)
+## Quick Start
 
-### On First Run
-
-When you launch A3 for the first time, you'll see a **Welcome Page** with two options:
-
-| Option | Description |
-|:-------|:------------|
-| **🚀 开始配置** | Select your AI provider, enter API key, test connection, start learning |
-| **🎭 先体验 Demo** | Skip configuration — use built-in mock responses (no API key needed) |
-
-### Supported AI Providers
-
-| Provider | API Key Source | Best For |
-|:---------|:---------------|:---------|
-| 🌊 **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/api_keys) | 高性价比，中文能力强 |
-| 🤖 **OpenAI** | [platform.openai.com](https://platform.openai.com/api-keys) | 全球领先的 AI 能力 |
-| 🚀 **讯飞星火** | [console.xfyun.cn](https://console.xfyun.cn/app/myapp) | 国产大模型，合规可靠 |
-| 🎭 **Demo 模式** | None required | 体验所有功能，无需 API Key |
-
-### After Configuration
-
-Your settings are saved to:
-- **Linux/macOS**: `~/.a3-agent/config/llm.json`
-- **Windows**: `%APPDATA%/A3-Agent/config/llm.json`
-
-API keys are **encrypted** before storage. To change providers later, go to the ⚙️ **AI模型设置** tab.
-
-> 🔐 **Security (v7.1)**: API keys are stored using your operating system's credential store:
-> - **Windows**: Windows Credential Manager
-> - **Linux**: Secret Service (GNOME Keyring / KDE Wallet)
-> - **macOS**: Keychain
->
-> If the system keyring is unavailable (headless/server), keys are encrypted with a machine-local key.
-
-### Troubleshooting
-
-| Symptom | Likely Cause | Solution |
-|:--------|:-------------|:---------|
-| "API Key 无效" | Key expired or mistyped | Re-copy from provider dashboard |
-| "额度已用尽" | Account balance depleted | Top up or switch to Demo mode |
-| "网络连接失败" | Network / proxy issue | Check internet and firewall settings |
-| Nothing happens | First run? No config? | Restart A3 to trigger onboarding |
-
-> 💡 **Tip**: You can always switch to Demo mode in ⚙️ AI模型设置 if your API key stops working.
-
----
-
-## Key Features
-
-### 🎯 Personalized Learning
-- **6-dimension student profile**: knowledge base, cognitive style, error patterns, learning pace, interaction preference, frustration threshold
-- **Adaptive difficulty**: content matches student level automatically
-- **3 profile creation methods**: natural language, conversation, quick quiz
-
-### 💬 AI Tutor (Phase 9.2)
-- ChatGPT-style streaming chat via SSE
-- 5 teaching styles (explanation, Socratic, example-driven, analogy, step-by-step)
-- Learning style adaptation (visual, code, reading, auditory)
-- Thread-based conversation history
-
-### 📚 Multimodal Resources (Phase 9.5)
-- **7 resource types**: documents, mind maps, exercises, code labs, PPT slides, illustrations, video scripts
-- **3-level fallback**: API → rule-based → mock (works without API keys)
-- **Cost control**: free/pro tiers with daily quotas
-
-### ✏️ Smart Evaluation (Phase 9.2)
-- Auto-generated quizzes with multiple-choice and open-ended questions
-- Instant scoring with weak area detection
-- Adaptive recommendations based on performance
-
-### 🔄 Learning Loop
-```
-Profile → Plan → Learn → Evaluate → Reflect → (loop)
-```
-
----
-
-## Product API (v2)
-
-```
-POST /api/v2/auth/register           POST /api/v2/chat/stream
-POST /api/v2/auth/login              POST /api/v2/chat/message
-POST /api/v2/auth/guest              GET  /api/v2/chat/threads
-GET  /api/v2/profile                 POST /api/v2/learning/plan
-PUT  /api/v2/profile                 GET  /api/v2/learning/history
-POST /api/v2/resources/generate      GET  /api/v2/learning/stats
-POST /api/v2/evaluation/quiz/generate
-POST /api/v2/evaluation/quiz/score
-```
-
----
-
-## Docker Quick Start 🐳
-
+### 🐳 Docker (recommended)
 ```bash
-# Option 1: Pull from Docker Hub (no build needed)
 docker pull leisureauf1/a3-multi-agent-system:latest
 docker run -p 8000:8000 -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
-
-# Option 2: Build locally
-git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
-cd A3-Multi-Agent-System
-docker compose up -d
-
-# Access
-# Dashboard: http://localhost:8501
-# API Docs:  http://localhost:8000/docs
+# → http://localhost:8501
 ```
 
-No Python required on host. Zero API keys needed — runs fully offline with mock providers.
-
-📖 [Docker Quickstart](docs/docker-quickstart.md) · 🚀 [Release Guide](docs/docker-release.md)
-
----
-
-## Quick Start (Local)
-
+### 💻 Local
 ```bash
 git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
 cd A3-Multi-Agent-System
-
-# Install Veritas-Core (framework dependency)
-pip install git+https://github.com/Leisure-Auf1/Veritas-Core.git@main
-
-# Install A3 dependencies
 pip install -r requirements.txt
-
-# Run API server
-uvicorn src.api.server:app --reload --port 8000
-
-# Run Streamlit UI (in another terminal)
-streamlit run app.py --server.port 8501
+streamlit run app.py
 ```
 
-### Run without API keys
-A3 works fully offline with rule-based generators. No LLM API key required. Check `docs/phase9.5-multimodal-implementation.md` for details.
-
----
-
-## Testing
-
+### 🏆 Competition Demo (no API key)
 ```bash
-make test       # 1130 tests
+streamlit run app.py
+# → Click "🏆 比赛演示" tab → Click "运行完整 Pipeline"
 ```
 
 ---
 
-## Repository Relationship
+## First Launch Guide
 
-| Repository | Role | Tests |
-|:-----------|:-----|:-----:|
-| [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) | Agent Runtime Framework (dependency) | 558 |
-| **A3-Multi-Agent-System** | AI Learning Application | 1130 |
-| [Terence-Agent](https://github.com/Leisure-Auf1/Terence-Agent) | Engineering Governance | — |
+| Step | Action |
+|:-----|:-------|
+| 1 | Launch A3 → Welcome page appears |
+| 2 | Choose provider (DeepSeek / OpenAI / Spark / Demo) |
+| 3 | Enter API key → Test connection → Save |
+| 4 | Enter the main app — 7 tabs of AI-powered learning |
+
+Or click **🎭 Demo Mode** to skip configuration entirely.
+
+🔐 API keys are stored in your OS credential store (Windows Credential Manager / Linux Secret Service / macOS Keychain).
 
 ---
 
-## Development Phases
+## Supported Providers
+
+| Provider | Model | Best For |
+|:---------|:------|:---------|
+| 🌊 DeepSeek | deepseek-chat, v4-pro | High value, strong Chinese |
+| 🤖 OpenAI | gpt-4o-mini, gpt-4o | Global SOTA capability |
+| 🚀 Spark | spark-pro, spark-lite | China-compliant |
+| 🎭 Mock | mock-model-v1 | **No key needed** — full offline demo |
+
+---
+
+## Benchmark
+
+| Metric | Mock Mode | DeepSeek (API) |
+|:-------|:----------|:---------------|
+| Full Pipeline Latency | ~500ms | ~2-5s (network) |
+| Profile Extraction | <10ms | ~200ms |
+| Plan Generation | ~50ms | ~500ms |
+| Resource Recommendation | ~30ms | ~300ms |
+| ReviewGate Scoring | ~5ms | ~200ms |
+| Memory Usage (idle) | ~80MB | ~80MB |
+
+**1154 tests, 100% pass rate, 0 external failures.**
+
+📖 [Full Benchmark](docs/competition/benchmark.md)
+
+---
+
+## Project Status
 
 | Phase | Milestone | Status |
 |:------|:----------|:------:|
-| 1–6 | Runtime Engine + SDK + Recovery + Lifecycle | ✅ |
-| 7.0 | Repository Independence (Veritas-Core extraction) | ✅ |
+| 1–6 | Runtime Engine, SDK, Recovery, Lifecycle | ✅ |
+| 7.0 | Veritas-Core Independence | ✅ |
 | 8.0 | Productization Audit | ✅ |
-| 9.1 | Data Layer (Auth + SQLite) | ✅ |
-| 9.2 | TutorAgent + EvaluationAgent | ✅ |
-| 9.3 | Multimodal Gateway Design | ✅ |
-| 9.4 | Product API v2 + UI Design | ✅ |
-| 9.5 | Multimodal Generation Implementation | ✅ |
+| 9.x | Data Layer, Tutor, Evaluation, Multimodal | ✅ |
 | 4.0 | User LLM Configuration Layer | ✅ |
-| 5.0 | First-Run Product Onboarding | ✅ |
-| 6.0 | Release Hardening v7.1 (keyring, capability detection) | ✅ |
+| 5.0 | First-Run Onboarding | ✅ |
+| 6.0 | Release Hardening (keyring, capability detection) | ✅ |
+| 7.0 | Release Validation & Distribution | ✅ |
+| 8.0 | Competition Demo Polish | ✅ |
 
 ---
 
-## Demo Showcase
+## Documentation
 
-Run these demos to see A3 in action:
-
-```bash
-# Beginner learning flow — ProfileAgent → PlannerAgent → ResourceAgent
-python examples/beginner_learning_demo.py
-
-# Multimodal generation — 7 resource types via Gateway
-python examples/multimodal_generation_demo.py
-
-# Interactive tutor — ChatGPT-style streaming conversation
-python examples/tutor_chat_demo.py
-
-# Evaluation loop — Quiz → Scoring → Weakness detection → Recommendations
-python examples/evaluation_loop_demo.py
-```
-
-### Workflow Diagram
-
-```
-Student: "I want to learn Python"
-        │
-        ▼
-ProfileAgent ──→ 6-dimension student profile
-        │
-        ▼
-PlannerAgent ──→ Personalized learning path
-        │
-        ▼
-ResourceAgent ──→ Resource recommendations
-        │
-        ▼
-MultimodalGateway ──→ 7 resource types generated
-        │
-        ▼
-TutorAgent ──→ Interactive tutoring (streaming)
-        │
-        ▼
-EvaluationAgent ──→ Quiz + scoring + recommendations
-        │
-        ▼
-ReflectionAgent ──→ Update profile → next iteration
-```
-
-## Screenshots
-
-See [docs/images/](docs/images/) for product screenshots.
+| Document | Description |
+|:---------|:------------|
+| [Architecture Design](docs/competition/architecture.md) | 5-layer system architecture |
+| [Agent Design](docs/competition/agent-design.md) | 12-agent pipeline specification |
+| [Memory & RAG](docs/competition/memory-rag-design.md) | Memory manager + TF-IDF retrieval |
+| [Evaluation Design](docs/competition/evaluation-design.md) | ReviewGate + confidence metrics |
+| [Demo Script](docs/competition/demo-script.md) | 5-minute competition presentation |
+| [Benchmark](docs/competition/benchmark.md) | Performance benchmarks |
+| [Release Checklist](docs/release-checklist.md) | Cross-platform validation |
 
 ---
 
 ## License
 
-MIT
+MIT — [Leisure-Auf1](https://github.com/Leisure-Auf1)
