@@ -55,3 +55,16 @@ def get_workflow(
         llm_provider=provider,
         bus=AgentEventBus(),  # 请求级独立实例
     )
+
+
+def get_llm_provider() -> Optional[LLMProvider]:
+    """
+    FastAPI dependency: provide LLMProvider from environment.
+
+    Priority:
+      1. LLM_PROVIDER env var (e.g., "deepseek", "spark")
+      2. Falls back to "mock" provider
+
+    Returns None only if LLM_PROVIDER is explicitly "none" / "rule_only".
+    """
+    return get_provider()

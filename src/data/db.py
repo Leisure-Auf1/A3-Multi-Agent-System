@@ -52,6 +52,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             display_name TEXT NOT NULL DEFAULT '',
+            is_guest INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL,
             last_login_at TEXT
         );
@@ -114,6 +115,17 @@ def init_db():
             ON resources(student_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_resources_type
             ON resources(resource_type, status);
+
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            expires_at REAL NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_sessions_user
+            ON sessions(user_id);
     """)
     # Ensure schema version
     row = conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
@@ -148,13 +160,13 @@ class UserRecord:
 
 
 def create_user(user_id: str, email: str, password_hash: str,
-                display_name: str = "") -> UserRecord:
+                display_name: str = "", is_guest: bool = False) -> UserRecord:
     conn = _get_conn()
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO users (id, email, password_hash, display_name, created_at) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (user_id, email, password_hash, display_name, now))
+        "INSERT INTO users (id, email, password_hash, display_name, is_guest, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, email, password_hash, display_name, int(is_guest), now))
     conn.commit()
     return UserRecord(id=user_id, email=email, display_name=display_name,
                       created_at=now)
@@ -329,6 +341,28 @@ def get_thread_messages(thread_id: str, limit: int = 100) -> List[Dict[str, Any]
     rows = conn.execute(
         "SELECT * FROM chat_messages WHERE thread_id = ? "
         "ORDER BY created_at ASC LIMIT ?", (thread_id, limit)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_thread_by_id(thread_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    """Get a chat thread, only if owned by user_id. Returns None if not found or not owned."""
+    conn = _get_conn()
+    row = conn.execute(
+        "SELECT * FROM chat_threads WHERE id = ? AND user_id = ?",
+        (thread_id, user_id)).fetchone()
+    return dict(row) if row else None
+
+
+def get_thread_messages_scoped(thread_id: str, user_id: str,
+                               limit: int = 100) -> List[Dict[str, Any]]:
+    """Get messages with ownership isolation via JOIN on chat_threads.user_id."""
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT cm.* FROM chat_messages cm "
+        "JOIN chat_threads ct ON cm.thread_id = ct.id "
+        "WHERE cm.thread_id = ? AND ct.user_id = ? "
+        "ORDER BY cm.created_at ASC LIMIT ?",
+        (thread_id, user_id, limit)).fetchall()
     return [dict(r) for r in rows]
 
 

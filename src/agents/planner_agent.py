@@ -249,6 +249,18 @@ class PlannerAgent:
             "autonomous agent", "自主 agent", "agent architecture",
             "agent 架构", "agent协作", "agent 协作", "agent",
         ],
+        "python_ai_engineer": [
+            "python", "Python", "python ai", "Python AI",
+            "ai工程师", "AI工程师", "ai engineer", "AI engineer",
+            "python工程师", "numpy", "NumPy", "pandas", "Pandas",
+            "机器学习", "machine learning",
+            "神经网络", "neural network",
+            "深度学习", "deep learning",
+            "大模型", "LLM", "llm", "RAG", "rag",
+            "langchain", "LangChain",
+            "agent框架", "agent framework",
+            "python开发", "Python开发",
+        ],
         "python_advanced": [
             "python", "Python", "装饰器", "闭包", "生成器",
             "迭代器", "decorator", "closure", "generator",
@@ -300,12 +312,28 @@ class PlannerAgent:
 
         try:
             from src.core.course_kb_loader import CourseKnowledgeBase
-            self._kb_loader = CourseKnowledgeBase(kb_path) if kb_path else CourseKnowledgeBase()
-            course = self._kb_loader.load()
-            if course and course.chapters:
-                # Merge KB into knowledge_graph
-                kb_graph = self._kb_loader.to_knowledge_graph()
-                self.knowledge_graph.update(kb_graph)
+
+            # Discover and load all available course KBs
+            kb_paths = [kb_path] if kb_path else []
+            if not kb_paths:
+                for candidate in [
+                    "knowledge_base/artificial_intelligence_multi_agent_course",
+                    "knowledge_base/python_for_ai_engineers",
+                ]:
+                    import os
+                    if os.path.isdir(candidate):
+                        kb_paths.append(candidate)
+
+            loaded_any = False
+            for path in kb_paths:
+                loader = CourseKnowledgeBase(path)
+                course = loader.load()
+                if course and course.chapters:
+                    kb_graph = loader.to_knowledge_graph()
+                    self.knowledge_graph.update(kb_graph)
+                    loaded_any = True
+
+            if loaded_any:
                 self._kb_loaded = True
                 return True
         except Exception:
@@ -520,12 +548,31 @@ class PlannerAgent:
         """
         text = (goal_text or "").lower()
 
-        # 按优先级扫描
-        for course_id in ["multi_agent_ai", "python_advanced", "python_basics"]:
-            keywords = self.COURSE_KEYWORDS.get(course_id, [])
+        # 按优先级扫描: keyword_id -> (graph_id, fallback)
+        priority = [
+            ("multi_agent_ai", "multi_agent_ai"),
+            ("python_ai_engineer", "py_ai_201"),
+            ("python_advanced", "python_advanced"),
+            ("python_basics", "python_basics"),
+        ]
+        # Include KB-loaded courses not in priority
+        for cid in self.knowledge_graph:
+            if cid not in [g for _, g in priority] and cid not in (
+                "python_basics", "python_advanced", "multi_agent_ai"
+            ):
+                priority.append((cid, cid))
+
+        for keyword_id, graph_id in priority:
+            keywords = self.COURSE_KEYWORDS.get(keyword_id, [])
             for kw in keywords:
                 if kw.lower() in text:
-                    return course_id
+                    # Use graph_id if it exists in knowledge_graph; otherwise skip
+                    # to let lower-priority matches take effect (e.g. when KB not loaded)
+                    if graph_id in self.knowledge_graph:
+                        return graph_id
+                    elif keyword_id in self.knowledge_graph:
+                        return keyword_id
+                    # else: continue scanning lower-priority entries
 
         # 无匹配: 根据知识基础选默认
         if profile_dict:

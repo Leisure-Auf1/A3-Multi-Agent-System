@@ -144,6 +144,11 @@ class ResourceAgent:
 
     def __init__(self):
         self._catalog = RESOURCE_CATALOG
+        self._llm_provider = None  # LLMProvider (reserved for future LLM enrichment)
+
+    def set_llm_provider(self, provider: Any) -> None:
+        """注入 LLMProvider (当前为 no-op，预留未来 LLM 增强资源推荐)。"""
+        self._llm_provider = provider
 
     # ── 主入口 ────────────────────────────────
 

@@ -157,13 +157,20 @@ class TestAuthManager:
         assert result is None
 
     def test_session_expiry(self):
-        from src.auth.session import create_session, get_user_by_token, _sessions
+        from src.auth.session import create_session, get_user_by_token
         from src.auth.models import AuthUser
+        from src.data.db import _get_conn, create_user
         import time
-        user = AuthUser(id="test", email="", display_name="T", is_guest=True)
+        uid = f"exp_{uuid.uuid4().hex[:8]}"
+        create_user(uid, f"{uid}@test.local", "h", "E")
+        user = AuthUser(id=uid, email="", display_name="T", is_guest=True)
         token = create_session(user)
         assert get_user_by_token(token) is not None
-        _sessions[token]["expires_at"] = time.time() - 1
+        # Artificially expire via SQL
+        conn = _get_conn()
+        conn.execute("UPDATE sessions SET expires_at = ? WHERE token = ?",
+                     (time.time() - 1, token))
+        conn.commit()
         assert get_user_by_token(token) is None
 
 
@@ -226,7 +233,7 @@ class TestThreadStore:
         t = new_thread(uid, "Test")
         add_message(t["id"], "user", "Hello")
         add_message(t["id"], "assistant", "Hi there!")
-        msgs = get_messages(t["id"])
+        msgs = get_messages(t["id"], uid)
         assert len(msgs) == 2
         assert msgs[1]["content"] == "Hi there!"
 
@@ -234,7 +241,7 @@ class TestThreadStore:
         from src.data.thread_store import new_thread, rename_thread, list_threads
         uid = _make_user()
         t = new_thread(uid, "Old")
-        rename_thread(t["id"], "New")
+        rename_thread(t["id"], uid, "New")
         assert list_threads(uid)[0]["title"] == "New"
 
 

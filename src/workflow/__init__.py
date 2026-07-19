@@ -88,6 +88,7 @@ class A3Workflow:
         if llm_provider is not None:
             self.profile_agent.set_llm_provider(llm_provider)
             self.planner_agent.set_llm_provider(llm_provider)
+            self.resource_agent.set_llm_provider(llm_provider)
             self.reflection_agent.set_llm_provider(llm_provider)
 
     # ── 主入口 ────────────────────────────────

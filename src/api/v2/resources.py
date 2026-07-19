@@ -137,7 +137,14 @@ def generate_single_v2(resource_type: str, req: GenerateBody,
 # ── Status / Query routes ─────────────────────────────────
 
 @router.get("/student/{student_id}")
-def get_student_resources(student_id: str, limit: int = 50):
+def get_student_resources(
+    student_id: str,
+    limit: int = 50,
+    user: AuthUser = Depends(require_auth),
+):
+    """Get a student's learning resources. Own resources only."""
+    if user.id != student_id:
+        raise HTTPException(403, "Access denied")
     return _get_student_artifacts(student_id, limit)
 
 
