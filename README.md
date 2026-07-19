@@ -1,15 +1,16 @@
-# A3 — AI Personalized Learning System
+# A3-Agent — Multi-Agent Personalized Learning Assistant
 
-[![Version](https://img.shields.io/badge/version-7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System)
-[![Tests](https://img.shields.io/badge/tests-1154%20passed-brightgreen)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions)
+[![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)
+[![Tests](https://img.shields.io/badge/tests-1154%2F1154-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
-[![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
+[![Platform](https://img.shields.io/badge/platform-Win%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
 
-> **A deployable offline multi-agent learning assistant with configurable LLM providers, explainable agent workflow, and cross-platform distribution.**
+> **An offline multi-agent learning assistant with LLM integration, explainable agent workflow, and cross-platform deployment.**
 >
-> *"Students describe what they want to learn. A team of AI agents does the rest."*
+> *Students describe what they want to learn. A team of 12 AI agents does the rest — profiling, planning, resource generation, tutoring, and evaluation.*
+
+**[🌐 Live Demo](https://a3-agent.streamlit.app)** · **[📥 Download](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)** · **[📖 Docs](docs/)** · **[🎬 Demo Video Guide](docs/showcase/demo-recording-script.md)**
 
 ---
 
@@ -35,6 +36,18 @@ A3 is a **complete AI-powered learning application** that combines 12 specialize
 | 🏆 **Competition Demo** | Click "比赛演示" tab → one-click full pipeline with frozen data |
 
 📖 [Demo Recording Script](docs/showcase/demo-recording-script.md) · [Screenshot Guide](docs/showcase/screenshot-checklist.md)
+
+---
+
+## 📸 Screenshots
+
+| Welcome Onboarding | Agent Pipeline | Dashboard |
+|:---:|:---:|:---:|
+| ![Welcome](docs/images/welcome.png) | ![Demo](docs/images/competition-demo.png) | ![Dashboard](docs/images/dashboard.png) |
+| **Model Settings** | **Student Profile** | **Architecture** |
+| ![Settings](docs/images/settings.png) | ![Profile](docs/images/profile.png) | ![Architecture](docs/images/architecture.png) |
+
+> Screenshots coming soon — see [capture guide](docs/showcase/screenshot-checklist.md).
 
 ---
 
