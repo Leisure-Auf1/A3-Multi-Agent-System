@@ -36,8 +36,10 @@ jobs:
           pip install pytest pytest-cov
           # CI-only compatibility: fresh installs pull the latest starlette,
           # whose TestClient now REQUIRES httpx2 (older envs only warned).
+          # scikit-learn is a test-only dep (TF-IDF retriever tests import
+          # sklearn; it was never in production requirements).
           # Production requirements are intentionally unchanged.
-          pip install httpx2
+          pip install httpx2 scikit-learn
 
       - name: Run tests
         run: |
