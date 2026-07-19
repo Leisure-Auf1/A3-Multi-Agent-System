@@ -1,16 +1,21 @@
 """
-Phase 9.2 — TutorAgent
+Phase 9.2 / PR #4 — TutorAgent (with tool calling)
 
 Conversational tutor agent. Explains concepts, answers questions,
 adapts to learning style, and generates Socratic follow-ups.
 
-Uses Veritas-Core LLMProvider — zero Runtime modifications.
+PR #4: Optional ToolRegistry integration for web search and other tools.
+When tools are available, the LLM may call them mid-conversation;
+results are fed back and a final response is generated.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Iterator
 from datetime import datetime, timezone
+import json
+
+from src.tools.base import ToolResult
 
 
 @dataclass
@@ -33,6 +38,7 @@ class TutorResponse:
     teaching_style: str = "explanation"
     tokens_used: int = 0
     latency_ms: int = 0
+    tool_calls_made: int = 0          # PR #4
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -43,6 +49,7 @@ class TutorResponse:
             "teaching_style": self.teaching_style,
             "tokens_used": self.tokens_used,
             "latency_ms": self.latency_ms,
+            "tool_calls_made": self.tool_calls_made,
         }
 
 
@@ -58,28 +65,38 @@ TEACHING_STYLES = ["explanation", "socratic", "example_driven", "analogy", "step
 
 
 class TutorAgent:
-    """Conversational AI tutor with multi-style teaching."""
+    """Conversational AI tutor with multi-style teaching and optional tool calling."""
 
-    def __init__(self, llm_provider: Any = None):
+    MAX_TOOL_ITERATIONS = 3  # PR #4 — prevent infinite loops
+
+    def __init__(self, llm_provider: Any = None, tool_registry: Any = None):
+        """
+        Args:
+            llm_provider: LLMProvider instance (or None for rule-only fallback)
+            tool_registry: Optional ToolRegistry for tool-calling capability
+        """
         self._llm = llm_provider
+        self._tool_registry = tool_registry
         self._default_style = "explanation"
 
     @property
     def name(self) -> str:
         return "tutor"
 
+    @property
+    def has_tools(self) -> bool:
+        return self._tool_registry is not None and len(self._tool_registry) > 0
+
     def _get_style_instruction(self, profile: Dict[str, Any]) -> str:
-        """Map student profile to teaching style instruction."""
         cognitive = profile.get("cognitive_style", "default")
         return LEARNING_STYLES.get(cognitive, LEARNING_STYLES["default"])
 
     def _build_system_prompt(self, ctx: TutorContext) -> str:
-        """Build a structured system prompt for the tutor."""
         style = self._get_style_instruction(ctx.student_profile)
         gaps = ", ".join(ctx.knowledge_gaps) if ctx.knowledge_gaps else "none identified"
         level = ctx.student_profile.get("knowledge_base", "beginner")
 
-        return f"""You are a patient, knowledgeable AI tutor. Your student is at '{level}' level.
+        prompt = f"""You are a patient, knowledgeable AI tutor. Your student is at '{level}' level.
 
 Teaching approach: {style}
 Current topic: {ctx.current_topic or ctx.learning_goal or 'general learning'}
@@ -95,6 +112,11 @@ Guidelines:
 
 Do NOT provide generic advice. Tailor every response to this specific student."""
 
+        if self.has_tools:
+            prompt += "\n\nYou have access to tools. Use them when the student asks about current events, recent information, or facts beyond your knowledge. Always cite your sources when using search results."
+
+        return prompt
+
     def _build_user_prompt(self, user_message: str, ctx: TutorContext) -> str:
         parts = []
         if ctx.learning_goal:
@@ -104,21 +126,113 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
         parts.append(f"\nStudent's question: {user_message}")
         return "\n".join(parts)
 
+    # ── Tool-calling loop (PR #4) ──────────────────────
+
+    def _llm_chat(self, messages: list, **kwargs) -> Any:
+        """Call LLM with a message list (for multi-turn tool calls)."""
+        if len(messages) >= 2 and messages[0].get("role") == "system":
+            system = messages[0]["content"]
+            user = messages[-1].get("content", "")
+            return self._llm.generate(user, system_prompt=system, **kwargs)
+        # Fallback: join all user messages
+        prompt = "\n".join(m.get("content", "") for m in messages if m.get("role") == "user")
+        system = next((m["content"] for m in messages if m.get("role") == "system"), "")
+        return self._llm.generate(prompt, system_prompt=system, **kwargs)
+
+    def _handle_tool_calls(self, tool_calls: list) -> list:
+        """Execute tool calls and return result messages."""
+        results = []
+        for tc in tool_calls:
+            name = tc.get("name", "")
+            args_str = tc.get("arguments", "{}")
+            try:
+                args = json.loads(args_str) if isinstance(args_str, str) else args_str
+            except json.JSONDecodeError:
+                args = {}
+
+            if self._tool_registry is None:
+                results.append({
+                    "role": "tool",
+                    "tool_call_id": tc.get("id", ""),
+                    "content": "Tool registry not available.",
+                })
+                continue
+
+            result = self._tool_registry.execute(name, args)
+            results.append({
+                "role": "tool",
+                "tool_call_id": tc.get("id", ""),
+                "content": result.content if result.success else f"Error: {result.error}",
+            })
+        return results
+
+    def _tool_loop_explain(self, user_prompt: str, ctx: TutorContext) -> tuple:
+        """Run the LLM with tool-calling loop. Returns (content, tool_call_count)."""
+        messages = [
+            {"role": "system", "content": self._build_system_prompt(ctx)},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        tools = self._tool_registry.to_openai_tools() if self.has_tools else None
+        tool_count = 0
+
+        for _ in range(self.MAX_TOOL_ITERATIONS):
+            kwargs = {}
+            if tools:
+                kwargs["tools"] = tools
+
+            resp = self._llm_chat(messages, **kwargs)
+
+            # Check for tool calls
+            tool_calls = getattr(resp, "tool_calls", []) or []
+            if not tool_calls:
+                content = resp.content if hasattr(resp, "content") else str(resp)
+                return content, tool_count
+
+            # Execute tools
+            tool_count += len(tool_calls)
+
+            # Add assistant message with tool calls
+            assistant_msg = {"role": "assistant", "content": resp.content or ""}
+            if tool_calls:
+                assistant_msg["tool_calls"] = [
+                    {"id": tc["id"], "type": "function",
+                     "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                    for tc in tool_calls
+                ]
+            messages.append(assistant_msg)
+
+            # Execute and add tool results
+            tool_results = self._handle_tool_calls(tool_calls)
+            messages.extend(tool_results)
+
+        # Max iterations reached — ask LLM for final answer
+        messages.append({"role": "user", "content": "Please provide a final answer based on the tool results above."})
+        resp = self._llm_chat(messages)
+        content = resp.content if hasattr(resp, "content") else str(resp)
+        return content, tool_count
+
+    # ── Public API ─────────────────────────────────────
+
     def explain(self, question: str, ctx: Optional[TutorContext] = None) -> TutorResponse:
         """Generate a tutor response (non-streaming)."""
         import time
         ctx = ctx or TutorContext()
         start = time.time()
+        tool_count = 0
 
         if self._llm is None:
             return self._fallback_explain(question, ctx)
 
-        system_prompt = self._build_system_prompt(ctx)
         user_prompt = self._build_user_prompt(question, ctx)
 
         try:
-            resp = self._llm.generate(user_prompt, system_prompt=system_prompt)
-            content = resp.content if hasattr(resp, 'content') else str(resp)
+            if self.has_tools:
+                content, tool_count = self._tool_loop_explain(user_prompt, ctx)
+            else:
+                system_prompt = self._build_system_prompt(ctx)
+                resp = self._llm.generate(user_prompt, system_prompt=system_prompt)
+                content = resp.content if hasattr(resp, 'content') else str(resp)
         except Exception:
             content = self._fallback_explain(question, ctx).content
 
@@ -127,6 +241,7 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
             follow_up_questions=self._extract_followups(content),
             teaching_style=self._detect_style(content),
             latency_ms=int((time.time() - start) * 1000),
+            tool_calls_made=tool_count,
         )
 
     def explain_stream(self, question: str, ctx: Optional[TutorContext] = None):
@@ -141,6 +256,12 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
         system_prompt = self._build_system_prompt(ctx)
         user_prompt = self._build_user_prompt(question, ctx)
 
+        # Streaming doesn't support tool-calling loop — delegate to non-streaming
+        if self.has_tools:
+            resp = self.explain(question, ctx)
+            yield resp.content
+            return
+
         try:
             if hasattr(self._llm, 'generate_stream'):
                 for chunk in self._llm.generate_stream(user_prompt, system_prompt=system_prompt):
@@ -154,7 +275,6 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
             yield resp.content
 
     def _fallback_explain(self, question: str, ctx: TutorContext) -> TutorResponse:
-        """Rule-based fallback when no LLM provider is available."""
         topic = ctx.current_topic or "the topic"
         return TutorResponse(
             content=(
@@ -176,7 +296,6 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
         )
 
     def _extract_followups(self, text: str) -> List[str]:
-        """Extract questions from the response for follow-up."""
         questions = []
         for line in text.split("\n"):
             stripped = line.strip()
@@ -185,7 +304,6 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
         return questions[:3]
 
     def _detect_style(self, text: str) -> str:
-        """Heuristic detection of teaching style used."""
         lower = text.lower()
         if "example" in lower or "```" in lower:
             return "example_driven"

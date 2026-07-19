@@ -7,7 +7,7 @@
 # (also busts Docker layer cache whenever the pin is bumped).
 # Pin = squash-merge of PR #1 (fix: veritas.sdk.adapters wheel packaging).
 # Local dev alternative: pip install -e /path/to/Veritas-Core
-veritas-core @ git+https://github.com/Leisure-Auf1/Veritas-Core.git@29a42debc46fdbbd5fb84c4213035971986344af
+veritas-core @ git+https://github.com/Leisure-Auf1/Veritas-Core.git@7107dd22b27d2c2d5a28d2e2be9cf3877d459e6c
 streamlit>=1.28.0
 fastapi>=0.115.0
 uvicorn>=0.30.0

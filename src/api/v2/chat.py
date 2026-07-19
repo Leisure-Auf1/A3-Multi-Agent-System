@@ -26,6 +26,7 @@ from src.data.thread_store import (
     get_thread_by_id,
 )
 from src.data.learning_records import record_agent_action
+from src.tools import ToolRegistry, WebSearchTool
 
 router = APIRouter(prefix="/api/v2/chat", tags=["chat"])
 
@@ -68,13 +69,24 @@ class ThreadResponse(BaseModel):
 # ── Helpers ────────────────────────────────────────────────
 
 _tutor_cache: Dict[str, TutorAgent] = {}
+_tool_registry: Optional[ToolRegistry] = None
+
+
+def _get_tool_registry() -> ToolRegistry:
+    """Get or create the shared tool registry."""
+    global _tool_registry
+    if _tool_registry is None:
+        _tool_registry = ToolRegistry()
+        _tool_registry.register(WebSearchTool())
+    return _tool_registry
 
 
 def _get_tutor(provider=None) -> TutorAgent:
-    """Get or create a tutor agent instance with optional LLM provider."""
+    """Get or create a tutor agent instance with optional LLM provider and tools."""
     key = "llm" if provider is not None else "default"
     if key not in _tutor_cache:
-        _tutor_cache[key] = TutorAgent(llm_provider=provider)
+        registry = _get_tool_registry() if provider is not None else None
+        _tutor_cache[key] = TutorAgent(llm_provider=provider, tool_registry=registry)
     return _tutor_cache[key]
 
 
@@ -123,6 +135,7 @@ def chat_message(
         "content": resp.content,
         "follow_up_questions": resp.follow_up_questions,
         "teaching_style": resp.teaching_style,
+        "tool_calls_made": resp.tool_calls_made,
     }
 
 
