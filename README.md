@@ -1,6 +1,6 @@
 # A3 — AI Personalized Learning System
 
-> **Product-Ready AI Learning Software** | 9 Agents | 1130 Tests | Phase 9.5  
+> **Product-Ready AI Learning Software** | 9 Agents | 1154 Tests | v7.1.0  
 > **Built on:** [Veritas-Core](https://github.com/Leisure-Auf1/Veritas-Core) (Agent Runtime Framework)
 
 *"Students describe what they want to learn. A team of 9 AI agents does the rest — generating personalized resources, tutoring interactively, and evaluating progress."*
@@ -79,6 +79,13 @@ Your settings are saved to:
 - **Windows**: `%APPDATA%/A3-Agent/config/llm.json`
 
 API keys are **encrypted** before storage. To change providers later, go to the ⚙️ **AI模型设置** tab.
+
+> 🔐 **Security (v7.1)**: API keys are stored using your operating system's credential store:
+> - **Windows**: Windows Credential Manager
+> - **Linux**: Secret Service (GNOME Keyring / KDE Wallet)
+> - **macOS**: Keychain
+>
+> If the system keyring is unavailable (headless/server), keys are encrypted with a machine-local key.
 
 ### Troubleshooting
 
@@ -215,6 +222,9 @@ make test       # 1130 tests
 | 9.3 | Multimodal Gateway Design | ✅ |
 | 9.4 | Product API v2 + UI Design | ✅ |
 | 9.5 | Multimodal Generation Implementation | ✅ |
+| 4.0 | User LLM Configuration Layer | ✅ |
+| 5.0 | First-Run Product Onboarding | ✅ |
+| 6.0 | Release Hardening v7.1 (keyring, capability detection) | ✅ |
 
 ---
 

@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="a3-multi-agent-system",
-    version="7.0.0",
+    version="7.1.0",
     description="A3 Multi-Agent Personalized Learning System",
     packages=find_packages(where=".", include=["src", "src.*"]),
     package_dir={"": "."},
