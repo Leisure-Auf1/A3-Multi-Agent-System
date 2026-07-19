@@ -119,6 +119,19 @@ class CourseKnowledgeBase:
             "python基础", "Python基础", "入门", "变量",
             "函数", "循环", "条件", "列表", "字典",
         ],
+        "python_ai_engineer": [
+            "python", "Python", "python ai", "Python AI",
+            "ai工程师", "AI工程师", "ai engineer", "AI engineer",
+            "python工程师",
+            "numpy", "NumPy", "pandas", "Pandas",
+            "机器学习", "Machine Learning", "machine learning",
+            "神经网络", "neural network", "Neural Network",
+            "深度学习", "deep learning", "Deep Learning",
+            "大模型", "LLM", "llm", "RAG", "rag",
+            "langchain", "LangChain", "CrewAI", "crewai",
+            "agent框架", "agent framework",
+            "python开发", "Python开发", "脚本开发",
+        ],
     }
 
     def __init__(self, kb_path: str = ""):
@@ -135,6 +148,7 @@ class CourseKnowledgeBase:
         """Auto-discover the first course directory in knowledge_base/."""
         candidates = [
             "knowledge_base/artificial_intelligence_multi_agent_course",
+            "knowledge_base/python_for_ai_engineers",
         ]
         for c in candidates:
             if os.path.isdir(c):

@@ -1,0 +1,58 @@
+{
+  "course_id": "py_ai_201",
+  "course_name": "Python for AI Engineers",
+  "resources": {
+    "lecture_notes": [
+      {"chapter": 1, "file": "chapters/chapter_01_variables_types.md"},
+      {"chapter": 2, "file": "chapters/chapter_02_control_flow.md"},
+      {"chapter": 3, "file": "chapters/chapter_03_functions.md"},
+      {"chapter": 4, "file": "chapters/chapter_04_data_structures.md"},
+      {"chapter": 5, "file": "chapters/chapter_05_oop_basics.md"},
+      {"chapter": 6, "file": "chapters/chapter_06_modules_packages.md"},
+      {"chapter": 7, "file": "chapters/chapter_07_file_io.md"},
+      {"chapter": 8, "file": "chapters/chapter_08_error_handling.md"},
+      {"chapter": 9, "file": "chapters/chapter_09_iterators_generators.md"},
+      {"chapter": 10, "file": "chapters/chapter_10_decorators.md"},
+      {"chapter": 11, "file": "chapters/chapter_11_numpy_basics.md"},
+      {"chapter": 12, "file": "chapters/chapter_12_pandas_basics.md"},
+      {"chapter": 13, "file": "chapters/chapter_13_ml_fundamentals.md"},
+      {"chapter": 14, "file": "chapters/chapter_14_neural_networks.md"},
+      {"chapter": 15, "file": "chapters/chapter_15_llm_basics.md"},
+      {"chapter": 16, "file": "chapters/chapter_16_prompt_engineering.md"},
+      {"chapter": 17, "file": "chapters/chapter_17_rag_systems.md"},
+      {"chapter": 18, "file": "chapters/chapter_18_agent_frameworks.md"},
+      {"chapter": 19, "file": "chapters/chapter_19_multi_agent_systems.md"},
+      {"chapter": 20, "file": "chapters/chapter_20_capstone_project.md"}
+    ],
+    "external_references": [
+      {"title": "Python Official Documentation", "url": "https://docs.python.org/3/", "type": "documentation", "chapter": 1},
+      {"title": "Real Python Tutorials", "url": "https://realpython.com/", "type": "tutorial", "chapter": 1},
+      {"title": "NumPy User Guide", "url": "https://numpy.org/doc/stable/user/", "type": "documentation", "chapter": 11},
+      {"title": "Pandas Documentation", "url": "https://pandas.pydata.org/docs/", "type": "documentation", "chapter": 12},
+      {"title": "Scikit-Learn User Guide", "url": "https://scikit-learn.org/stable/user_guide.html", "type": "documentation", "chapter": 13},
+      {"title": "Attention Is All You Need", "url": "https://arxiv.org/abs/1706.03762", "type": "paper", "chapter": 15},
+      {"title": "LangChain Documentation", "url": "https://python.langchain.com/docs/", "type": "documentation", "chapter": 18},
+      {"title": "CrewAI Documentation", "url": "https://docs.crewai.com/", "type": "documentation", "chapter": 19}
+    ]
+  },
+  "learning_paths": {
+    "beginner": {
+      "profile": "junior_dev, visual_dominant, normal pace",
+      "node_order": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      "depth_per_chapter": {},
+      "estimated_hours": 60
+    },
+    "intermediate": {
+      "profile": "mid_level, code_sandbox, fast pace",
+      "node_order": [1, 2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      "depth_per_chapter": {},
+      "estimated_hours": 40
+    },
+    "advanced": {
+      "profile": "senior, deep_dive, fast_track",
+      "node_order": [4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      "depth_per_chapter": {},
+      "estimated_hours": 25
+    }
+  }
+}
