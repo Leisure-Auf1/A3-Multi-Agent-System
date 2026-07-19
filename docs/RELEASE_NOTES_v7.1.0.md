@@ -14,7 +14,8 @@
 - **Zero-config demo**: Full pipeline runs offline with mock providers
 - **Cross-platform**: Windows (.exe), Linux (tar.gz), Docker, Streamlit Cloud
 - **OS keyring security**: API keys stored in Windows Credential Manager / Linux Secret Service
-- **1154 tests**: 100% pass rate, 0 failures
+- **1164 tests**: 100% pass rate, 0 failures
+- **Bundle integrity validation**: Launcher detects corrupted/moved bundles before startup
 
 ---
 
@@ -75,6 +76,9 @@ docker run -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
 
 ## What's New
 
+### 🛡️ Bundle Integrity Validation
+Launcher checks that critical bundle files exist before starting services. Prevents Internal Server Error when the application directory is moved or files are deleted at runtime. See [Troubleshooting Guide](TROUBLESHOOTING.md).
+
 ### 🪟 Windows Desktop Edition
 Native Windows executable with 5-stage launcher: initialize → FastAPI backend → Streamlit UI → browser. User data stored in `%APPDATA%\A3-Agent\`. API keys encrypted via Windows Credential Manager.
 
@@ -99,7 +103,7 @@ Interactive 5-layer system diagram: Presentation → Agent Pipeline → Intellig
 
 | Metric | Value |
 |:-------|:------|
-| Tests | 1154/1154 passed |
+| Tests | 1164/1164 passed |
 | Failures | 0 |
 | Agent core changes | 0 |
 | Workflow changes | 0 |
@@ -111,15 +115,17 @@ Interactive 5-layer system diagram: Presentation → Agent Pipeline → Intellig
 
 ## Documentation
 
-- [Installation Guide](docs/INSTALL.md)
-- [User Guide](docs/USER_GUIDE.md)
-- [Architecture](docs/competition/architecture.md)
-- [Agent Design](docs/competition/agent-design.md)
-- [Memory & RAG](docs/competition/memory-rag-design.md)
-- [Evaluation Design](docs/competition/evaluation-design.md)
-- [Demo Script](docs/competition/demo-script.md)
-- [Release Checklist](docs/release-checklist.md)
-- [Screenshots Guide](docs/screenshots.md)
+- [Installation Guide — Linux](INSTALL-linux.md)
+- [Installation Guide — Windows](INSTALL-windows.md)
+- [Troubleshooting Guide](TROUBLESHOOTING.md)
+- [User Guide](USER_GUIDE.md)
+- [Architecture](competition/architecture.md)
+- [Agent Design](competition/agent-design.md)
+- [Memory & RAG](competition/memory-rag-design.md)
+- [Evaluation Design](competition/evaluation-design.md)
+- [Demo Script](competition/demo-script.md)
+- [Release Checklist](release-checklist.md)
+- [Technical Blog](blog/)
 
 ---
 

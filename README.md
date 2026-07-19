@@ -1,53 +1,98 @@
-# A3-Agent — Multi-Agent Personalized Learning Assistant
+# A3-Agent — Multi-Agent Personalized Learning System
 
 [![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)
-[![Tests](https://img.shields.io/badge/tests-1154%2F1154-brightgreen)]()
+[![CI](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions/workflows/test.yml/badge.svg)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions/workflows/test.yml)
+[![Tests](https://img.shields.io/badge/tests-1164%2F1164-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Win%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
 
-> **An offline multi-agent learning assistant with LLM integration, explainable agent workflow, and cross-platform deployment.**
+> **A 12-agent AI learning system that builds personalized curricula from natural language.**
 >
-> *Students describe what they want to learn. A team of 12 AI agents does the rest — profiling, planning, resource generation, tutoring, and evaluation.*
+> *Describe what you want to learn. A team of specialized AI agents profiles you, plans your path, generates resources, tutors interactively, and evaluates your progress — all locally, with zero-config demo mode.*
 
-**[🌐 Live Demo](https://a3-agent.streamlit.app)** · **[📥 Download](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)** · **[📖 Docs](docs/)** · **[🎬 Demo Video Guide](docs/showcase/demo-recording-script.md)**
+**[🌐 Live Demo](https://a3-agent.streamlit.app)** · **[📥 Download](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)** · **[📖 Docs](docs/)** · **[📝 Blog](docs/blog/)**
 
 ---
 
 ## What is A3?
 
-A3 is a **complete AI-powered learning application** that combines 12 specialized agents to deliver personalized education. Unlike generic AI chatbots, A3 builds a 6-dimension student profile, generates tailored learning paths, creates 7 types of multimodal resources, tutors interactively, evaluates understanding, and continuously improves — all through a professional Streamlit interface.
+A3 is a **complete AI-powered learning application** that orchestrates 12 specialized agents through an EventBus to deliver personalized education. Unlike generic AI chatbots that answer one question at a time, A3:
 
-**Key Differentiators**:
-- 🧠 **Multi-Agent Pipeline** — Not a single LLM call; 12 agents collaborate via EventBus
-- 👤 **6-Dimension Profiling** — Natural language → automatic cognitive analysis
-- 📚 **7 Resource Types** — Documents, mindmaps, exercises, code, slides, illustrations, video scripts
-- 🔐 **Zero-Config Demo** — Works fully offline with mock providers; no API key needed
-- 🏗️ **5-Layer Architecture** — Presentation → Agent → Intelligence → Trust → Data
+- 🧠 **Profiles you** across 6 cognitive dimensions from natural language input
+- 📋 **Plans your path** with adaptive, goal-driven learning sequences
+- 📚 **Generates resources** in 7 formats: documents, mindmaps, exercises, code, slides, illustrations, video scripts
+- 🎓 **Tutors interactively** via SSE-streaming chat with knowledge retrieval
+- 📊 **Evaluates and improves** through ReviewGate + explainability tracing
 
----
+**Key qualities:**
 
-## 🎬 Demo
-
-| 🎥 **Demo Video** | See A3 in action — 3-minute pipeline walkthrough |
-|:------------------|:-------------------------------------------------|
-| 📸 **Screenshots** | [7 UI screenshots](docs/screenshots.md) — Welcome, Dashboard, Architecture, more |
-| 🌐 **Live Demo** | [a3-agent.streamlit.app](https://a3-agent.streamlit.app) — try online (free) |
-| 🏆 **Competition Demo** | Click "比赛演示" tab → one-click full pipeline with frozen data |
-
-📖 [Demo Recording Script](docs/showcase/demo-recording-script.md) · [Screenshot Guide](docs/showcase/screenshot-checklist.md)
+| | |
+|:--|:--|
+| 🔐 **Zero-config demo** | Full 6-agent pipeline runs offline — no API key, no network |
+| 🏗️ **5-layer architecture** | Presentation → Agent → Intelligence → Trust → Data |
+| 🖥️ **Cross-platform** | Windows `.exe`, Linux binary, Docker, Streamlit Cloud |
+| 🔒 **OS keyring security** | API keys stored in Windows Credential Manager / Linux Secret Service |
+| ✅ **1164 tests** | 100% pass rate, 0 failures |
 
 ---
 
-## 📸 Screenshots
+## Quick Start
 
-| Welcome Onboarding | Agent Pipeline | Dashboard |
-|:---:|:---:|:---:|
-| ![Welcome](docs/images/welcome.png) | ![Demo](docs/images/competition-demo.png) | ![Dashboard](docs/images/dashboard.png) |
-| **Model Settings** | **Student Profile** | **Architecture** |
-| ![Settings](docs/images/settings.png) | ![Profile](docs/images/profile.png) | ![Architecture](docs/images/architecture.png) |
+### 🌐 Browser (zero install, recommended)
 
-> Screenshots coming soon — see [capture guide](docs/showcase/screenshot-checklist.md).
+```
+https://a3-agent.streamlit.app
+```
+
+Deploy your own on [Streamlit Cloud](https://share.streamlit.io) in 2 clicks.
+
+### 🖥️ Desktop App (Windows)
+
+1. Download [`A3-Agent-v7.1.0-win64.zip`](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/download/v7.1.0/A3-Agent-v7.1.0-win64.zip) (54 MB)
+2. Extract anywhere — **double-click `A3-Agent.exe`**
+3. Browser opens automatically → configure provider or try Demo Mode
+
+📖 [Full Windows install guide →](docs/INSTALL-windows.md)
+
+### 🐧 Desktop App (Linux)
+
+```bash
+curl -LO https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/download/v7.1.0/A3-Agent-v7.1.0-linux-x64.tar.gz
+tar xzf A3-Agent-v7.1.0-linux-x64.tar.gz
+cd A3-Agent-v7.1.0-linux-x64 && ./A3-Agent
+```
+
+📖 [Full Linux install guide →](docs/INSTALL-linux.md)
+
+### 🐳 Docker
+
+```bash
+docker pull leisureauf1/a3-multi-agent-system:latest
+docker run -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
+```
+
+### 💻 Run from Source
+
+```bash
+git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
+cd A3-Multi-Agent-System
+pip install -r requirements.txt
+python -m desktop.launcher
+```
+
+---
+
+## First Launch
+
+| Step | Action |
+|:-----|:-------|
+| 1 | Launch A3 → Welcome page appears |
+| 2 | Choose provider (DeepSeek / OpenAI / Spark) or **🎭 Demo Mode** |
+| 3 | If using a provider: enter API key → Test connection → Save |
+| 4 | Enter the main app — 7 tabs of AI-powered learning |
+
+API keys are stored in your OS credential store, not plaintext files.
 
 ---
 
@@ -55,14 +100,14 @@ A3 is a **complete AI-powered learning application** that combines 12 specialize
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  🖥️  Presentation    Streamlit UI · FastAPI · Desktop .exe    │
+│  🖥️  Presentation    Streamlit 7-tab UI · FastAPI · Desktop  │
 ├──────────────────────────────────────────────────────────────┤
 │  🤖  Agent Pipeline  Profile→Planner→Resource→Tutor→Eval     │
 │                       EventBus · TraceCollector              │
 ├──────────────────────────────────────────────────────────────┤
-│  🧠  Intelligence    LLM Factory · RAG · Memory · Multimodal │
+│  🧠  Intelligence    LLM Factory · TF-IDF RAG · Memory       │
 ├──────────────────────────────────────────────────────────────┤
-│  🔐  Trust & Security  ReviewGate · Keyring · Auth (JWT)     │
+│  🔐  Trust           ReviewGate · Keyring · JWT Auth         │
 ├──────────────────────────────────────────────────────────────┤
 │  💾  Data            SQLite (WAL) · Profiles · Threads       │
 └──────────────────────────────────────────────────────────────┘
@@ -75,137 +120,79 @@ A3 is a **complete AI-powered learning application** that combines 12 specialize
 
 ---
 
-## Quick Start
-
-### ⚡ Browser (recommended — zero install, free)
-```
-https://a3-agent.streamlit.app
-```
-Deploy your own in 2 clicks: [Streamlit Cloud](https://share.streamlit.io) → select repo → deploy.
-
-No Python. No API keys. No Docker. Works on any device with a browser.
-
-### 🐳 Docker
-```bash
-docker pull leisureauf1/a3-multi-agent-system:latest
-docker run -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
-```
-
-### 💻 Local
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-```bash
-streamlit run app.py
-# → Click "🏆 比赛演示" tab → Click "运行完整 Pipeline"
-```
-
----
-
-## First Launch Guide
-
-| Step | Action |
-|:-----|:-------|
-| 1 | Launch A3 → Welcome page appears |
-| 2 | Choose provider (DeepSeek / OpenAI / Spark / Demo) |
-| 3 | Enter API key → Test connection → Save |
-| 4 | Enter the main app — 7 tabs of AI-powered learning |
-
-Or click **🎭 Demo Mode** to skip configuration entirely.
-
-🔐 API keys are stored in your OS credential store (Windows Credential Manager / Linux Secret Service / macOS Keychain).
-
----
-
 ## Supported Providers
 
-| Provider | Model | Best For |
-|:---------|:------|:---------|
+| Provider | Models | Best For |
+|:---------|:-------|:---------|
 | 🌊 DeepSeek | deepseek-chat, v4-pro | High value, strong Chinese |
 | 🤖 OpenAI | gpt-4o-mini, gpt-4o | Global SOTA capability |
-| 🚀 Spark | spark-pro, spark-lite | China-compliant |
+| 🚀 Spark | spark-pro, spark-lite | China-compliant deployment |
 | 🎭 Mock | mock-model-v1 | **No key needed** — full offline demo |
 
 ---
 
-## Benchmark
+## Performance
 
 | Metric | Mock Mode | DeepSeek (API) |
 |:-------|:----------|:---------------|
-| Full Pipeline Latency | ~500ms | ~2-5s (network) |
+| Full Pipeline Latency | ~500ms | ~2-5s |
 | Profile Extraction | <10ms | ~200ms |
 | Plan Generation | ~50ms | ~500ms |
 | Resource Recommendation | ~30ms | ~300ms |
-| ReviewGate Scoring | ~5ms | ~200ms |
 | Memory Usage (idle) | ~80MB | ~80MB |
-
-**1154 tests, 100% pass rate, 0 external failures.**
 
 📖 [Full Benchmark](docs/competition/benchmark.md)
 
 ---
 
-## Project Status
-
-| Phase | Milestone | Status |
-|:------|:----------|:------:|
-| 1–6 | Runtime Engine, SDK, Recovery, Lifecycle | ✅ |
-| 7.0 | Veritas-Core Independence | ✅ |
-| 8.0 | Productization Audit | ✅ |
-| 9.x | Data Layer, Tutor, Evaluation, Multimodal | ✅ |
-| 4.0 | User LLM Configuration Layer | ✅ |
-| 5.0 | First-Run Onboarding | ✅ |
-| 6.0 | Release Hardening (keyring, capability detection) | ✅ |
-| 7.0 | Release Validation & Distribution | ✅ |
-| 8.0 | Competition Demo Polish | ✅ |
-
----
-
 ## Documentation
 
+### Getting Started
 | Document | Description |
 |:---------|:------------|
-| [Architecture Design](docs/competition/architecture.md) | 5-layer system architecture |
+| [Linux Install Guide](docs/INSTALL-linux.md) | Arch/Ubuntu/Fedora — tar.gz + source build |
+| [Windows Install Guide](docs/INSTALL-windows.md) | zip extraction, Defender, SmartScreen |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues: ports, API keys, bundle errors |
+| [User Guide](docs/USER_GUIDE.md) | 7-tab reference + workflow |
+
+### Architecture & Design
+| Document | Description |
+|:---------|:------------|
+| [Architecture](docs/competition/architecture.md) | 5-layer system design |
 | [Agent Design](docs/competition/agent-design.md) | 12-agent pipeline specification |
 | [Memory & RAG](docs/competition/memory-rag-design.md) | Memory manager + TF-IDF retrieval |
 | [Evaluation Design](docs/competition/evaluation-design.md) | ReviewGate + confidence metrics |
-| [Demo Script](docs/competition/demo-script.md) | 5-minute competition presentation |
-| [Deployment](docs/competition/deployment.md) | Streamlit Cloud / Render / Docker |
-| [Benchmark](docs/competition/benchmark.md) | Performance benchmarks |
+
+### Blog Series
+| Article | Topic |
+|:--------|:------|
+| [01 — Architecture Evolution](docs/blog/01-architecture-evolution.md) | From monolith to 12-agent pipeline |
+| [02 — Multi-Agent Design](docs/blog/02-multi-agent-design.md) | EventBus concurrency + coordinator patterns |
+| [03 — Memory & RAG](docs/blog/03-memory-rag-system.md) | SQLite memory + TF-IDF retrieval |
+| [04 — Evaluation & Tracing](docs/blog/04-agent-evaluation-and-tracing.md) | ReviewGate + explainability chain |
+| [05 — Production](docs/blog/05-productionization-and-deployment.md) | PyInstaller, Docker, Streamlit Cloud |
+| [06 — Lessons Learned](docs/blog/06-lessons-learned.md) | Engineering takeaways |
+
+### More
+| Document | Description |
+|:---------|:------------|
+| [Release Notes](docs/RELEASE_NOTES_v7.1.0.md) | v7.1.0 highlights + checksums |
 | [Release Checklist](docs/release-checklist.md) | Cross-platform validation |
-| [Demo Video Script](docs/showcase/demo-video-script.md) | 5-minute recording guide |
-| [Architecture Slides](docs/showcase/architecture-presentation.md) | Slide deck for presentations |
-| [Resume Description](docs/showcase/internship-resume.md) | STAR-format project summary |
-| [Demo Assets](docs/showcase/demo-assets.md) | Screenshots + capture guide |
-| [Install Guide](docs/INSTALL.md) | Windows / Linux / Docker setup |
-| [User Guide](docs/USER_GUIDE.md) | Tab reference + workflow |
-| [Screenshots](docs/screenshots.md) | UI capture guide for demos |
-| [Release Notes](docs/RELEASE_NOTES_v7.1.0.md) | v7.1.0 release notes |
-| [Windows Validation](docs/windows-release-validation.md) | Windows build + E2E checklist |
-| [Technical Blog](docs/blog/) | 6-part engineering deep-dive |
-
----
-
-## Showcase
-
-| Asset | Purpose |
-|:------|:--------|
-| 🎬 [Demo Video Script](docs/showcase/demo-video-script.md) | 8-scene recording guide (3-5 min) |
-| 📊 [Architecture Slides](docs/showcase/architecture-presentation.md) | 9-slide presentation deck |
-| 📄 [Internship Resume](docs/showcase/internship-resume.md) | STAR-format project description |
-| 📸 [Demo Assets](docs/showcase/demo-assets.md) | 8 screenshots + capture instructions |
+| [Demo Script](docs/competition/demo-script.md) | 5-minute walkthrough |
+| [Benchmark](docs/competition/benchmark.md) | Performance data |
 
 ---
 
 ## Release
 
-[![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
+[![Release](https://img.shields.io/badge/v7.1.0-stable-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
 
-| Platform | Download |
-|:---------|:---------|
-| 🐧 Linux | `A3-Agent-v7.1.0-linux-x64.tar.gz` (76 MB) |
-| 🪟 Windows | `A3-Agent-v7.1.0-win64.zip` (54 MB) |
+| Platform | Download | Size |
+|:---------|:---------|:-----|
+| 🪟 Windows x64 | [`A3-Agent-v7.1.0-win64.zip`](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/download/v7.1.0/A3-Agent-v7.1.0-win64.zip) | 54 MB |
+| 🐧 Linux x64 | [`A3-Agent-v7.1.0-linux-x64.tar.gz`](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/download/v7.1.0/A3-Agent-v7.1.0-linux-x64.tar.gz) | 76 MB |
+| 🐳 Docker | [`leisureauf1/a3-multi-agent-system:latest`](https://hub.docker.com/r/leisureauf1/a3-multi-agent-system) | — |
+| 🌐 Web | [a3-agent.streamlit.app](https://a3-agent.streamlit.app) | — |
 
 ```bash
 # Verify checksum

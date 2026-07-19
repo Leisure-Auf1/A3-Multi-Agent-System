@@ -16,7 +16,7 @@ Fixes # (issue number)
 
 Please describe the tests that you ran to verify your changes.
 
-- [ ] `make test` — all 1154 tests pass
+- [ ] `make test` — all 1164 tests pass
 - [ ] Manual E2E test on [platform]
 - [ ] Release validation: `python scripts/release_check.py`
 

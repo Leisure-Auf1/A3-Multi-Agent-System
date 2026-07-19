@@ -160,53 +160,93 @@ def render_settings_tab() -> None:
             st.session_state.settings_test_result = None
             st.session_state.settings_saved = False
 
-    # ── API Key input (only for non-mock providers) ──
-    with col_right:
+    st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
+
+    # ── API Key + Actions (wrapped in st.form) ─
+    #
+    # st.form batches all widget states before processing submit.
+    # This guarantees the password field value is captured even when
+    # the user pastes a key and clicks submit without pressing Enter.
+    # Ref: Streamlit docs — Form execution model.
+    with st.form("api_key_settings_form", clear_on_submit=False):
+        # ── API Key input ──────────────────
         if provider in ("mock", "rule"):
             st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
             st.caption(f"{PROVIDER_LABELS.get(provider)} 无需 API Key")
-            st.session_state.settings_api_key = ""
+            api_key = ""
         else:
             st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
-            api_key_input = st.text_input(
+            api_key = st.text_input(
                 "API Key",
                 type="password",
                 placeholder="输入你的 API Key...",
                 label_visibility="collapsed",
                 key="settings_api_key_input",
             )
-            # Only capture non-empty input.  Password fields clear on Streamlit
-            # rerun (e.g. after clicking "Test Connection") — never overwrite
-            # the session-state key with an empty string from the cleared widget.
-            if api_key_input:
-                st.session_state.settings_api_key = api_key_input
 
-    st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
+        # ── Action buttons ─────────────────
+        btn_col1, btn_col2, btn_col3 = st.columns([2, 2, 1])
 
-    # ── Action buttons ──────────────────────
-    btn_col1, btn_col2, btn_col3 = st.columns([2, 2, 1])
-
-    with btn_col1:
-        if st.button("🔍 测试连接", use_container_width=True, type="secondary"):
-            with st.spinner(f"正在连接 {PROVIDER_LABELS.get(provider, provider)}..."):
-                result = _test_connection(provider, st.session_state.settings_model, st.session_state.settings_api_key)
-                st.session_state.settings_test_result = result
-                st.session_state.settings_saved = False
-
-    with btn_col2:
-        can_save = provider in ("mock", "rule") or bool(st.session_state.settings_api_key.strip())
-        if st.button("💾 保存配置", use_container_width=True, type="primary", disabled=not can_save):
-            cfg = LLMConfig(
-                provider=provider,
-                model=st.session_state.settings_model,
-                api_key=st.session_state.settings_api_key,
+        with btn_col1:
+            test_clicked = st.form_submit_button(
+                "🔍 测试连接",
+                use_container_width=True,
+                type="secondary",
             )
-            save_llm_config(cfg)
-            st.session_state.settings_saved = True
-            st.session_state.settings_test_result = None
-            st.success(f"✅ 配置已保存 — {PROVIDER_LABELS.get(provider, provider)}")
 
-    # ── Status display ──────────────────────
+        with btn_col2:
+            can_save = provider in ("mock", "rule") or bool(api_key.strip())
+            save_clicked = st.form_submit_button(
+                "💾 保存配置",
+                use_container_width=True,
+                type="primary",
+                disabled=not can_save,
+            )
+
+    # ── Process form submission ─────────────
+    # These run AFTER the form context exits, when form data is committed.
+
+    # Sync key to session_state (for display in "配置详情" etc.)
+    if api_key:
+        st.session_state.settings_api_key = api_key
+    elif provider in ("mock", "rule"):
+        st.session_state.settings_api_key = ""
+
+    if test_clicked:
+        with st.status(
+            f"正在连接 {PROVIDER_LABELS.get(provider, provider)}...",
+            expanded=True,
+        ) as status:
+            result = _test_connection(provider, st.session_state.settings_model, api_key)
+            st.session_state.settings_test_result = result
+            st.session_state.settings_saved = False
+            if result["success"]:
+                status.update(
+                    label=f"✅ 连接成功! ({result['latency']:.1f}s)",
+                    state="complete",
+                )
+            else:
+                status.update(
+                    label=f"❌ 连接失败: {result.get('error', '未知错误')}",
+                    state="error",
+                )
+
+    if save_clicked:
+        cfg = LLMConfig(
+            provider=provider,
+            model=st.session_state.settings_model,
+            api_key=api_key,
+        )
+        save_llm_config(cfg)
+        st.session_state.settings_saved = True
+        st.session_state.settings_test_result = None
+        st.success(f"✅ 配置已保存 — {PROVIDER_LABELS.get(provider, provider)}")
+
+    # ── Status display (stable containers) ─
+    # Always rendered — never conditionally removed from the widget tree.
+    # This prevents React DOM removeChild errors caused by
+    # spinner/expander appearing and disappearing between renders.
+
     test_result = st.session_state.settings_test_result
     if test_result is not None:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
@@ -220,7 +260,6 @@ def render_settings_tab() -> None:
         else:
             error_msg = test_result.get("error", "未知错误")
             st.error(f"❌ 连接失败: {error_msg}")
-            # Show troubleshooting hints
             with st.expander("💡 故障排除建议"):
                 hints = _get_error_hints(error_msg)
                 for hint in hints:
