@@ -5,12 +5,14 @@ on:
   push:
     tags:
       - "v*"             # v1.0.0, v1.0.0-alpha, etc.
-    branches:
-      - main             # Also build on main push (latest tag)
+    # main push removed — automatic publishing on every merge is unsafe
+    # until production verification stabilizes. Use workflow_dispatch.
   workflow_dispatch:      # Manual trigger
 
 env:
-  IMAGE_NAME: leisureauf1/a3-multi-agent-system
+  # GHCR-only publishing (Docker Hub removed per Post-Release Audit:
+  # DOCKERHUB_* secrets are not configured). Re-add IMAGE_NAME:
+  # leisureauf1/a3-multi-agent-system when Docker Hub login restored.
 
 jobs:
   # ═══════════════════════════════════════════════════════
@@ -33,6 +35,9 @@ jobs:
       - name: Install deps + test
         run: |
           pip install -r requirements.txt pytest
+          # CI-only compatibility (same scope as PR #28 fix in test.yml):
+          # unpinned starlette requires httpx2; sklearn is a test-only dep.
+          pip install httpx2 scikit-learn
           python -m pytest tests/ -q --tb=short
 
   # ═══════════════════════════════════════════════════════
@@ -54,7 +59,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=tag
@@ -72,13 +76,6 @@ jobs:
       # ── Buildx ────────────────────────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      # ── Docker Hub login ──────────────────────────────
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # ── GHCR login ────────────────────────────────────
       - name: Login to GHCR
