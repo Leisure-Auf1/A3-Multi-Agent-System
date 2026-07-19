@@ -2,20 +2,21 @@
 
 ## Pre-requisites
 
-- [x] Source: `feat/deploy-final` branch, commit `fec0f7e`
-- [x] `desktop/build.bat` verified (23 hidden-imports, 10 add-data)
-- [x] Linux PyInstaller build validated (FastAPI ✅, Streamlit ✅, 185 MB)
+- [x] Source: `main` branch, commit from `48836aa` (desktop packaging layer)
+- [x] `desktop/build.bat` verified (23 hidden-imports + 4 collect-all, 10 add-data entries)
+- [x] `desktop/launcher.py` — parent/child dispatch architecture verified
+- [x] `desktop/config.py` — APPDATA isolation, bundle root detection verified
+- [x] `desktop/hooks/runtime_hook.py` — sys._MEIPASS path injection verified
+- [x] Linux PyInstaller build validated (FastAPI ✅, Streamlit ✅, 75 MB .tar.gz)
+- [x] 1154/1154 tests passing
 - [ ] Windows 10/11 machine with Python 3.10+ installed
 
----
-
-## Build
+## Build (on Windows)
 
 ```batch
 REM 1. Clone and checkout
 git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
 cd A3-Multi-Agent-System
-git checkout feat/deploy-final
 
 REM 2. Install dependencies
 pip install -r requirements.txt
@@ -27,12 +28,20 @@ desktop\build.bat
 
 **Expected output**: `dist\A3-Agent\A3-Agent.exe` (~200-250 MB)
 
-> **Note**: Windows build will be larger than Linux (185 MB) because:
+> **Note**: Windows build will be larger than Linux (76 MB .tar.gz) because:
 > - Windows bundles more DLLs
 > - Keyring Windows backend (win32ctypes, pywin32) adds ~5-10 MB
 > - Streamlit frontend assets are larger on Windows
 
----
+## Build Verification
+
+After build, run automated validation:
+
+```batch
+python scripts\release_check.py --dist dist\A3-Agent
+```
+
+Expected: ✅ VALIDATION PASSED for all 30+ checks.
 
 ## Clean-Machine E2E
 
@@ -91,7 +100,13 @@ Test on a Windows machine with **no Python installed**:
 
 ## Release Packaging
 
-After all checks pass:
+After all checks pass, use the packaging script:
+
+```batch
+powershell .\scripts\build-windows-release.ps1
+```
+
+Or manually:
 
 ```batch
 REM Create release zip
@@ -101,11 +116,10 @@ copy LICENSE release\A3-Agent-v7.1.0-win64\
 copy README.md release\A3-Agent-v7.1.0-win64\README.txt
 echo A3-Agent v7.1.0 > release\A3-Agent-v7.1.0-win64\VERSION
 
-REM Zip it
 powershell Compress-Archive -Path release\A3-Agent-v7.1.0-win64 -DestinationPath release\A3-Agent-v7.1.0-win64.zip
 ```
 
-**Deliverable**: `release/A3-Agent-v7.1.0-win64.zip`
+**Deliverable**: `release/A3-Agent-v7.1.0-win64.zip` + `release/A3-Agent-v7.1.0-win64.sha256`
 
 ---
 

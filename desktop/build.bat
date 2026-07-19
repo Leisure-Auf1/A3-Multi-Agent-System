@@ -81,6 +81,6 @@ echo   Output: dist\A3-Agent\A3-Agent.exe
 echo ============================================
 echo.
 echo Size:
-dir dist\A3-Agent /s | findstr "个文件"
+dir dist\A3-Agent /s 2>nul | findstr /C:"File(s)" >nul 2>&1 && dir dist\A3-Agent /s | findstr /C:"File(s)"
 echo.
 echo To test: dist\A3-Agent\A3-Agent.exe
