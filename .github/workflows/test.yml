@@ -34,6 +34,10 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-cov
+          # CI-only compatibility: fresh installs pull the latest starlette,
+          # whose TestClient now REQUIRES httpx2 (older envs only warned).
+          # Production requirements are intentionally unchanged.
+          pip install httpx2
 
       - name: Run tests
         run: |
