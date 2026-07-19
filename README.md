@@ -152,6 +152,11 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | [Architecture Slides](docs/showcase/architecture-presentation.md) | Slide deck for presentations |
 | [Resume Description](docs/showcase/internship-resume.md) | STAR-format project summary |
 | [Demo Assets](docs/showcase/demo-assets.md) | Screenshots + capture guide |
+| [Install Guide](docs/INSTALL.md) | Windows / Linux / Docker setup |
+| [User Guide](docs/USER_GUIDE.md) | Tab reference + workflow |
+| [Screenshots](docs/screenshots.md) | UI capture guide for demos |
+| [Release Notes](docs/RELEASE_NOTES_v7.1.0.md) | v7.1.0 release notes |
+| [Windows Validation](docs/windows-release-validation.md) | Windows build + E2E checklist |
 
 ---
 
@@ -163,6 +168,22 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | 📊 [Architecture Slides](docs/showcase/architecture-presentation.md) | 9-slide presentation deck |
 | 📄 [Internship Resume](docs/showcase/internship-resume.md) | STAR-format project description |
 | 📸 [Demo Assets](docs/showcase/demo-assets.md) | 8 screenshots + capture instructions |
+
+---
+
+## Release
+
+[![Release](https://img.shields.io/badge/release-v7.1.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
+
+| Platform | Download |
+|:---------|:---------|
+| 🐧 Linux | `A3-Agent-v7.1.0-linux-x64.tar.gz` (76 MB) |
+| 🪟 Windows | `A3-Agent-v7.1.0-win64.zip` (coming soon — build from source: `desktop\\build.bat`) |
+
+```bash
+# Verify checksum
+sha256sum -c A3-Agent-v7.1.0-linux-x64.sha256
+```
 
 ---
 
