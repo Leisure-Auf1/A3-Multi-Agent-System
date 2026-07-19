@@ -25,6 +25,11 @@ from web.settings_tab import render_settings_tab
 # Phase 5.0 — Onboarding
 from web.onboarding_page import render_onboarding_page
 
+# Phase 8.0 — Competition Demo
+from web.architecture_overview import render_architecture_overview
+from web.demo_dashboard import render_demo_dashboard
+from web.competition_demo import render_competition_demo
+
 
 def main():
     """A3 Streamlit entry point. Callable from app.py for HF Spaces."""
@@ -105,8 +110,9 @@ def main():
     # Navigation tabs
     # ═══════════════════════════════════════════════
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "🏠 学习助手", "👤 学习画像", "📚 学习空间", "⚙️ AI模型设置",
+        "🏆 比赛演示", "🎯 仪表盘", "🏗️ 架构概览",
     ])
 
     # ═══════════════════════════════════════════════
@@ -533,6 +539,30 @@ def main():
 
     with tab4:
         render_settings_tab()
+
+    # ═══════════════════════════════════════════════
+    # ═══════════  TAB 5: COMPETITION DEMO  ════════
+    # ═══════════════════════════════════════════════
+
+    with tab5:
+        result = render_competition_demo()
+        if result:
+            st.session_state.workflow_result = result
+
+    # ═══════════════════════════════════════════════
+    # ═════════════  TAB 6: DASHBOARD  ═════════════
+    # ═══════════════════════════════════════════════
+
+    with tab6:
+        wf_result = st.session_state.get("workflow_result")
+        render_demo_dashboard(wf_result)
+
+    # ═══════════════════════════════════════════════
+    # ═══════════  TAB 7: ARCHITECTURE  ════════════
+    # ═══════════════════════════════════════════════
+
+    with tab7:
+        render_architecture_overview()
 
 
 # ── Entry points ──────────────────────────────

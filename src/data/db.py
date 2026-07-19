@@ -22,7 +22,29 @@ from typing import Optional, List, Dict, Any
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__)))), "storage", "a3.db")
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+
+def _run_migrations(conn: sqlite3.Connection) -> None:
+    """Apply schema migrations for missing columns in existing databases."""
+    # Migration 1→2: Add is_guest column if missing
+    cols = conn.execute("PRAGMA table_info(users)").fetchall()
+    col_names = {c[1] for c in cols}
+    if "is_guest" not in col_names:
+        conn.execute("ALTER TABLE users ADD COLUMN is_guest INTEGER NOT NULL DEFAULT 0")
+    # Migration 2→3: Add sessions table if missing (backward compat)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            expires_at REAL NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)"
+    )
 
 _local = threading.local()
 
@@ -127,6 +149,8 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_sessions_user
             ON sessions(user_id);
     """)
+    # Apply migrations for existing databases (Phase 8.0)
+    _run_migrations(conn)
     # Ensure schema version
     row = conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
     if row is None:
