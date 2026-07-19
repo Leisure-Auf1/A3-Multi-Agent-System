@@ -18,6 +18,9 @@ import streamlit as st
 from src.workflow import A3Workflow
 from src.core.provider_factory import create_provider
 
+# Phase 4.0 — User LLM settings
+from web.settings_tab import render_settings_tab
+
 
 def main():
     """A3 Streamlit entry point. Callable from app.py for HF Spaces."""
@@ -82,7 +85,9 @@ def main():
     # Navigation tabs
     # ═══════════════════════════════════════════════
 
-    tab1, tab2, tab3 = st.tabs(["🏠 学习助手", "👤 学习画像", "📚 学习空间"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "🏠 学习助手", "👤 学习画像", "📚 学习空间", "⚙️ AI模型设置",
+    ])
 
     # ═══════════════════════════════════════════════
     # Cached workflow (Phase 4.2 — provider-aware)
@@ -501,6 +506,13 @@ def main():
                 f"资源: {len(resources)} 项 · "
                 f"状态: {'成功' if result_dict.get('success') else '有错误'}"
             )
+
+    # ═══════════════════════════════════════════════
+    # ═════════════  TAB 4: SETTINGS  ═════════════
+    # ═══════════════════════════════════════════════
+
+    with tab4:
+        render_settings_tab()
 
 
 # ── Entry points ──────────────────────────────

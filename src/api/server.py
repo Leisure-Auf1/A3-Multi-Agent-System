@@ -27,7 +27,7 @@ from src.api.routes import learning_router, runtime_router, auth_router  # Phase
 # Phase 9.4 — Product API v2
 from src.api.v2 import (
     chat_router, profile_router, learning_v2_router,
-    resources_router, evaluation_router,
+    resources_router, evaluation_router, settings_router,
 )
 
 app = FastAPI(
@@ -61,6 +61,7 @@ app.include_router(profile_router)
 app.include_router(learning_v2_router)
 app.include_router(resources_router)
 app.include_router(evaluation_router)
+app.include_router(settings_router)  # Phase 4.0 — User LLM settings
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
