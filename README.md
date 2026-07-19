@@ -51,22 +51,25 @@ A3 is a **complete AI-powered learning application** that combines 12 specialize
 
 ## Quick Start
 
-### 🐳 Docker (recommended)
+### ⚡ Browser (recommended — zero install, free)
+```
+https://a3-agent.streamlit.app
+```
+Deploy your own in 2 clicks: [Streamlit Cloud](https://share.streamlit.io) → select repo → deploy.
+
+No Python. No API keys. No Docker. Works on any device with a browser.
+
+### 🐳 Docker
 ```bash
 docker pull leisureauf1/a3-multi-agent-system:latest
-docker run -p 8000:8000 -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
-# → http://localhost:8501
+docker run -p 8501:8501 leisureauf1/a3-multi-agent-system:latest
 ```
 
 ### 💻 Local
 ```bash
-git clone https://github.com/Leisure-Auf1/A3-Multi-Agent-System.git
-cd A3-Multi-Agent-System
 pip install -r requirements.txt
 streamlit run app.py
 ```
-
-### 🏆 Competition Demo (no API key)
 ```bash
 streamlit run app.py
 # → Click "🏆 比赛演示" tab → Click "运行完整 Pipeline"
@@ -142,6 +145,7 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | [Memory & RAG](docs/competition/memory-rag-design.md) | Memory manager + TF-IDF retrieval |
 | [Evaluation Design](docs/competition/evaluation-design.md) | ReviewGate + confidence metrics |
 | [Demo Script](docs/competition/demo-script.md) | 5-minute competition presentation |
+| [Deployment](docs/competition/deployment.md) | Streamlit Cloud / Render / Docker |
 | [Benchmark](docs/competition/benchmark.md) | Performance benchmarks |
 | [Release Checklist](docs/release-checklist.md) | Cross-platform validation |
 
