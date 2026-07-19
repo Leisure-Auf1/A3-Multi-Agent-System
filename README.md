@@ -52,6 +52,47 @@ A3 is a **complete AI-powered learning application** that combines 9 specialized
 
 ---
 
+## 🚀 First Launch Guide (Phase 5.0)
+
+### On First Run
+
+When you launch A3 for the first time, you'll see a **Welcome Page** with two options:
+
+| Option | Description |
+|:-------|:------------|
+| **🚀 开始配置** | Select your AI provider, enter API key, test connection, start learning |
+| **🎭 先体验 Demo** | Skip configuration — use built-in mock responses (no API key needed) |
+
+### Supported AI Providers
+
+| Provider | API Key Source | Best For |
+|:---------|:---------------|:---------|
+| 🌊 **DeepSeek** | [platform.deepseek.com](https://platform.deepseek.com/api_keys) | 高性价比，中文能力强 |
+| 🤖 **OpenAI** | [platform.openai.com](https://platform.openai.com/api-keys) | 全球领先的 AI 能力 |
+| 🚀 **讯飞星火** | [console.xfyun.cn](https://console.xfyun.cn/app/myapp) | 国产大模型，合规可靠 |
+| 🎭 **Demo 模式** | None required | 体验所有功能，无需 API Key |
+
+### After Configuration
+
+Your settings are saved to:
+- **Linux/macOS**: `~/.a3-agent/config/llm.json`
+- **Windows**: `%APPDATA%/A3-Agent/config/llm.json`
+
+API keys are **encrypted** before storage. To change providers later, go to the ⚙️ **AI模型设置** tab.
+
+### Troubleshooting
+
+| Symptom | Likely Cause | Solution |
+|:--------|:-------------|:---------|
+| "API Key 无效" | Key expired or mistyped | Re-copy from provider dashboard |
+| "额度已用尽" | Account balance depleted | Top up or switch to Demo mode |
+| "网络连接失败" | Network / proxy issue | Check internet and firewall settings |
+| Nothing happens | First run? No config? | Restart A3 to trigger onboarding |
+
+> 💡 **Tip**: You can always switch to Demo mode in ⚙️ AI模型设置 if your API key stops working.
+
+---
+
 ## Key Features
 
 ### 🎯 Personalized Learning

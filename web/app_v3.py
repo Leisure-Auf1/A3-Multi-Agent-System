@@ -17,9 +17,13 @@ import streamlit as st
 
 from src.workflow import A3Workflow
 from src.core.provider_factory import create_provider
+from src.config.onboarding import detect_onboarding
 
 # Phase 4.0 — User LLM settings
 from web.settings_tab import render_settings_tab
+
+# Phase 5.0 — Onboarding
+from web.onboarding_page import render_onboarding_page
 
 
 def main():
@@ -80,6 +84,22 @@ def main():
         .divider-custom { margin: 1.5em 0; border: none; border-top: 1px solid #E0E0E0; }
     </style>
     """, unsafe_allow_html=True)
+
+    # ═══════════════════════════════════════════════
+    # Phase 5.0 — Onboarding Gate
+    # ═══════════════════════════════════════════════
+
+    if "onboarding_done" not in st.session_state:
+        st.session_state.onboarding_done = False
+
+    if not st.session_state.onboarding_done:
+        state = detect_onboarding()
+        if state.show_onboarding:
+            render_onboarding_page()
+            st.stop()  # Stop rendering — onboarding page handles its own flow
+        else:
+            # Config already exists and is ready — mark onboarding done
+            st.session_state.onboarding_done = True
 
     # ═══════════════════════════════════════════════
     # Navigation tabs
