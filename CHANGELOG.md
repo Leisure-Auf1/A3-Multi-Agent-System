@@ -4,55 +4,58 @@ All notable changes to the A3-Multi-Agent-System.
 
 ---
 
-## [v7.1.0] — 2026-07-19
+## [v7.1.0] — 2026-07-19 (Release)
+
+🔗 [GitHub Release](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)
 
 ### Added
-- **System keyring integration** for API key storage
-  - Windows: Credential Manager · Linux: Secret Service · macOS: Keychain
-  - Automatic fallback to local XOR encryption (headless/server)
-- **Provider capability detection** (`validate_provider_capability`)
-  - Validates API key, provider, model, and chat completion before saving
-- **First-run onboarding wizard** (Phase 5.0)
-  - Welcome page with A3 introduction + provider setup wizard
-  - "Demo mode" skip option
-- **User-friendly error messages** (Phase 5.0)
-  - Chinese titles/reasons/solutions for 8 error categories
-- **Linux distribution package builder**
-- **Demo freeze fixtures** (sample profile, trace, resources)
-- **Competition demo UI** (Phase 8.0/9.0)
-  - Architecture overview page with 5-layer diagram
-  - Demo dashboard: KPI cards, agent timeline, explainability chain
-  - One-click competition demo mode (auto-loads fixtures, no API key)
-  - Competition docs: architecture, agent design, memory/RAG, evaluation, demo script, benchmark
-  - Competition-ready README with badges and benchmark table
-  - Release checklist (cross-platform validation)
-- **Database migration fix**
-  - Fixed `is_guest` column missing in existing databases
-  - Tests: 1154/1154 passed (resolved 65 pre-existing failures)
+- **System keyring integration** for API key storage (Windows Credential Manager, Linux Secret Service, macOS Keychain)
+- **Provider capability detection** — validates API key, provider, model, and chat completion before saving
+- **First-run onboarding wizard** with A3 introduction + provider setup flow
+- **User-friendly Chinese error messages** covering 8 error categories with solutions
+- **Linux distribution package** (`A3-Agent-v7.1.0-linux-x64.tar.gz`, 76 MB)
+- **Competition demo UI**: architecture overview, dashboard with KPI cards, one-click pipeline
+- **7-tab Streamlit UI**: 学习助手, 学习画像, 学习空间, AI模型设置, 比赛演示, 仪表盘, 架构概览
+- **Demo freeze fixtures**: sample profile, learning trace, generated resources
+- **Database migration fix**: `is_guest` column for existing databases (resolved 65 failures)
+- **Release validation script** (`scripts/release_check.py`): 32-point automated check
+- **User documentation**: INSTALL.md, USER_GUIDE.md, screenshots guide, Windows validation checklist
 
 ### Changed
 - **Version**: 7.0.0 → 7.1.0
 - **Dependencies**: Added `keyring>=25.0.0`
-- **README**: Competition-ready with badges, architecture diagram, benchmark
-- **Documentation**: 8 new docs in `docs/competition/` and `docs/`
-- **Streamlit UI**: 7 tabs (was 4)
+- **README**: Competition-ready with badges, architecture diagram, benchmark table
+- **Documentation**: 12+ docs across `docs/competition/`, `docs/`, and `demo/fixtures/`
 
 ### Fixed
 - SQLite schema migration: `ALTER TABLE users ADD COLUMN is_guest`
-- Backward compatible: existing XOR-encrypted keys still decrypt
+- Frozen binary `BUNDLE_ROOT`: use `sys._MEIPASS` for `--add-data` files
+- Missing `desktop/` in `--add-data` for PyInstaller build
+
+### Security
+- API keys encrypted in OS credential store (keyring)
+- Automatic fallback to XOR encryption when keyring unavailable
+- `llm.json` permissions set to 0o600 (owner-only)
+
+### Release Assets
+| File | Size | SHA256 |
+|:-----|:-----|:-------|
+| `A3-Agent-v7.1.0-linux-x64.tar.gz` | 76 MB | `d0d8b88e...` |
+| `A3-Agent-v7.1.0-win64.zip` | TBD | TBD |
 
 ### Architecture
 - 0 changes to `src/agents/`, `src/workflow/`, Veritas-Core
+- 1154/1154 tests passing (100%)
 
 ---
 
 ## [v7.0.0] — 2026-07-19
 
 ### Added
-- **User LLM configuration layer** (Phase 4.0)
-  - File-based config with encrypted API key storage
-  - Settings API + Streamlit AI settings tab
-- ProviderFactory: user config > env > mock > rule priority
+- User LLM configuration layer with encrypted API key storage
+- Settings API (`/api/v2/settings/llm`, `/api/v2/settings/test`)
+- Streamlit AI settings tab with provider/model selector
+- ProviderFactory priority: user config > env > mock > rule
 
 ---
 
@@ -65,12 +68,3 @@ All notable changes to the A3-Multi-Agent-System.
 - Data layer (auth, SQLite, learning records)
 - Repository independence (Veritas-Core extraction)
 - Runtime engine, SDK, recovery, lifecycle, CLI
-
----
-
-## Legend
-
-| Icon | Meaning |
-|:-----|:--------|
-| ✅ | Merged to main |
-| 🔴 | In review |
