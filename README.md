@@ -148,6 +148,21 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | [Deployment](docs/competition/deployment.md) | Streamlit Cloud / Render / Docker |
 | [Benchmark](docs/competition/benchmark.md) | Performance benchmarks |
 | [Release Checklist](docs/release-checklist.md) | Cross-platform validation |
+| [Demo Video Script](docs/showcase/demo-video-script.md) | 5-minute recording guide |
+| [Architecture Slides](docs/showcase/architecture-presentation.md) | Slide deck for presentations |
+| [Resume Description](docs/showcase/internship-resume.md) | STAR-format project summary |
+| [Demo Assets](docs/showcase/demo-assets.md) | Screenshots + capture guide |
+
+---
+
+## Showcase
+
+| Asset | Purpose |
+|:------|:--------|
+| 🎬 [Demo Video Script](docs/showcase/demo-video-script.md) | 8-scene recording guide (3-5 min) |
+| 📊 [Architecture Slides](docs/showcase/architecture-presentation.md) | 9-slide presentation deck |
+| 📄 [Internship Resume](docs/showcase/internship-resume.md) | STAR-format project description |
+| 📸 [Demo Assets](docs/showcase/demo-assets.md) | 8 screenshots + capture instructions |
 
 ---
 
