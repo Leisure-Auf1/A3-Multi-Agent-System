@@ -15,7 +15,7 @@ import sys
 # ── Version ───────────────────────────────
 
 APP_NAME = "A3-Agent"
-APP_VERSION = "7.1.0"
+APP_VERSION = "7.1.1"
 
 # ── Ports ─────────────────────────────────
 
