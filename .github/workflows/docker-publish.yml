@@ -9,11 +9,6 @@ on:
     # until production verification stabilizes. Use workflow_dispatch.
   workflow_dispatch:      # Manual trigger
 
-env:
-  # GHCR-only publishing (Docker Hub removed per Post-Release Audit:
-  # DOCKERHUB_* secrets are not configured). Re-add IMAGE_NAME:
-  # leisureauf1/a3-multi-agent-system when Docker Hub login restored.
-
 jobs:
   # ═══════════════════════════════════════════════════════
   # Test gate
