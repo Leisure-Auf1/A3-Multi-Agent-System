@@ -21,10 +21,10 @@ uvicorn src.api.server:app \
     --log-level info &
 API_PID=$!
 
-# Wait for API to be ready
+# Wait for API to be ready (stdlib check — image has no curl)
 echo "      Waiting for API health check..."
 for i in $(seq 1 30); do
-    if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    if python -c "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/health', timeout=2); sys.exit(0 if r.status==200 else 1)" > /dev/null 2>&1; then
         echo "      API is ready."
         break
     fi
