@@ -20,6 +20,7 @@ import uuid
 from src.auth.middleware import require_auth, optional_auth
 from src.auth.models import AuthUser
 from src.agents.tutor_agent import TutorAgent, TutorContext, TutorResponse
+from src.api.dependencies import get_llm_provider
 from src.data.thread_store import (
     new_thread, list_threads, add_message, get_messages, rename_thread,
 )
@@ -68,9 +69,12 @@ class ThreadResponse(BaseModel):
 _tutor_cache: Dict[str, TutorAgent] = {}
 
 
-def _get_tutor() -> TutorAgent:
-    """Get or create a tutor agent instance."""
-    return _tutor_cache.setdefault("default", TutorAgent())
+def _get_tutor(provider=None) -> TutorAgent:
+    """Get or create a tutor agent instance with optional LLM provider."""
+    key = "llm" if provider is not None else "default"
+    if key not in _tutor_cache:
+        _tutor_cache[key] = TutorAgent(llm_provider=provider)
+    return _tutor_cache[key]
 
 
 # ── Routes ─────────────────────────────────────────────────
@@ -84,7 +88,7 @@ def chat_message(
     import time
     start = time.time()
 
-    tutor = _get_tutor()
+    tutor = _get_tutor(provider=get_llm_provider())
     ctx = TutorContext(
         student_profile=req.student_profile,
         learning_goal=req.learning_goal,
@@ -129,7 +133,7 @@ def chat_stream(
     """Streaming SSE chat endpoint. Yields tokens as they arrive."""
 
     def generate():
-        tutor = _get_tutor()
+        tutor = _get_tutor(provider=get_llm_provider())
         ctx = TutorContext(
             student_profile=req.student_profile,
             learning_goal=req.learning_goal,
