@@ -46,6 +46,7 @@ from desktop.config import (
     BROWSER_OPEN_DELAY, SHUTDOWN_TIMEOUT,
     IS_WIN, USER_DATA_DIR, BUNDLE_ROOT,
     _CREATE_NO_WINDOW,
+    verify_bundle_integrity,
 )
 
 # ── Logging ───────────────────────────────
@@ -141,6 +142,11 @@ def start_service(args: list[str], name: str) -> subprocess.Popen | None:
     """Start a child service process."""
     log_path = os.path.join(LOG_DIR, "subprocess.log")
     try:
+        # Verify cwd exists before spawning — prevents pathlib/os.getcwd()
+        # crashes inside child when bundle has been moved/deleted at runtime.
+        if not os.path.isdir(BUNDLE_ROOT):
+            log.error("Bundle root does not exist — cannot start %s: %s", name, BUNDLE_ROOT)
+            return None
         with open(log_path, "a") as log_fp:
             log_fp.write(f"\n--- {name} started at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n")
             proc = subprocess.Popen(
@@ -217,8 +223,26 @@ def main() -> None:
     # ═══════════ Normal launcher ═══════════
     log.info("=" * 50)
     log.info("  %s v%s — Desktop Launcher", APP_NAME, APP_VERSION)
-    log.info("  Bundle: %s", BUNDLE_ROOT)
-    log.info("  User data: %s", USER_DATA_DIR)
+    log.info("  Bundle root : %s", BUNDLE_ROOT)
+    log.info("  Executable  : %s", sys.executable)
+    log.info("  Internal    : %s", os.path.join(BUNDLE_ROOT, "streamlit/static/index.html"))
+    log.info("  User data   : %s", USER_DATA_DIR)
+
+    # ── Bundle integrity check ─────────────
+    bundle_ok, bundle_missing = verify_bundle_integrity()
+    if bundle_ok:
+        log.info("  Integ check : PASS")
+    else:
+        log.error("  Integ check : FAILED — %d missing", len(bundle_missing))
+        for item in bundle_missing:
+            log.error("    Missing: %s", item)
+        log.error("")
+        log.error("A3-Agent installation appears corrupted.")
+        log.error("Please re-download from the official release:")
+        log.error("  https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases")
+        log.error("")
+        log.info("=" * 50)
+        sys.exit(1)
     log.info("=" * 50)
 
     processes: dict[str, subprocess.Popen | None] = {"api": None, "ui": None}

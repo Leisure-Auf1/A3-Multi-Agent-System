@@ -183,6 +183,7 @@ Or click **🎭 Demo Mode** to skip configuration entirely.
 | [Screenshots](docs/screenshots.md) | UI capture guide for demos |
 | [Release Notes](docs/RELEASE_NOTES_v7.1.0.md) | v7.1.0 release notes |
 | [Windows Validation](docs/windows-release-validation.md) | Windows build + E2E checklist |
+| [Technical Blog](docs/blog/) | 6-part engineering deep-dive |
 
 ---
 

@@ -5,6 +5,12 @@ __pycache__/
 dist/
 build/
 
+# Release artifacts (keep .zip/.sha256 committed, ignore extracted dirs and linux packages)
+release/A3-Agent-v*
+
+# Test cache
+.pytest_cache/
+
 # Virtual environment
 .venv/
 
