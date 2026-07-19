@@ -1,0 +1,68 @@
+{
+  "session_id": "demo_session_01",
+  "student_id": "demo_student_01",
+  "resources": [
+    {
+      "id": "res-001",
+      "type": "documentation",
+      "title": "Introduction to Multi-Agent Systems",
+      "difficulty": "beginner",
+      "estimated_minutes": 30,
+      "reason": "Build foundational understanding of agent architectures",
+      "content": "## Multi-Agent Systems\n\nA multi-agent system (MAS) is a collection of autonomous agents that interact...",
+      "language": "en"
+    },
+    {
+      "id": "res-002",
+      "type": "code",
+      "title": "Building Your First Agent with Veritas-Core",
+      "difficulty": "intermediate",
+      "estimated_minutes": 45,
+      "reason": "Hands-on practice for code-sandbox learning style",
+      "content": "```python\nfrom veritas.core import AgentRuntime\n\nclass MyAgent:\n    def run(self, task):\n        return f\"Processing: {task}\"\n\nruntime = AgentRuntime()\nruntime.register(MyAgent())\n```",
+      "language": "python"
+    },
+    {
+      "id": "res-003",
+      "type": "exercise",
+      "title": "Agent Communication Patterns Quiz",
+      "difficulty": "intermediate",
+      "estimated_minutes": 20,
+      "reason": "Reinforce EventBus and message-passing concepts",
+      "content": "Q1: What pattern does A3's EventBus implement?\nA) Observer\nB) Mediator\nC) Pub-Sub\nD) Pipeline",
+      "language": "en"
+    },
+    {
+      "id": "res-004",
+      "type": "documentation",
+      "title": "A3 Agent Pipeline Architecture",
+      "difficulty": "advanced",
+      "estimated_minutes": 40,
+      "reason": "Deep dive into the 9-agent pipeline",
+      "content": "## Pipeline Overview\n\nProfileAgent → PlannerAgent → ResourceAgent → ReviewAgent → ReflectionAgent",
+      "language": "en"
+    },
+    {
+      "id": "res-005",
+      "type": "exercise",
+      "title": "Debugging Multi-Agent Pipelines",
+      "difficulty": "advanced",
+      "estimated_minutes": 35,
+      "reason": "Address error_prone_bias: magic_syntax_blind",
+      "content": "## Exercise\n\nFix the broken pipeline below. The ReflectionAgent is returning empty summaries...",
+      "language": "en"
+    },
+    {
+      "id": "res-006",
+      "type": "documentation",
+      "title": "Visual Guide: Agent State Machines",
+      "difficulty": "beginner",
+      "estimated_minutes": 25,
+      "reason": "Visual diagram for visual_dominant cognitive style",
+      "content": "```\n[IDLE] → [RUNNING] → [SUCCESS]\n                  → [ERROR] → [RETRY] → [RUNNING]\n                            → [FALLBACK] → [DONE]\n```",
+      "language": "en"
+    }
+  ],
+  "total_resources": 6,
+  "generated_at": "2026-07-19T12:00:02.000Z"
+}

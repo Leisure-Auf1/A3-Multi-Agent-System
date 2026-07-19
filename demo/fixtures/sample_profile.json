@@ -1,0 +1,16 @@
+{
+  "student_id": "demo_student_01",
+  "profile": {
+    "knowledge_base": "mid_level",
+    "cognitive_style": "visual_dominant",
+    "error_prone_bias": "magic_syntax_blind",
+    "learning_pace": "fast_track",
+    "interaction_preference": "code_sandbox",
+    "frustration_threshold": "medium",
+    "confidence": 0.88,
+    "source": "llm",
+    "reasoning": "学生有 Python 基础，偏好视觉化学习，希望通过实战快速上手 Multi-Agent 系统开发。容易在语法糖上出错，建议加代码对比练习。"
+  },
+  "learning_goal": "I am a sophomore network engineering student. I have basic Python skills, prefer visual learning, and want to learn Multi-Agent AI system development. I get frustrated easily — please be patient and guide step by step.",
+  "timestamp": "2026-07-19T12:00:00Z"
+}
