@@ -168,18 +168,18 @@ def render_settings_tab() -> None:
             st.session_state.settings_api_key = ""
         else:
             st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
-            api_key = st.text_input(
+            api_key_input = st.text_input(
                 "API Key",
                 type="password",
                 placeholder="输入你的 API Key...",
                 label_visibility="collapsed",
                 key="settings_api_key_input",
             )
-            if api_key:
-                st.session_state.settings_api_key = api_key
-            elif current.provider == provider and not st.session_state.settings_api_key:
-                # User hasn't typed — show placeholder hint
-                pass
+            # Only capture non-empty input.  Password fields clear on Streamlit
+            # rerun (e.g. after clicking "Test Connection") — never overwrite
+            # the session-state key with an empty string from the cleared widget.
+            if api_key_input:
+                st.session_state.settings_api_key = api_key_input
 
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
 
@@ -188,7 +188,7 @@ def render_settings_tab() -> None:
 
     with btn_col1:
         if st.button("🔍 测试连接", use_container_width=True, type="secondary"):
-            with st.spinner("正在测试连接..."):
+            with st.spinner(f"正在连接 {PROVIDER_LABELS.get(provider, provider)}..."):
                 result = _test_connection(provider, st.session_state.settings_model, st.session_state.settings_api_key)
                 st.session_state.settings_test_result = result
                 st.session_state.settings_saved = False
@@ -213,10 +213,18 @@ def render_settings_tab() -> None:
         if test_result["success"]:
             st.success(
                 f"✅ 连接成功！延迟: {test_result['latency']:.2f}s "
-                f"(Provider: {test_result['provider']}, Model: {test_result['model']})"
+                f"({PROVIDER_LABELS.get(test_result['provider'], test_result['provider'])}"
+                f" · {test_result['model']})"
             )
+            st.caption("连接已验证，点击「保存配置」以保存设置。")
         else:
-            st.error(f"❌ 连接失败: {test_result['error']}")
+            error_msg = test_result.get("error", "未知错误")
+            st.error(f"❌ 连接失败: {error_msg}")
+            # Show troubleshooting hints
+            with st.expander("💡 故障排除建议"):
+                hints = _get_error_hints(error_msg)
+                for hint in hints:
+                    st.markdown(f"- {hint}")
 
     elif st.session_state.settings_saved:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
@@ -322,3 +330,25 @@ def _test_connection(provider: str, model: str, api_key: str) -> dict:
             "latency": round(latency, 2),
             "error": str(e),
         }
+
+def _get_error_hints(error_msg: str) -> list[str]:
+    """Return troubleshooting hints based on error message content."""
+    hints = []
+    error_lower = error_msg.lower()
+
+    if "api key" in error_lower or "401" in error_msg or "unauthorized" in error_lower:
+        hints.append("API Key 无效或格式错误 — 请检查 Key 是否完整复制")
+        hints.append("确认 Key 以 'sk-' 开头且在提供商控制台处于激活状态")
+    elif "timeout" in error_lower or "connect" in error_lower:
+        hints.append("网络连接超时 — 请检查网络或代理设置")
+        hints.append("如果使用代理，确认代理地址和端口正确")
+    elif "rate" in error_lower or "429" in error_msg:
+        hints.append("请求频率过高 — 请稍后再试")
+    elif "model" in error_lower:
+        hints.append("模型不可用 — 尝试选择其他模型")
+    else:
+        hints.append("请确认 API Key 格式正确且网络连通")
+        hints.append(f"错误详情: {error_msg}")
+
+    hints.append("如果问题持续，请尝试 Demo 模式 (Mock) 体验系统功能")
+    return hints
