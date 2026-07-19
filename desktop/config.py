@@ -59,12 +59,12 @@ def get_bundle_root() -> str:
     """
     Return the PyInstaller bundle root directory.
 
-    In frozen mode:  directory containing the .exe (for --onedir).
+    In frozen mode:  sys._MEIPASS (the _internal/ directory for --onedir).
     In dev mode:     project root (parent of this desktop/ directory).
     """
     if getattr(sys, "frozen", False):
-        # --onedir: sys.executable is dist/A3-Agent/A3-Agent(.exe)
-        return os.path.dirname(sys.executable)
+        # --onedir: data files live in _internal/
+        return getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
     # Dev mode: desktop/config.py → desktop/ → project root
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
