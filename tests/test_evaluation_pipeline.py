@@ -30,6 +30,24 @@ from src.api.server import app
 
 client = TestClient(app)
 
+
+# ── Auth helper ──
+_AUTH_EP = None
+
+
+def _auth_ep() -> dict:
+    global _AUTH_EP
+    if _AUTH_EP is None:
+        client.post("/api/v2/auth/register", json={
+            "email": "ep_eval@a3.local", "password": "testpass", "display_name": "EP Eval",
+        })
+        resp = client.post("/api/v2/auth/login", json={
+            "email": "ep_eval@a3.local", "password": "testpass",
+        })
+        assert resp.status_code == 200
+        _AUTH_EP = {"Authorization": f"Bearer {resp.json()['token']}"}
+    return _AUTH_EP
+
 GOAL = "学习 Python Agent 开发和 EventBus 架构"
 
 
@@ -242,6 +260,7 @@ class TestAPIResponse:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "rule"},
+            headers=_auth_ep(),
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -255,6 +274,7 @@ class TestAPIResponse:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "mock"},
+            headers=_auth_ep(),
         )
         data = resp.json()
         expl = data["evaluation"].get("explanations", [])

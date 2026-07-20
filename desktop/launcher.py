@@ -1,5 +1,5 @@
 """
-A3-Agent v7.1.0 — Desktop Launcher (PyInstaller Entry Point)
+A3-Agent v1.0.0 — Desktop Launcher (PyInstaller Entry Point)
 ===============================================================
 
 Child-mode dispatch launcher for FastAPI + Streamlit in PyInstaller

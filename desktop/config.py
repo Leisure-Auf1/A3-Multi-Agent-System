@@ -1,5 +1,5 @@
 """
-A3-Agent v7.1.0 — Desktop Launcher Configuration
+# A3-Agent v1.0.0 — Desktop Launcher Configuration
 
 Platform detection, paths, ports, and timeouts for the PyInstaller
 frozen environment (Windows) or development mode (Linux).
@@ -15,7 +15,7 @@ import sys
 # ── Version ───────────────────────────────
 
 APP_NAME = "A3-Agent"
-APP_VERSION = "7.1.1"
+APP_VERSION = "1.0.0"
 
 # ── Ports ─────────────────────────────────
 

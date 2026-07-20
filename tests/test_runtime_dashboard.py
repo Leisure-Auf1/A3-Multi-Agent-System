@@ -36,6 +36,29 @@ from src.api.server import app
 client = TestClient(app)
 
 
+# ── Auth helper ──
+
+def _register_and_login(email: str = "rt_dash@a3.local") -> dict:
+    client.post("/api/v2/auth/register", json={
+        "email": email, "password": "testpass", "display_name": "RT Dash Test",
+    })
+    resp = client.post("/api/v2/auth/login", json={
+        "email": email, "password": "testpass",
+    })
+    assert resp.status_code == 200
+    return {"Authorization": f"Bearer {resp.json()['token']}"}
+
+
+_AUTH = None
+
+
+def _auth() -> dict:
+    global _AUTH
+    if _AUTH is None:
+        _AUTH = _register_and_login()
+    return _AUTH
+
+
 # ──────────────────────────────────────────────
 # 1. RuntimeSnapshot
 # ──────────────────────────────────────────────
@@ -172,7 +195,7 @@ class TestRuntimeAPI:
         bus = RuntimeBus.get_bus()
         bus.emit(RuntimeEvent(event_type="state_enter", state=AgentState.INIT))
 
-        resp = client.get("/api/v1/runtime/snapshot")
+        resp = client.get("/api/v1/runtime/snapshot", headers=_auth())
         assert resp.status_code == 200
         data = resp.json()
         assert "current_state" in data
@@ -181,7 +204,7 @@ class TestRuntimeAPI:
 
     def test_metrics_endpoint(self):
         RuntimeBus.init()
-        resp = client.get("/api/v1/runtime/metrics")
+        resp = client.get("/api/v1/runtime/metrics", headers=_auth())
         assert resp.status_code == 200
         data = resp.json()
         assert "total_runs" in data
@@ -193,7 +216,7 @@ class TestRuntimeAPI:
         bus = RuntimeBus.get_bus()
         bus.emit(RuntimeEvent(event_type="state_enter", state=AgentState.PROFILE))
 
-        resp = client.get("/api/v1/runtime/timeline")
+        resp = client.get("/api/v1/runtime/timeline", headers=_auth())
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -205,7 +228,7 @@ class TestRuntimeAPI:
         bus = RuntimeBus.get_bus()
         bus.emit(RuntimeEvent(event_type="evaluation", metadata={"score": 77}))
 
-        resp = client.get("/api/v1/runtime/events?limit=5")
+        resp = client.get("/api/v1/runtime/events?limit=5", headers=_auth())
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -217,7 +240,7 @@ class TestRuntimeAPI:
         bus = RuntimeBus.get_bus()
         bus.emit(RuntimeEvent(event_type="state_enter", state=AgentState.EVALUATE))
 
-        resp = client.get("/api/v1/runtime/state")
+        resp = client.get("/api/v1/runtime/state", headers=_auth())
         assert resp.status_code == 200
         data = resp.json()
         assert "current_state" in data
@@ -225,14 +248,15 @@ class TestRuntimeAPI:
 
     def test_reset_endpoint(self):
         RuntimeBus.init()
-        resp = client.post("/api/v1/runtime/reset")
+        resp = client.post("/api/v1/runtime/reset", headers=_auth())
         assert resp.status_code == 200
-        assert resp.json() == {"status": "reset"}
+        data = resp.json()
+        assert data["status"] == "reset"
 
     def test_all_endpoints_respond(self):
         """Every runtime endpoint returns 200."""
         RuntimeBus.init()
-
+        h = _auth()
         endpoints = [
             ("GET", "/api/v1/runtime/snapshot"),
             ("GET", "/api/v1/runtime/metrics"),
@@ -243,10 +267,16 @@ class TestRuntimeAPI:
         ]
         for method, path in endpoints:
             if method == "GET":
-                resp = client.get(path)
+                resp = client.get(path, headers=h)
             else:
-                resp = client.post(path)
+                resp = client.post(path, headers=h)
             assert resp.status_code == 200, f"{method} {path} returned {resp.status_code}"
+
+    def test_no_token_returns_401(self):
+        """Unauthenticated runtime queries must return 401."""
+        RuntimeBus.init()
+        resp = client.get("/api/v1/runtime/state")
+        assert resp.status_code == 401
 
 
 # ──────────────────────────────────────────────

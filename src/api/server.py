@@ -28,6 +28,7 @@ from src.api.routes import learning_router, runtime_router, auth_router  # Phase
 from src.api.v2 import (
     chat_router, profile_router, learning_v2_router,
     resources_router, evaluation_router, settings_router,
+    users_router, pipeline_router,  # Phase 9.5-B / 10.2
 )
 
 app = FastAPI(
@@ -62,6 +63,8 @@ app.include_router(learning_v2_router)
 app.include_router(resources_router)
 app.include_router(evaluation_router)
 app.include_router(settings_router)  # Phase 4.0 — User LLM settings
+app.include_router(users_router)     # Phase 9.5-B — Multi-User Platform
+app.include_router(pipeline_router)  # Phase 10.2 — Unified Pipeline
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])

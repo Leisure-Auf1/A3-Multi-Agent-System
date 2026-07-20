@@ -88,9 +88,12 @@ class ResourceItem:
     difficulty: str = "beginner"      # beginner | intermediate | advanced
     estimated_minutes: int = 30       # 预计学习时间
     url: str = ""                     # 资源链接 (可选)
+    # LLM-enriched fields (added by _enrich_with_llm)
+    personalized_description: str = ""  # 个性化描述 (LLM 生成)
+    learning_tips: str = ""             # 学习建议 (LLM 生成)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "type": self.type,
             "title": self.title,
             "reason": self.reason,
@@ -98,6 +101,11 @@ class ResourceItem:
             "estimated_minutes": self.estimated_minutes,
             "url": self.url,
         }
+        if self.personalized_description:
+            d["personalized_description"] = self.personalized_description
+        if self.learning_tips:
+            d["learning_tips"] = self.learning_tips
+        return d
 
 
 @dataclass
@@ -147,7 +155,7 @@ class ResourceAgent:
         self._llm_provider = None  # LLMProvider (reserved for future LLM enrichment)
 
     def set_llm_provider(self, provider: Any) -> None:
-        """注入 LLMProvider (当前为 no-op，预留未来 LLM 增强资源推荐)。"""
+        """注入 LLMProvider 以启用个性化资源增强 (reasoning/description/tips)。"""
         self._llm_provider = provider
 
     # ── 主入口 ────────────────────────────────
@@ -157,6 +165,7 @@ class ResourceAgent:
         profile: Dict[str, str],
         goal: str = "",
         knowledge_gaps: Optional[List[str]] = None,
+        student_goal: Any = None,  # Phase 8.3-D2: StudentGoal
     ) -> ResourceRecommendation:
         """
         根据画像和目标推荐资源.
@@ -165,6 +174,7 @@ class ResourceAgent:
             profile: 六维画像字典 (或 DynamicProfile.to_dict())
             goal: 学习目标描述
             knowledge_gaps: 知识缺口列表 (概念名)
+            student_goal: Phase 8.3-D2 — StudentGoal, 用于职业/考试导向推荐
 
         Returns:
             ResourceRecommendation
@@ -188,19 +198,75 @@ class ResourceAgent:
             difficulty=difficulty,
         )
 
+        # Phase 8.3-D2 — Goal-driven resource augmentation
+        if student_goal is not None:
+            goal_category = getattr(student_goal, "category", "")
+            goal_target = getattr(student_goal, "target", "")
+            goal_meta = getattr(student_goal, "metadata", {})
+
+            # Career-oriented: add practical project resources
+            if goal_category == "career":
+                resources.append(ResourceItem(
+                    type="project",
+                    title=f"🎯 职业实战: {goal_target} 项目演练",
+                    reason=f"瞄准 {goal_target} 岗位要求, 综合实践核心技能",
+                    difficulty=difficulty,
+                    estimated_minutes=90,
+                ))
+                resources.append(ResourceItem(
+                    type="article",
+                    title=f"📋 {goal_target} 面试准备指南",
+                    reason="了解目标岗位的常见面试题和技能要求",
+                    difficulty="intermediate",
+                    estimated_minutes=20,
+                ))
+            # Exam-oriented: add mock exam and review resources
+            elif goal_category == "exam":
+                resources.append(ResourceItem(
+                    type="exercise",
+                    title=f"📝 {goal_target} 模拟考试",
+                    reason="模拟真实考试环境, 检测准备程度",
+                    difficulty=difficulty,
+                    estimated_minutes=60,
+                ))
+                resources.append(ResourceItem(
+                    type="article",
+                    title=f"📋 {goal_target} 考点梳理",
+                    reason="系统回顾考试涉及的所有知识点",
+                    difficulty=difficulty,
+                    estimated_minutes=30,
+                ))
+
+        # LLM 增强: 根据画像动态生成 reasoning/description/tips
+        # 失败时静默回退到 rule resources（不影响主流程）
+        reasoning = ""
+        if self._llm_provider is not None:
+            try:
+                resources, reasoning = self._enrich_with_llm(
+                    resources, profile, goal, knowledge_gaps
+                )
+            except Exception:
+                pass  # fallback: keep rule resources + rule reasoning
+
+        # 使用 LLM reasoning 或回退到规则 reasoning
+        if not reasoning:
+            reasoning = self._generate_reasoning(
+                profile=profile, goal=goal, gaps=knowledge_gaps, resources=resources
+            )
+
         # 计算总时长
         total_minutes = sum(r.estimated_minutes for r in resources)
 
-        # 生成推理说明
-        reasoning = self._generate_reasoning(
-            profile=profile,
-            goal=goal,
-            gaps=knowledge_gaps,
-            resources=resources,
-        )
+        # Phase 8.3-D2 — use student_goal target as goal label
+        effective_goal = goal
+        if student_goal is not None:
+            goal_target = getattr(student_goal, "target", "")
+            goal_category = getattr(student_goal, "category", "")
+            if goal_target:
+                effective_goal = f"🎯 {goal_target}" if not goal else f"🎯 {goal} → {goal_target}"
 
         return ResourceRecommendation(
-            goal=goal,
+            goal=effective_goal,
             profile_summary=f"{kb_level} / {cognitive} / {pace}",
             resources=resources,
             total_minutes=total_minutes,
@@ -365,3 +431,82 @@ class ResourceAgent:
             parts.append("策略: 优先文档和分步教程, 匹配线性阅读者")
 
         return " | ".join(parts)
+
+
+    # ── LLM Enhancement (Phase 8.2-A) ────────
+
+    def _enrich_with_llm(
+        self,
+        resources: list,
+        profile: dict,
+        goal: str,
+        knowledge_gaps: list,
+    ):
+        """Enrich rule-selected resources with LLM-generated reasoning,
+        personalized descriptions, and learning tips.
+
+        Operates on existing resources only — never changes count/type/difficulty.
+        Any failure returns original resources silently (no exception propagation).
+
+        Returns:
+            (enriched_resources, reasoning_str)
+        """
+        if not resources or self._llm_provider is None:
+            return resources, ""
+
+        kb = profile.get("knowledge_base", "junior_dev")
+        cog = profile.get("cognitive_style", "visual_dominant")
+        pace = profile.get("learning_pace", "normal")
+
+        resource_list = []
+        for i, r in enumerate(resources):
+            resource_list.append(
+                f"{i+1}. [{r.type}] {r.title} (difficulty: {r.difficulty}, {r.estimated_minutes}min)"
+            )
+        resource_text = "\n".join(resource_list)
+        gaps_text = ", ".join(knowledge_gaps[:8]) if knowledge_gaps else "none"
+
+        prompt = (
+            f"You are a learning resource advisor. Based on the learner profile "
+            f"below, personalize the recommended resources for goal: {goal}.\n\n"
+            f"[Learner Profile]\n"
+            f"  knowledge_base: {kb}\n"
+            f"  cognitive_style: {cog}\n"
+            f"  learning_pace: {pace}\n"
+            f"  knowledge_gaps: {gaps_text}\n\n"
+            f"[Recommended Resources]\n{resource_text}\n\n"
+            f"For each resource, generate 2 fields (JSON format):\n"
+            f"  personalized_description: one sentence why this resource suits this learner\n"
+            f"  learning_tips: one specific study tip (method/focus/sequence)\n\n"
+            f"Also output a reasoning field summarizing the overall strategy.\n\n"
+            f"Output pure JSON:\n"
+            f'{{"resources":[{{"index":1,"personalized_description":"...","learning_tips":"..."}}],"reasoning":"..."}}'
+        )
+
+        try:
+            import json as _json
+            resp = self._llm_provider.generate(prompt)
+            content = resp.content if hasattr(resp, "content") else str(resp)
+
+            start = content.find("{")
+            end = content.rfind("}") + 1
+            if start < 0 or end <= start:
+                return resources, ""
+            data = _json.loads(content[start:end])
+
+            llm_reasoning = data.get("reasoning", "")
+            llm_items = data.get("resources", [])
+
+            enriched = list(resources)
+            for item in llm_items:
+                idx = item.get("index", 0) - 1
+                if 0 <= idx < len(enriched):
+                    enriched[idx].personalized_description = item.get(
+                        "personalized_description", ""
+                    )
+                    enriched[idx].learning_tips = item.get("learning_tips", "")
+
+            return enriched, llm_reasoning
+
+        except Exception:
+            return resources, ""

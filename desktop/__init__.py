@@ -1,1 +1,1 @@
-# A3-Agent v7.1.0 — Desktop packaging layer
+# A3-Agent v1.0.0 — Desktop packaging layer

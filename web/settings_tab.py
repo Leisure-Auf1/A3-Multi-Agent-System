@@ -391,3 +391,219 @@ def _get_error_hints(error_msg: str) -> list[str]:
 
     hints.append("如果问题持续，请尝试 Demo 模式 (Mock) 体验系统功能")
     return hints
+
+
+# ═══════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════
+# Model Capability & Registry Display (Phase 8.3-E2)
+# ═══════════════════════════════════════════════════════════════
+
+def _render_capability_display(model_info):
+    """Render capability badges for a single model."""
+    from src.config.model_capability import CAPABILITY_ICONS, CAPABILITY_LABELS, ModelCapability
+
+    caps = []
+    for cap in ModelCapability:
+        if cap in model_info.capabilities and cap in CAPABILITY_LABELS:
+            icon = CAPABILITY_ICONS.get(cap, "?")
+            label = CAPABILITY_LABELS[cap]
+            caps.append(f"{icon}{label}")
+    return " | ".join(caps) if caps else ""
+
+
+def _render_model_registry_list():
+    """Render the full model registry list in settings tab."""
+    from src.config.model_registry import list_models
+    from src.config.model_capability import CAPABILITY_ICONS, CAPABILITY_LABELS
+
+    models = list_models()
+    if not models:
+        st.caption("No models registered")
+        return
+
+    for m in models:
+        cap_all = [
+            cap for cap in m.capabilities.__class__
+            if cap in m.capabilities and cap in CAPABILITY_LABELS
+        ]
+        cap_supported = [
+            cap for cap in cap_all
+            if cap in m.capabilities
+        ]
+        cap_unsupported = [cap for cap in cap_all if cap not in m.capabilities]
+
+        sup_count = len(cap_supported)
+        total_count = sup_count + len(cap_unsupported)
+
+        with st.container(border=True):
+            c1, c2 = st.columns([3, 1])
+            c1.markdown(f"**{m.display_name}**")
+            c2.caption(f"\U0001f4ca {sup_count}/{total_count} \u80fd\u529b")
+
+            st.caption(
+                f"`{m.provider}` \u00b7 context: {m.context_length // 1000}K"
+                + (f" \u00b7 streaming" if m.supports_streaming else "")
+                + (f" \u00b7 tags: {', '.join(m.tags)}" if m.tags else "")
+            )
+
+            chips = []
+            for cap in cap_all:
+                icon = CAPABILITY_ICONS.get(cap, "?")
+                label = CAPABILITY_LABELS.get(cap, cap.name)
+                if cap in m.capabilities:
+                    chips.append(f"\u2705{icon}{label}")
+            st.caption(" | ".join(chips[:6]) + (" ..." if len(chips) > 6 else ""))
+
+# Model Status Page (Phase 9.2)
+# ═══════════════════════════════════════════════════════════════
+
+def render_model_status_page():
+    """Render the model connection status page."""
+    from src.config.secrets import get_config_summary
+
+    st.markdown("### 🌐 模型连接状态")
+    st.caption("显示所有支持的 AI 模型 Provider 的 API Key 配置状态")
+
+    summary = get_config_summary()
+
+    for provider_name, info in summary.items():
+        emoji = info["emoji"]
+        label = info["label"]
+        configured = info["configured"]
+        env_var = info["env_var"]
+
+        if configured:
+            status_icon = "🟢"
+            status_text = "已配置"
+            detail = f'Key: {info["key_preview"]}'
+        else:
+            status_icon = "⚪"
+            status_text = "未配置"
+            detail = f"缺少环境变量: `{env_var}`"
+
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([1, 3, 2])
+            with c1:
+                st.markdown(f"### {emoji}")
+            with c2:
+                st.markdown(f"**{label}**")
+                st.caption(detail)
+            with c3:
+                st.markdown(f"{status_icon} **{status_text}**")
+
+    configured_count = sum(1 for v in summary.values() if v["configured"])
+    total_count = len(summary)
+    st.divider()
+    tail = " — 全部就绪 ✅" if configured_count == total_count else " — 设置环境变量后重启应用"
+    st.caption(f"📊 已配置 {configured_count}/{total_count} 个 Provider{tail}")
+
+    with st.expander("💡 如何配置 API Key？"):
+        st.markdown('''**方式1: 环境变量**
+```
+export OPENAI_API_KEY="sk-your-key"
+export DEEPSEEK_API_KEY="sk-your-key"
+```
+**方式2: 设置页** — 在「AI模型设置」标签页中选择 Provider，输入 API Key 并保存。
+
+**支持的环境变量:**
+- OPENAI_API_KEY — OpenAI GPT
+- ANTHROPIC_API_KEY — Anthropic Claude
+- GOOGLE_API_KEY — Google Gemini
+- DASHSCOPE_API_KEY — 阿里通义千问
+- DEEPSEEK_API_KEY — DeepSeek
+- MOONSHOT_API_KEY — Moonshot Kimi
+- XAI_API_KEY — xAI Grok
+- SPARK_API_KEY — 讯飞星火
+''')
+
+
+# ═══════════════════════════════════════════════════════════════
+# Orchestrator Dashboard (Phase 9.4-A)
+# ═══════════════════════════════════════════════════════════════
+
+def render_orchestrator_dashboard():
+    """Render the model orchestration dashboard in settings."""
+    from src.orchestration.analytics import DecisionAnalytics
+    from src.orchestration.runtime import get_runtime
+
+    st.markdown("### \U0001f916 \u6a21\u578b\u8c03\u5ea6\u4e2d\u5fc3")
+    st.caption("\u663e\u793a Orchestrator \u7684\u6a21\u578b\u9009\u62e9\u51b3\u7b56\u3001\u5386\u53f2\u7edf\u8ba1\u548c\u8fd0\u884c\u6307\u6807")
+
+    # Runtime metrics
+    runtime = get_runtime()
+    metrics = runtime.get_metrics()
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("\u8bf7\u6c42\u6570", metrics.get("total_calls", 0))
+    with col2:
+        st.metric("\u6210\u529f\u7387", f"{metrics.get('success_rate', 0)}%")
+    with col3:
+        st.metric("Fallback\u7387", f"{metrics.get('fallback_rate', 0)}%")
+    with col4:
+        st.metric("\u5e73\u5747\u5ef6\u8fdf", f"{metrics.get('avg_latency_ms', 0)}ms")
+
+    if metrics.get("total_cost", 0) > 0:
+        st.caption(f"\U0001f4b0 \u4f30\u7b97\u6210\u672c: ${metrics['total_cost']:.4f}")
+
+    st.divider()
+
+    # Last decision
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("**\U0001f4cb \u5386\u53f2\u7edf\u8ba1**")
+        # Try analytics for a demo student
+        try:
+            analytics = DecisionAnalytics("demo-student")
+            summary = analytics.get_summary()
+            if summary["total_requests"] > 0:
+                st.caption(f"\u8bf7\u6c42: {summary['total_requests']} | Fallback: {summary['fallback_rate']}%")
+                if summary.get("models"):
+                    model_text = " | ".join(
+                        f"{m}: {c}" for m, c in list(summary["models"].items())[:3]
+                    )
+                    st.caption(f"\u6a21\u578b: {model_text}")
+                if summary.get("task_distribution"):
+                    task_text = " | ".join(
+                        f"{t}: {c}" for t, c in list(summary["task_distribution"].items())[:5]
+                    )
+                    st.caption(f"\u4efb\u52a1: {task_text}")
+            else:
+                st.caption("\u6682\u65e0\u5386\u53f2\u6570\u636e")
+        except Exception:
+            st.caption("\u6682\u65e0\u5386\u53f2\u6570\u636e")
+
+
+# User Model Preferences Display (Phase 9.4-B)
+
+def render_model_preferences():
+    """Render user model preference display in settings."""
+    from src.orchestration.user_preferences import UserPreferenceManager
+
+    st.markdown("### User Model Preferences")
+    st.caption("Models adapt to your usage patterns over time")
+
+    # Try loading preferences for a demo student
+    try:
+        mgr = UserPreferenceManager("demo-student")
+        prefs = mgr.get_all_preferences()
+
+        if not prefs:
+            st.info("No learned preferences yet. Use the AI Teacher and rate responses to build preferences.")
+        else:
+            for task_type, tp in sorted(prefs.items()):
+                stars = int(tp.quality_score * 5)
+                star_str = chr(0x2B50) * stars
+                with st.container(border=True):
+                    c1, c2 = st.columns([3, 1])
+                    with c1:
+                        st.markdown(f"**{task_type}**")
+                        st.caption(f"Model: `{tp.preferred_model}` | Provider: `{tp.preferred_provider}`")
+                    with c2:
+                        st.markdown(f"{star_str}")
+                    st.caption(f"Used {tp.use_count} times | Quality: {tp.quality_score:.0%}")
+            st.divider()
+            st.caption("Preferences are learned from your ratings and usage patterns.")
+    except Exception:
+        st.caption("Preferences not available")

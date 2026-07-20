@@ -1,0 +1,38 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels: ['feature', 'enhancement']
+  - title: '🐛 Bug Fixes'
+    labels: ['fix', 'bug']
+  - title: '🔒 Security'
+    labels: ['security']
+  - title: '📚 Documentation'
+    labels: ['documentation', 'docs']
+  - title: '🧪 Testing'
+    labels: ['test', 'testing']
+  - title: '🏗️ Infrastructure'
+    labels: ['ci', 'build', 'docker']
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## Verification
+
+  - Tests: 2640 passed, 0 failures
+  - `make test` → all green
+
+  ## Downloads
+
+  | Platform | File |
+  |:---------|:-----|
+  | Windows | `A3-Agent-v$RESOLVED_VERSION-win64.zip` |
+  | Linux | `A3-Agent-v$RESOLVED_VERSION-linux-x64.tar.gz` |
+
+  ## Documentation
+
+  - [Getting Started](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/blob/main/docs/user/getting-started.md)
+  - [API Reference](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/blob/main/docs/developer/api.md)
+  - [Changelog](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/blob/main/docs/release/changelog.md)

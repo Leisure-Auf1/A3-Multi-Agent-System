@@ -27,6 +27,7 @@ from .data_providers import (
     get_evaluation_data,
     get_improvement_timeline,
     get_trust_safety_data,
+    get_goal_progress,  # Phase 8.3-D2
     get_demo_all,
 )
 
@@ -38,6 +39,7 @@ from .components import (
     render_evaluation_dashboard,
     render_improvement_timeline,
     render_trust_safety_panel,
+    render_goal_progress,  # Phase 8.3-D2
 )
 
 __all__ = [
@@ -49,6 +51,7 @@ __all__ = [
     "get_evaluation_data",
     "get_improvement_timeline",
     "get_trust_safety_data",
+    "get_goal_progress",  # Phase 8.3-D2
     "get_demo_all",
     # Rendering components
     "render_system_overview",
@@ -58,4 +61,5 @@ __all__ = [
     "render_evaluation_dashboard",
     "render_improvement_timeline",
     "render_trust_safety_panel",
+    "render_goal_progress",  # Phase 8.3-D2
 ]

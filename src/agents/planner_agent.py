@@ -382,6 +382,8 @@ class PlannerAgent:
         topic_filter: Optional[List[str]] = None,
         student_memory: Any = None,       # StudentMemory (optional)
         goal_text: str = "",              # 学生目标文本 (用于自动检测课程)
+        knowledge_graph: Any = None,      # Phase 8.3-D1: InMemoryKnowledgeGraph
+        student_goal: Any = None,         # Phase 8.3-D2: StudentGoal
     ) -> LearningPlan:
         """
         生成个性化学习路径.
@@ -392,6 +394,10 @@ class PlannerAgent:
             topic_filter: 可选话题过滤器
             student_memory: StudentMemory (可选, 用于读取 mastery_map)
             goal_text: 学生目标文本 (用于自动检测课程, 如 "学习 Multi-Agent AI")
+            knowledge_graph: Phase 8.3-D1 — InMemoryKnowledgeGraph 实例
+                             提供拓扑排序和前置知识依赖
+            student_goal: Phase 8.3-D2 — StudentGoal 实例
+                          长期目标驱动路线优先级 (career/exam/skill目标)
 
         Returns:
             LearningPlan
@@ -402,6 +408,28 @@ class PlannerAgent:
         if not course_id:
             course_id = self.detect_course(goal_text, profile_dict)
 
+        # 0b. Phase 8.3-D2 — Goal-driven course preference
+        goal_pending_concepts: List[str] = []
+        goal_category = ""
+        goal_target_label = ""
+        goal_deadline_urgency = 0  # 0=none, 1=moderate, 2=urgent
+        if student_goal is not None:
+            goal_category = getattr(student_goal, "category", "")
+            goal_target_label = getattr(student_goal, "target", "")
+            goal_pending_concepts = getattr(student_goal, "get_pending_concepts", lambda: [])()
+            # Goal-recommended course overrides auto-detection
+            goal_meta = getattr(student_goal, "metadata", {})
+            recommended_course = goal_meta.get("recommended_course", "")
+            if recommended_course and recommended_course in self.knowledge_graph:
+                course_id = recommended_course
+            # Deadline urgency: if < 7 days remaining, accelerate pace
+            days = getattr(student_goal, "days_remaining", None)
+            if days is not None:
+                if days <= 3:
+                    goal_deadline_urgency = 2
+                elif days <= 14:
+                    goal_deadline_urgency = 1
+
         # 1. 获取课程话题
         course = self.knowledge_graph.get(course_id, {})
         all_topics = course.get("topics", [])
@@ -410,8 +438,12 @@ class PlannerAgent:
         if topic_filter:
             all_topics = [t for t in all_topics if t["id"] in topic_filter]
 
-        # 3. 应用节奏调整
+        # 3. 应用节奏调整 (含 deadline urgency)
         pace = profile_dict.get("learning_pace", "normal")
+        if goal_deadline_urgency >= 2 and pace == "normal":
+            pace = "fast_track"  # deadline pressure → accelerate
+        elif goal_deadline_urgency >= 1 and pace == "deep_dive":
+            pace = "normal"  # deadline approaching → reduce depth
         pace_adj = PACE_ADJUSTMENTS.get(pace, PACE_ADJUSTMENTS["normal"])
 
         # 4. 应用认知风格 → 教学策略
@@ -427,6 +459,34 @@ class PlannerAgent:
         if student_memory and hasattr(student_memory, "mastery_map"):
             mastery = student_memory.mastery_map
 
+        # 5c. Phase 8.3-D1: KG-based topological ordering
+        if knowledge_graph is not None:
+            try:
+                from src.knowledge_graph.bridge import compute_plan_order
+                concept_ids = [t["id"] for t in all_topics]
+                path = compute_plan_order(knowledge_graph, concept_ids, mastery)
+                # Reorder topics by KG topological sort
+                id_to_topic = {t["id"]: t for t in all_topics}
+                reordered = []
+                for cid in path.ordered_nodes:
+                    if cid in id_to_topic:
+                        reordered.append(id_to_topic[cid])
+                # Append any topics NOT in KG path (keep original order)
+                seen = set(t["id"] for t in reordered)
+                for t in all_topics:
+                    if t["id"] not in seen:
+                        reordered.append(t)
+                all_topics = reordered
+                # Use KG's skipped/boosted metadata
+                _skipped = set(path.skipped_nodes)
+                _boosted = set(path.boosted_nodes)
+            except Exception:
+                _skipped = set()
+                _boosted = set()
+        else:
+            _skipped = set()
+            _boosted = set()
+
         # 6. 构建节点 — 受 mastery_map 影响
         nodes: List[PlanNode] = []
         skipped_by_mastery: List[str] = []
@@ -440,15 +500,19 @@ class PlannerAgent:
             topic_mastery = mastery.get(tid, -1)
 
             # 已掌握 (≥0.8) → 跳过或极简
-            if topic_mastery >= 0.8:
-                skipped_by_mastery.append(tid)
-                continue
+            if topic_mastery >= 0.8 or tid in _skipped:
+                # Phase 8.3-D2 — don't skip goal-pending concepts even if mastered
+                if tid in goal_pending_concepts:
+                    topic_mastery = 0.5  # treat as needs-review
+                else:
+                    skipped_by_mastery.append(tid)
+                    continue
 
             # 掌握中 (0.5-0.8) → 降低深度
             depth_mod = 0
             if 0.5 <= topic_mastery < 0.8:
                 depth_mod = -1
-            elif 0 < topic_mastery <= 0.3:
+            elif 0 < topic_mastery <= 0.3 or tid in _boosted:
                 # 薄弱 → 增加深度和练习
                 depth_mod = 1
 
@@ -491,6 +555,20 @@ class PlannerAgent:
         # 补充 memory 跳过信息
         if skipped_by_mastery:
             rationale += f" | 已掌握跳过: {', '.join(skipped_by_mastery)}"
+
+        # Phase 8.3-D2 — Goal context in rationale
+        if student_goal is not None:
+            goal_progress = getattr(student_goal, "progress", 0.0)
+            milestone_count = getattr(student_goal, "total_milestones", 0)
+            rationale += (
+                f" | 🎯 目标: {goal_target_label} "
+                f"({goal_category}, 进度 {goal_progress:.0%}, "
+                f"{milestone_count} 里程碑)"
+            )
+            if goal_deadline_urgency >= 2:
+                rationale += " | ⚠️ 紧急: 截止日期临近，加速路线"
+            elif goal_deadline_urgency >= 1:
+                rationale += " | ⏰ 注意: 截止日期在即，适度加速"
 
         # 9. 生成备选路径
         alternatives = self._generate_alternatives(profile_dict, all_topics)

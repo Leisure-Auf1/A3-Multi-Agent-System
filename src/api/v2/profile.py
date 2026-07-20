@@ -66,10 +66,19 @@ def assess_student_profile(
     req: ProfileAssessRequest,
     user: AuthUser = Depends(require_auth),
 ):
-    """Analyze student description and return profile assessment."""
+    """⚠️ LEGACY — Direct agent call. Migrate to POST /api/v2/learning/run.
+
+    Analyze student description and return profile assessment.
+    """
+    from fastapi.responses import JSONResponse
     agent = ProfileAgent()
     result = agent.extract(req.text)
     profile = result.to_dict() if hasattr(result, 'to_dict') else {}
     # Auto-save the assessed profile
     save_profile(user.id, profile)
-    return ProfileResponse(user_id=user.id, profile=profile, source="rule")
+    resp = JSONResponse(content=ProfileResponse(
+        user_id=user.id, profile=profile, source="rule"
+    ).model_dump())
+    resp.headers["X-Deprecated-API"] = "true"
+    resp.headers["X-Migration-Path"] = "/api/v2/learning/run"
+    return resp

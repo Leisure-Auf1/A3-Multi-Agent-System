@@ -32,6 +32,24 @@ from src.api.server import app
 
 client = TestClient(app)
 
+
+# ── Auth helper ──
+_AUTH_RT = None
+
+
+def _auth_rt() -> dict:
+    global _AUTH_RT
+    if _AUTH_RT is None:
+        client.post("/api/v2/auth/register", json={
+            "email": "rt_gate@a3.local", "password": "testpass", "display_name": "RT Gate",
+        })
+        resp = client.post("/api/v2/auth/login", json={
+            "email": "rt_gate@a3.local", "password": "testpass",
+        })
+        assert resp.status_code == 200
+        _AUTH_RT = {"Authorization": f"Bearer {resp.json()['token']}"}
+    return _AUTH_RT
+
 GOAL = "学习 Python Agent 开发和 EventBus 架构"
 
 
@@ -209,6 +227,7 @@ class TestAPIReviewGate:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "rule"},
+            headers=_auth_rt(),
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -219,6 +238,7 @@ class TestAPIReviewGate:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "mock"},
+            headers=_auth_rt(),
         )
         data = resp.json()
         rg = data["evaluation"].get("review_gate")

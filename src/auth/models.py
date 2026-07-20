@@ -1,8 +1,9 @@
 """
-Phase 9.1 — Auth Models
+Phase 9.1 / 9.6-A — Auth Models
 
 Dataclass contracts for the auth system.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -49,3 +50,7 @@ class AuthUser:
             "last_login_at": self.last_login_at,
             "is_guest": self.is_guest,
         }
+
+
+# Re-export UserToken from jwt_manager for convenience
+from .jwt_manager import UserToken  # noqa: E402, F401

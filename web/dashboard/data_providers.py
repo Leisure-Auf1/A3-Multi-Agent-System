@@ -429,6 +429,101 @@ def get_improvement_timeline(
 # ═══════════════════════════════════════════════════
 
 
+# ═══════════════════════════════════════════════════
+# 7. Goal Progress Dashboard (Phase 8.3-D2)
+# ═══════════════════════════════════════════════════
+
+GoalProgressData = Dict[str, Any]
+
+
+def get_goal_progress(
+    student_id: str = "",
+    memory_manager: Any = None,
+) -> GoalProgressData:
+    """Student long-term goal progress — milestones, deadline, completion rate."""
+
+    if student_id:
+        try:
+            from src.data.goal_store import get_goal_summary
+            summary = get_goal_summary(student_id)
+            if summary and summary.get("has_goal"):
+                return _format_goal_data(summary)
+        except Exception:
+            pass
+
+    return _demo_goal_progress()
+
+
+def _format_goal_data(summary: Dict[str, Any]) -> GoalProgressData:
+    """Transform goal_summary into dashboard-friendly format."""
+    goal = summary.get("goal", {})
+    milestones = goal.get("milestones", [])
+    next_ms = summary.get("next_milestone", {})
+
+    # Compute per-milestone progress bars
+    milestone_view = []
+    for ms in milestones:
+        target_concepts = ms.get("target_concepts", [])
+        milestone_view.append({
+            "title": ms.get("title", ""),
+            "description": ms.get("description", ""),
+            "completed": ms.get("completed", False),
+            "target_concepts": target_concepts,
+            "estimated_days": ms.get("estimated_days", 0),
+            "completed_at": ms.get("completed_at", "")[:10] if ms.get("completed_at") else "",
+            "icon": "✅" if ms.get("completed") else "⏳",
+        })
+
+    return {
+        "has_goal": True,
+        "category": goal.get("category", "general"),
+        "target": goal.get("target", ""),
+        "target_level": goal.get("target_level", "beginner"),
+        "progress": goal.get("progress", 0.0),
+        "completed_milestones": goal.get("completed_milestones", 0),
+        "total_milestones": goal.get("total_milestones", 0),
+        "deadline": goal.get("deadline", ""),
+        "days_remaining": goal.get("days_remaining", None),
+        "is_overdue": goal.get("is_overdue", False),
+        "next_milestone": next_ms.get("title", "") if next_ms else "",
+        "pending_concepts": summary.get("pending_concepts", []),
+        "milestones": milestone_view,
+        "category_icon": _goal_category_icon(goal.get("category", "general")),
+    }
+
+
+def _goal_category_icon(category: str) -> str:
+    return {
+        "career": "💼", "exam": "📝", "skill": "🎯",
+        "project": "🚀", "general": "📚",
+    }.get(category, "📚")
+
+
+def _demo_goal_progress() -> GoalProgressData:
+    """Demo goal progress data when no live student_goal exists."""
+    return {
+        "has_goal": False,
+        "category": "general",
+        "target": "尚未设定学习目标",
+        "target_level": "beginner",
+        "progress": 0.0,
+        "completed_milestones": 0,
+        "total_milestones": 0,
+        "deadline": "",
+        "days_remaining": None,
+        "is_overdue": False,
+        "next_milestone": "",
+        "pending_concepts": [],
+        "milestones": [],
+        "category_icon": "📚",
+    }
+
+
+# ═══════════════════════════════════════════════════
+# Existing Demo / Seed Data
+# ═══════════════════════════════════════════════════
+
+
 def get_demo_all() -> Dict[str, Any]:
     """Return fully populated demo data for all 6 panels."""
     return {

@@ -120,7 +120,11 @@ Do NOT provide generic advice. Tailor every response to this specific student.""
             resp = self._llm.generate(user_prompt, system_prompt=system_prompt)
             content = resp.content if hasattr(resp, 'content') else str(resp)
         except Exception:
-            content = self._fallback_explain(question, ctx).content
+            content = ""
+
+        # Fallback if LLM returns empty or unavailable
+        if not content or not content.strip():
+            return self._fallback_explain(question, ctx)
 
         return TutorResponse(
             content=content,

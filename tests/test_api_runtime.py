@@ -6,10 +6,11 @@ Uses httpx.TestClient (built into FastAPI) — zero extra deps.
 
 Test matrix:
   1. GET  /health                          → 200
-  2. POST /api/v1/learning/plan (mock)     → 200, profile/trace present
-  3. POST /api/v1/learning/plan (rule)     → 200, source=rule
-  4. POST /api/v1/learning/plan (empty)    → 422
-  5. POST /api/v1/learning/plan (bad provider) → 422
+  2. POST /api/v1/learning/plan (mock, auth) → 200, profile/trace present
+  3. POST /api/v1/learning/plan (rule, auth) → 200, source=rule
+  4. POST /api/v1/learning/plan (empty, auth)→ 422
+  5. POST /api/v1/learning/plan (bad provider, auth) → 422
+  6. POST /api/v1/learning/plan (no token)     → 401
 """
 
 from __future__ import annotations
@@ -27,6 +28,30 @@ from src.api.server import app
 client = TestClient(app)
 
 GOAL = "学习 Python Agent 开发"
+
+
+# ── Helper: register + login + return headers ──
+
+def _register_and_login(email: str = "v1_test@a3.local") -> dict:
+    """Register a test user and return auth headers."""
+    client.post("/api/v2/auth/register", json={
+        "email": email, "password": "testpass", "display_name": "V1 Test",
+    })
+    resp = client.post("/api/v2/auth/login", json={
+        "email": email, "password": "testpass",
+    })
+    assert resp.status_code == 200
+    return {"Authorization": f"Bearer {resp.json()['token']}"}
+
+
+_AUTH_HEADERS = None
+
+
+def _auth() -> dict:
+    global _AUTH_HEADERS
+    if _AUTH_HEADERS is None:
+        _AUTH_HEADERS = _register_and_login()
+    return _AUTH_HEADERS
 
 
 # ──────────────────────────────────────────────
@@ -54,6 +79,7 @@ class TestMockProvider:
                 "provider": "mock",
                 "student_id": "api_test_001",
             },
+            headers=_auth(),
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -73,6 +99,7 @@ class TestMockProvider:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "mock"},
+            headers=_auth(),
         )
         data = resp.json()
         assert data["profile"]["profile"]["knowledge_base"] == "mid_level"
@@ -81,6 +108,7 @@ class TestMockProvider:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "mock"},
+            headers=_auth(),
         )
         agents_in_trace = {t["agent"] for t in resp.json()["trace"]}
         assert "ProfileAgent" in agents_in_trace
@@ -101,6 +129,7 @@ class TestRuleProvider:
                 "provider": "rule",
                 "student_id": "api_test_rule",
             },
+            headers=_auth(),
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -114,6 +143,7 @@ class TestRuleProvider:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "none"},
+            headers=_auth(),
         )
         assert resp.status_code == 200
         assert resp.json()["success"] is True
@@ -128,6 +158,7 @@ class TestValidation:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": "", "provider": "mock"},
+            headers=_auth(),
         )
         assert resp.status_code == 422
 
@@ -135,6 +166,7 @@ class TestValidation:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"provider": "mock"},
+            headers=_auth(),
         )
         assert resp.status_code == 422
 
@@ -142,6 +174,7 @@ class TestValidation:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL, "provider": "openai"},
+            headers=_auth(),
         )
         assert resp.status_code == 422
 
@@ -150,11 +183,20 @@ class TestValidation:
         resp = client.post(
             "/api/v1/learning/plan",
             json={"goal": GOAL},
+            headers=_auth(),
         )
         assert resp.status_code == 200
         data = resp.json()
         # Default is mock → profile source should be llm
         assert data["profile"]["source"] == "llm"
+
+    def test_no_token_returns_401(self):
+        """Unauthenticated request must return 401."""
+        resp = client.post(
+            "/api/v1/learning/plan",
+            json={"goal": GOAL, "provider": "mock"},
+        )
+        assert resp.status_code == 401
 
 
 if __name__ == "__main__":

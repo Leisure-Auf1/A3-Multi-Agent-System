@@ -8,7 +8,7 @@ Phase 4 — A3Workflow: 多 Agent 协作编排器
   - 收集并返回 WorkflowResult (from .result)
 
 Pipeline:
-  User Goal → ProfileAgent → PlannerAgent → ResourceAgent → Review → ReflectionAgent → Memory
+  User Goal → ProfileAgent → PlannerAgent → ContentGeneratorAgent → ResourceAgent → Review → ReflectionAgent → Memory
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ from src.agents.profile_agent import ProfileAgent, ProfileExtractionResult
 from src.agents.planner_agent import PlannerAgent, LearningPlan
 from src.agents.resource_agent import ResourceAgent, ResourceRecommendation
 from src.agents.reflection_agent import ReflectionAgent, ReflectionResult
+from src.agents.content_generator_agent import ContentGeneratorAgent, TeachingMaterial
 from veritas.memory import MemoryManager
 
 # Phase 4.6 — MetaReflector integration
@@ -57,20 +58,24 @@ class A3Workflow:
         memory_manager: Optional[MemoryManager] = None,
         profile_agent: Optional[ProfileAgent] = None,
         planner_agent: Optional[PlannerAgent] = None,
+        content_generator_agent: Optional[ContentGeneratorAgent] = None,
         resource_agent: Optional[ResourceAgent] = None,
         reflection_agent: Optional[ReflectionAgent] = None,
         meta_reflector: Optional[MetaReflectorAgent] = None,  # Phase 4.6
         student_id: str = "demo_student",
         llm_provider: Any = None,
         bus: Optional[AgentEventBus] = None,
+        knowledge_graph: Any = None,  # Phase 8.3-D1
     ):
         self.memory = memory_manager or MemoryManager()
         self.profile_agent = profile_agent or ProfileAgent()
         self.planner_agent = planner_agent or PlannerAgent()
+        self.content_generator_agent = content_generator_agent or ContentGeneratorAgent()
         self.resource_agent = resource_agent or ResourceAgent()
         self.reflection_agent = reflection_agent or ReflectionAgent()
         self.meta_reflector = meta_reflector  # Phase 4.6
         self.student_id = student_id
+        self._kg = knowledge_graph  # Phase 8.3-D1
 
         # Phase 4.6 — Wire MetaReflector to ExperienceMemory
         self._meta_adapter = MetaReflectionAdapter()
@@ -88,6 +93,7 @@ class A3Workflow:
         if llm_provider is not None:
             self.profile_agent.set_llm_provider(llm_provider)
             self.planner_agent.set_llm_provider(llm_provider)
+            self.content_generator_agent.set_llm_provider(llm_provider)
             self.resource_agent.set_llm_provider(llm_provider)
             self.reflection_agent.set_llm_provider(llm_provider)
 
@@ -110,7 +116,7 @@ class A3Workflow:
             session_id: 会话 ID (自动生成)
 
         Returns:
-            WorkflowResult (含 profile, learning_plan, resources, evaluation,
+            WorkflowResult (含 profile, learning_plan, content, resources, evaluation,
                             reflection, trace, memory_saved)
         """
         start_time = time.time()
@@ -169,6 +175,24 @@ class A3Workflow:
         except Exception as e:
             errors.append(f"PlannerAgent: {e}")
             self._emit("PlannerAgent", "plan_generated",
+                       f"目标: {user_goal[:60]}", str(e), "error")
+
+        # ── Step 2.5: ContentGeneratorAgent — 生成个性化教材 ──
+        try:
+            _t0 = time.time()
+            content_result = self._run_content_generator_agent(
+                result.profile, result.learning_plan
+            )
+            result.content = content_result.to_dict() if hasattr(content_result, "to_dict") else content_result
+            _gen_source = (result.content or {}).get("generation_source", "rule")
+            ch_count = len((result.content or {}).get("chapters", []))
+            self._emit("ContentGeneratorAgent", "content_generated",
+                       f"目标: {user_goal[:60]}",
+                       f"教材: {ch_count} 章节 (source={_gen_source})",
+                       duration_ms=round((time.time() - _t0) * 1000, 1))
+        except Exception as e:
+            errors.append(f"ContentGeneratorAgent: {e}")
+            self._emit("ContentGeneratorAgent", "content_generated",
                        f"目标: {user_goal[:60]}", str(e), "error")
 
         # ── Step 3: ResourceAgent — 推荐资源 ──
@@ -261,6 +285,8 @@ class A3Workflow:
         # ── Step 6: Memory — 保存体验 ──
         try:
             _t0 = time.time()
+            # Phase 8.2-D: compute elapsed before save for time_spent tracking
+            _prelim_elapsed = (time.time() - start_time) * 1000
             self._save_to_memory(
                 student_id=self.student_id,
                 user_goal=user_goal,
@@ -268,12 +294,17 @@ class A3Workflow:
                 plan=result.learning_plan,
                 resources=result.resources,
                 reflection=result.reflection,
+                evaluation=result.evaluation,
+                total_duration_ms=_prelim_elapsed,
             )
             result.memory_saved = True  # ★ 新字段
             self._emit("Memory", "experience_saved",
-                       f"Session: {session_id}",
-                       "Memory 已更新",
-                       duration_ms=round((time.time() - _t0) * 1000, 1))
+                        f"Session: {session_id}",
+                        "Memory 已更新",
+                        duration_ms=round((time.time() - _t0) * 1000, 1))
+
+            # Phase 9.0 — Artifact save: persist generated content to workspace
+            self._save_artifacts_to_workspace(session_id, result)
         except Exception as e:
             errors.append(f"Memory: {e}")
 
@@ -316,7 +347,15 @@ class A3Workflow:
             return ProfileExtractionResult(profile=profile, source="preset", confidence=1.0)
 
         # 从目标文本提取 — LLM 优先 (Phase 4.2), provider=None 时自动走规则模式
+        # Phase 8.2-D: use memory-aware extraction when available
         if self.llm_provider is not None:
+            student_memory = None
+            try:
+                student_memory = self.memory.get_student_memory(self.student_id)
+            except Exception:
+                pass
+            if student_memory is not None and student_memory.profile_history:
+                return self.profile_agent.extract_with_provider(user_goal)
             return self.profile_agent.extract_with_provider(user_goal)
         return self.profile_agent.extract(user_goal)
 
@@ -347,10 +386,50 @@ class A3Workflow:
             profile = profile_result_ext.profile
 
         # 自动检测课程或使用默认
+        # Phase 8.2-D: load student memory for personalized planning
+        student_memory = None
+        try:
+            student_memory = self.memory.get_student_memory(self.student_id)
+        except Exception:
+            pass
+
         return self.planner_agent.plan(
             profile=profile,
             goal_text=user_goal,
             course_id="",
+            student_memory=student_memory,
+            knowledge_graph=self._kg,  # Phase 8.3-D1
+        )
+
+    def _run_content_generator_agent(
+        self,
+        profile_result: Optional[Dict[str, Any]] = None,
+        plan_result: Optional[Dict[str, Any]] = None,
+    ) -> TeachingMaterial:
+        """Step 2.5: 生成个性化教材"""
+        from src.core.agent_router import DynamicProfile
+
+        # 获取 profile 对象
+        if profile_result:
+            profile_data = profile_result.get("profile", profile_result)
+            if isinstance(profile_data, dict):
+                profile = DynamicProfile(
+                    knowledge_base=profile_data.get("knowledge_base", "junior_dev"),
+                    cognitive_style=profile_data.get("cognitive_style", "visual_dominant"),
+                    error_prone_bias=profile_data.get("error_prone_bias", "magic_syntax_blind"),
+                    learning_pace=profile_data.get("learning_pace", "normal"),
+                    interaction_preference=profile_data.get("interaction_preference", "code_sandbox"),
+                    frustration_threshold=profile_data.get("frustration_threshold", "medium"),
+                )
+            else:
+                profile = profile_data
+        else:
+            profile_result_ext = self.profile_agent.extract(plan_result.get("plan_id", ""))
+            profile = profile_result_ext.profile
+
+        return self.content_generator_agent.generate_material(
+            profile=profile,
+            plan=plan_result,
         )
 
     def _run_resource_agent(
@@ -440,23 +519,129 @@ class A3Workflow:
         plan: Optional[Dict[str, Any]],
         resources: Optional[List[Dict[str, Any]]],
         reflection: Optional[Dict[str, Any]],
+        evaluation: Optional[Dict[str, Any]] = None,
+        total_duration_ms: float = 0.0,
     ) -> None:
-        """Step 6: 持久化到 Memory"""
+        """Step 6: 持久化到 Memory (Phase 8.2-D: time_spent + weak_points + error_analyses).
+        Phase 8.3-E0.5: Also persists to SQLite for unbounded session tracking.
+        """
         try:
             profile_data = self._extract_profile_dict(profile)
+
+            # ── Mastery updates from evaluation ──
+            mastery_updates = self._extract_mastery_updates(plan, evaluation)
+
+            # ── Session with real time_spent ──
+            time_spent_min = round(total_duration_ms / 60000, 1) if total_duration_ms else 0
+            session = {
+                "course_id": (plan or {}).get("plan_id", ""),
+                "nodes_completed": len(plan.get("nodes", [])) if plan else 0,
+                "total_score": (evaluation or reflection or {}).get("score", 75),
+                "time_spent": time_spent_min,
+                "goal": user_goal[:80],
+            }
+
             self.memory.update_student_memory(
                 student_id=student_id,
                 profile=profile_data,
-                mastery_updates=self._extract_mastery_updates(plan),
-                session={
-                    "course_id": "",
-                    "nodes_completed": len(plan.get("nodes", [])) if plan else 0,
-                    "total_score": (reflection or {}).get("score", 75),
-                    "time_spent": 0,
-                },
+                mastery_updates=mastery_updates,
+                session=session,
             )
+
+            # ── Phase 8.3-E0.5: Unbounded session record in SQLite ──
+            self._save_session_to_db(
+                student_id=student_id,
+                user_goal=user_goal,
+                plan=plan,
+                evaluation=evaluation,
+                duration_ms=total_duration_ms,
+            )
+
+            # ── Phase 8.2-D: write weak_points from evaluation weak_areas ──
+            if evaluation:
+                weak_areas = evaluation.get("weak_areas", [])
+                for area in weak_areas:
+                    try:
+                        self.memory.update_student_memory(
+                            student_id=student_id,
+                            weak_point={"concept": area, "error_type": "weak_area"},
+                        )
+                    except Exception:
+                        pass
+
+            # ── Phase 8.2-D: write error_analyses from quiz results ──
+            if evaluation:
+                error_analyses = evaluation.get("error_analyses", {})
+                for qid, analysis in error_analyses.items():
+                    related = analysis.get("related_concepts", [])
+                    for concept in related:
+                        try:
+                            self.memory.update_student_memory(
+                                student_id=student_id,
+                                weak_point={
+                                    "concept": concept,
+                                    "error_type": analysis.get("error_type", "unknown"),
+                                    "question_id": qid,
+                                },
+                            )
+                        except Exception:
+                            pass
+
         except Exception:
             pass
+
+    def _save_session_to_db(
+        self,
+        student_id: str,
+        user_goal: str,
+        plan: Optional[Dict[str, Any]] = None,
+        evaluation: Optional[Dict[str, Any]] = None,
+        duration_ms: float = 0.0,
+    ) -> None:
+        """Phase 8.3-E0.5: Persist session to A3 SQLite DB for unbounded history.
+        Independent of Veritas-Core's capped JSON session tracking.
+        """
+        try:
+            import uuid
+            import json
+            from src.data.db import _get_conn
+            from datetime import datetime, timezone
+            from src.data.learning_records import record_agent_action
+
+            # Ensure student_id exists in users table (FK constraint)
+            conn = _get_conn()
+            exists = conn.execute(
+                "SELECT id FROM users WHERE id = ?", (student_id,)
+            ).fetchone()
+            if not exists:
+                now = datetime.now(timezone.utc).isoformat()
+                conn.execute(
+                    "INSERT INTO users (id, email, password_hash, display_name, is_guest, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (student_id, f"{student_id}@a3.local", "a3_auto", "A3 Student", 1, now),
+                )
+                conn.commit()
+
+            plan_id = (plan or {}).get("plan_id", "")
+            score = (evaluation or {}).get("score", 0)
+            node_count = len(plan.get("nodes", [])) if plan else 0
+
+            record_agent_action(
+                user_id=student_id,
+                agent="A3Workflow",
+                action="session_completed",
+                course_id=plan_id,
+                result={
+                    "goal": user_goal[:120],
+                    "nodes_completed": node_count,
+                    "total_score": score,
+                    "duration_ms": round(duration_ms, 1),
+                },
+                score=float(score),
+                duration_ms=int(duration_ms),
+            )
+        except Exception:
+            pass  # Non-critical: don't fail the pipeline on DB write
 
     def _extract_profile_dict(
         self,
@@ -486,12 +671,41 @@ class A3Workflow:
     def _extract_mastery_updates(
         self,
         plan: Optional[Dict[str, Any]],
+        evaluation: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, float]:
-        """从 plan 提取 mastery 更新"""
+        """
+        从 plan 和 evaluation 提取 mastery 更新。
+
+        Phase 8.2-B1: 当 evaluation 包含 weak_areas / strong_areas 时，
+        返回 evaluation scores (0.2 / 0.85) 而非中性 placeholder。
+        StudentMemory.update_mastery() 使用 EMA 平滑这些值。
+
+        无 evaluation → 回退到旧逻辑 (所有 topic=0.6)。
+        """
         if not plan:
             return {}
+
         nodes = plan.get("nodes", [])
-        return {n.get("node_id", f"node_{i}"): 0.6 for i, n in enumerate(nodes)}
+        node_ids = [n.get("node_id", f"node_{i}") for i, n in enumerate(nodes)]
+
+        # ── Phase 8.2-B1: evaluation-driven mastery ──
+        if evaluation:
+            weak = set(evaluation.get("weak_areas", []))
+            strong = set(evaluation.get("strong_areas", []))
+
+            if weak or strong:
+                mastery: Dict[str, float] = {}
+                for nid in node_ids:
+                    if nid in weak:
+                        mastery[nid] = 0.2    # 薄弱 → 降低 mastery input
+                    elif nid in strong:
+                        mastery[nid] = 0.85   # 已掌握 → 提高 mastery input
+                    else:
+                        mastery[nid] = 0.6    # 未测试 → 中性
+                return mastery
+
+        # Fallback: 旧行为 (所有 topic 中性)
+        return {nid: 0.6 for nid in node_ids}
 
     # ── EventBus 辅助 ──────────────────────────
 
@@ -667,6 +881,32 @@ class A3Workflow:
             reflection=c.reflection,
         ))
 
+    # ── Phase 9.0 — Artifact Persistence ──
+
+    def _save_artifacts_to_workspace(self, session_id: str, result: Any) -> None:
+        """Save generated content to the user's workspace. Non-critical — errors are silent."""
+        try:
+            from src.artifacts.manager import ArtifactManager, MaterialArtifact
+            am = ArtifactManager()
+
+            # Save teaching material
+            if result.content and isinstance(result.content, dict):
+                try:
+                    artifact = MaterialArtifact(
+                        artifact_id=f"material_{session_id[:8]}",
+                        title=result.content.get("title", "Teaching Material"),
+                        content=result.content.get("overall_summary", ""),
+                        metadata={
+                            "chapters": len(result.content.get("chapters", [])),
+                            "generation_source": result.content.get("generation_source", "rule"),
+                        },
+                    )
+                    am.save_material(self.student_id, artifact)
+                except Exception:
+                    pass
+        except ImportError:
+            pass
+
 
 def _set_ctx(ctx, name: str, value):
     """Set attribute on context, returning None (for handler compatibility)."""
@@ -697,3 +937,67 @@ def _meta_reflect_handler(wf, ctx) -> None:
         wf._emit("MetaReflector", "meta_reflection_completed",
                    f"概念: {concept[:40]}",
                    f"severity={severity} | {meta_result.root_cause[:60]}")
+
+
+# ──────────────────────────────────────────────
+# Phase 8.3-E2-F: Task → Model Routing
+# ──────────────────────────────────────────────
+
+
+def get_model_for_task(task: str) -> dict:
+    """
+    Find the best model for a given A3 Agent task.
+
+    Uses ModelRouter to select a model based on task capability requirements.
+    Returns a dict suitable for use by Agents.
+
+    Args:
+        task: TaskType string value (e.g. "generate_material", "generate_image")
+
+    Returns:
+        {
+            "success": bool,
+            "model_id": str,
+            "display_name": str,
+            "provider": str,
+            "reason": str,
+            "alternatives": [...],
+            "error": str or None,
+        }
+    """
+    try:
+        from src.config.model_router import select_model as _select
+        result = _select(task)
+        d = result.to_dict()
+        d["error"] = None if result.success else result.reason
+        return d
+    except ImportError as e:
+        return {
+            "success": False,
+            "model_id": "",
+            "display_name": "",
+            "provider": "",
+            "reason": "",
+            "alternatives": [],
+            "error": f"Model router unavailable: {e}",
+        }
+
+
+def check_task_capability_for_current(provider: str, model: str, task: str) -> dict:
+    """
+    Check if the currently configured provider/model supports a task.
+
+    Args:
+        provider: Current provider name
+        model: Current model name
+        task: TaskType string value
+
+    Returns:
+        {"ok": bool, "error": str or None}
+    """
+    try:
+        from src.config.model_capability import check_task_capability as _check
+        ok, err = _check(provider, model, task)
+        return {"ok": ok, "error": err}
+    except ImportError as e:
+        return {"ok": True, "error": None}  # assume supported if module unavailable

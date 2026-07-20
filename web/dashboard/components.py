@@ -554,3 +554,131 @@ def render_trust_safety_panel(data: dict, st) -> None:
         st.caption(f"Available: {fb.get('available', True)}")
         st.caption(f"Active: {fb.get('active', False)}")
         st.caption(f"Reason: {fb.get('reason', 'N/A')}")
+
+
+# ═══════════════════════════════════════════════════
+
+def render_goal_progress(data: dict, st) -> None:
+    """Panel 8: Phase 8.3-D2 — Long-term learning goal progress.
+
+    Shows goal target, category, milestone completion,
+    deadline urgency, and pending concepts.
+    """
+    st.header("🎯 Goal Progress")
+    st.caption("长期学习目标追踪 — 里程碑进度 · 截止日期 · 待掌握概念")
+
+    has_goal = data.get("has_goal", False)
+
+    if not has_goal:
+        st.info("📚 尚未设定长期学习目标。去设定一个目标吧！")
+        with st.expander("💡 示例目标", expanded=False):
+            st.markdown("""
+            - 💼 **职业**: 成为 Python 后端工程师
+            - 📝 **考试**: 通过 PCEP Python 认证
+            - 🎯 **技能**: 掌握 Multi-Agent AI 系统开发
+            - 🚀 **项目**: 构建智能客服系统
+            """)
+        return
+
+    category_icon = data.get("category_icon", "📚")
+    target = data.get("target", "")
+    category = data.get("category", "general")
+    target_level = data.get("target_level", "beginner")
+    progress = data.get("progress", 0.0)
+    completed_ms = data.get("completed_milestones", 0)
+    total_ms = data.get("total_milestones", 0)
+    deadline = data.get("deadline", "")
+    days_remaining = data.get("days_remaining", None)
+    is_overdue = data.get("is_overdue", False)
+    next_ms = data.get("next_milestone", "")
+    pending_concepts = data.get("pending_concepts", [])
+    milestones = data.get("milestones", [])
+
+    # ── Top row: Goal identity + Progress ──
+    c1, c2, c3 = st.columns([3, 2, 1])
+
+    with c1:
+        st.markdown(f"### {category_icon} {target}")
+        st.caption(f"类型: {category} | 目标水平: {target_level}")
+
+    with c2:
+        progress_color = "red" if is_overdue else "normal"
+        st.metric(
+            "📊 总体进度",
+            f"{progress:.0%}",
+            f"{completed_ms}/{total_ms} 里程碑",
+        )
+        # Overdue badge
+        if is_overdue:
+            st.error("⚠️ 已逾期!")
+
+    with c3:
+        if deadline:
+            urgency_label = (
+                "🔴 紧急" if is_overdue or (days_remaining is not None and days_remaining <= 3)
+                else "🟡 注意" if days_remaining is not None and days_remaining <= 14
+                else "🟢 充裕"
+            )
+            st.metric(
+                "⏰ 截止日期",
+                deadline[:10] if len(deadline) >= 10 else deadline,
+                f"{days_remaining} 天后" if days_remaining is not None else "",
+            )
+            st.caption(urgency_label)
+
+    st.divider()
+
+    # ── Progress bar ──
+    st.progress(progress, text=f"完成度: {progress:.0%} ({completed_ms}/{total_ms})")
+
+    # ── Next milestone ──
+    if next_ms:
+        st.info(f"📍 **下一步**: {next_ms}")
+
+    # ── Pending concepts ──
+    if pending_concepts:
+        st.caption(
+            "📋 待掌握概念: "
+            + " · ".join(pending_concepts[:8])
+            + (f" ... (+{len(pending_concepts) - 8})" if len(pending_concepts) > 8 else "")
+        )
+
+    st.divider()
+
+    # ── Milestone Timeline ──
+    st.subheader("🗺️ 里程碑路线")
+
+    for i, ms in enumerate(milestones):
+        icon = ms.get("icon", "⏳")
+        title = ms.get("title", f"Milestone {i + 1}")
+        description = ms.get("description", "")
+        completed = ms.get("completed", False)
+        concepts = ms.get("target_concepts", [])
+        est_days = ms.get("estimated_days", 0)
+        completed_at = ms.get("completed_at", "")
+
+        bg_color = "#e8f5e9" if completed else "#f5f5f5"
+        border_color = "#4caf50" if completed else "#e0e0e0"
+
+        with st.container(border=True):
+            c1, c2 = st.columns([4, 1])
+            c1.markdown(f"{icon} **{title}**")
+            c2.caption(f"⏱️ ~{est_days}天")
+
+            if description:
+                st.caption(description)
+
+            if concepts:
+                st.caption(f"📋 概念: {' · '.join(concepts)}")
+
+            if completed and completed_at:
+                st.caption(f"✅ 完成于: {completed_at}")
+
+    # ── Summary ──
+    st.divider()
+    if progress >= 1.0:
+        st.success(f"🎉 恭喜！你已完成 {target} 目标！")
+    elif progress >= 0.5:
+        st.info(f"💪 已完成过半 — {target} 指日可待！")
+    else:
+        st.caption(f"🚀 {target} — 继续加油！每天进步一点点。")

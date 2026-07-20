@@ -14,6 +14,31 @@ from datetime import datetime, timezone
 
 
 @dataclass
+class ErrorAnalysis:
+    """Per-question error analysis for wrong answers. (Phase 8.2-C)"""
+    question_id: str
+    error_type: str = ""              # "concept_misunderstanding" | "syntax" | "logic" | "incomplete" | "unknown"
+    explanation: str = ""             # 为什么错
+    correct_reasoning: str = ""       # 正确思路
+    related_concepts: List[str] = field(default_factory=list)  # 知识漏洞
+    recovery_plan: str = ""           # 恢复学习计划
+    next_exercise: str = ""           # 推荐练习
+    generation_source: str = "rule"   # rule | llm
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "question_id": self.question_id,
+            "error_type": self.error_type,
+            "explanation": self.explanation,
+            "correct_reasoning": self.correct_reasoning,
+            "related_concepts": self.related_concepts,
+            "recovery_plan": self.recovery_plan,
+            "next_exercise": self.next_exercise,
+            "generation_source": self.generation_source,
+        }
+
+
+@dataclass
 class QuizQuestion:
     """A single quiz question."""
     id: str
@@ -51,6 +76,7 @@ class QuizResult:
     strong_areas: List[str] = field(default_factory=list)
     answers: List[StudentAnswer] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
+    error_analyses: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     completed_at: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
@@ -64,6 +90,7 @@ class QuizResult:
             "weak_areas": self.weak_areas,
             "strong_areas": self.strong_areas,
             "recommendations": self.recommendations,
+            "error_analyses": self.error_analyses,
             "completed_at": self.completed_at,
         }
 
@@ -73,10 +100,15 @@ class EvaluationAgent:
 
     def __init__(self, llm_provider: Any = None):
         self._llm = llm_provider
+        self._orchestrator = None  # Phase 9.3-B
 
     @property
     def name(self) -> str:
         return "evaluation"
+
+    def set_orchestrator(self, orchestrator: Any) -> None:
+        """Phase 9.3-B: inject OrchestratorRuntime (preferred over llm_provider)."""
+        self._orchestrator = orchestrator
 
     # ── Quiz Generation ────────────────────────────────────
 
@@ -240,6 +272,197 @@ class EvaluationAgent:
             recommendations=recs,
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
+
+    # ── Wrong Answer Analysis (Phase 8.2-C) ────────────────
+
+    WRONG_ANSWER_PROMPT = """你是一个教学诊断专家。请分析以下学生的错误答案，并提供详细的纠错指导。
+
+[题目]
+{question}
+
+[正确答案]
+{correct_answer}
+
+[学生答案]
+{student_answer}
+
+请输出纯 JSON，包含以下字段：
+{{
+  "error_type": "concept_misunderstanding | syntax | logic | incomplete | unknown",
+  "explanation": "为什么错了 — 具体分析学生的错误思维过程 (2-3句)",
+  "correct_reasoning": "正确思路 — 应该怎么想 (2-3句)",
+  "related_concepts": ["相关知识点1", "相关知识点2"],
+  "recovery_plan": "恢复学习计划 — 建议先复习什么，再看什么 (2-3句)",
+  "next_exercise": "推荐的下一道练习题目"
+}}
+
+要求:
+- error_type 必须从候选值中选择
+- explanation 要具体到学生的错误点，不要泛泛而谈
+- recovery_plan 要给出具体可操作的学习步骤
+- 所有内容用中文编写
+
+只输出 JSON，不要任何额外文本。"""
+
+    ERROR_RULE_ANALYSES = {
+        "concept_misunderstanding": {
+            "error_type": "concept_misunderstanding",
+            "explanation": "你对这个概念的理解可能有些偏差。请重新阅读相关内容，注意核心定义和关键特征。",
+            "correct_reasoning": "应该从概念的基本定义出发，理解其适用范围和局限性，然后结合具体场景进行判断。",
+            "related_concepts": [],
+            "recovery_plan": "建议回到相关章节，重新阅读概念定义部分，然后用自己的话复述一遍。",
+            "next_exercise": "请用自己的话重新解释这个概念，并举一个实际应用的例子。",
+        },
+    }
+
+    def analyze_wrong_answer(
+        self,
+        question: str,
+        student_answer: str,
+        correct_answer: str,
+        question_id: str = "",
+    ) -> ErrorAnalysis:
+        """
+        Analyze a wrong answer and produce detailed error guidance.
+
+        LLM available → LLM-generated deep analysis
+        No LLM → rule-based analysis with sensible defaults
+
+        Args:
+            question: The question text
+            student_answer: What the student answered (incorrect)
+            correct_answer: The correct answer
+            question_id: Optional question identifier
+
+        Returns:
+            ErrorAnalysis with explanation, correct_reasoning, recovery_plan, next_exercise
+        """
+        if self._llm is not None:
+            try:
+                return self._llm_analyze_wrong_answer(
+                    question, student_answer, correct_answer, question_id
+                )
+            except Exception:
+                pass  # fallback to rule
+
+        return self._rule_analyze_wrong_answer(
+            question, student_answer, correct_answer, question_id
+        )
+
+    def _llm_analyze_wrong_answer(
+        self,
+        question: str,
+        student_answer: str,
+        correct_answer: str,
+        question_id: str,
+    ) -> ErrorAnalysis:
+        """Use LLM for detailed error analysis."""
+        prompt = self.WRONG_ANSWER_PROMPT.format(
+            question=question,
+            correct_answer=correct_answer,
+            student_answer=student_answer,
+        )
+        resp = self._llm.generate(prompt)
+        raw = resp.content if hasattr(resp, "content") else str(resp)
+
+        import json
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start < 0 or end <= start:
+            raise ValueError("No JSON found in LLM response")
+
+        data = json.loads(raw[start:end])
+
+        return ErrorAnalysis(
+            question_id=question_id,
+            error_type=data.get("error_type", "unknown"),
+            explanation=data.get("explanation", ""),
+            correct_reasoning=data.get("correct_reasoning", ""),
+            related_concepts=data.get("related_concepts", []),
+            recovery_plan=data.get("recovery_plan", ""),
+            next_exercise=data.get("next_exercise", ""),
+            generation_source="llm",
+        )
+
+    def _rule_analyze_wrong_answer(
+        self,
+        question: str,
+        student_answer: str,
+        correct_answer: str,
+        question_id: str,
+    ) -> ErrorAnalysis:
+        """Rule-based error analysis (no LLM dependency)."""
+        analysis = self.ERROR_RULE_ANALYSES["concept_misunderstanding"]
+
+        return ErrorAnalysis(
+            question_id=question_id,
+            error_type=analysis["error_type"],
+            explanation=analysis["explanation"],
+            correct_reasoning=analysis["correct_reasoning"],
+            related_concepts=analysis["related_concepts"],
+            recovery_plan=analysis["recovery_plan"],
+            next_exercise=analysis["next_exercise"],
+            generation_source="rule",
+        )
+
+    def analyze_wrong_answer_with_kg(
+        self,
+        question: str,
+        student_answer: str,
+        correct_answer: str,
+        question_id: str = "",
+        knowledge_graph: Any = None,
+        mastery_map: Dict[str, float] = None,
+    ) -> ErrorAnalysis:
+        """
+        Analyze wrong answer with Knowledge Graph enrichment. (Phase 8.3-D1)
+
+        Extends analyze_wrong_answer() by using KG to find missing prerequisites.
+
+        Args:
+            question, student_answer, correct_answer, question_id: same as analyze_wrong_answer
+            knowledge_graph: InMemoryKnowledgeGraph instance (optional)
+            mastery_map: concept_id → mastery (0.0-1.0)
+
+        Returns:
+            ErrorAnalysis with KG-enriched related_concepts and recovery_plan
+        """
+        # First get the standard analysis
+        analysis = self.analyze_wrong_answer(
+            question, student_answer, correct_answer, question_id
+        )
+
+        # Enrich with KG gap analysis
+        if knowledge_graph is not None and mastery_map:
+            try:
+                from src.knowledge_graph.bridge import map_error_to_prerequisites
+
+                # Use existing related_concepts from analysis + try concept matching
+                concepts_to_check = analysis.related_concepts or []
+                if not concepts_to_check:
+                    # Try to extract concept from question text
+                    concepts_to_check = [question_id] if question_id else []
+
+                for concept in concepts_to_check[:3]:
+                    gap = map_error_to_prerequisites(
+                        knowledge_graph, concept, mastery_map or {}
+                    )
+                    missing = gap.get("missing_prerequisites", [])
+                    if missing:
+                        # Add missing prerequisites to related_concepts
+                        existing = set(analysis.related_concepts)
+                        for m in missing:
+                            if m not in existing:
+                                analysis.related_concepts.append(m)
+                        # Enhance recovery plan
+                        analysis.recovery_plan = (
+                            f"Before studying '{concept}', you should first review these prerequisites: "
+                            f"{', '.join(missing)}. " + analysis.recovery_plan
+                        )
+            except Exception:
+                pass  # KG enrichment is best-effort
+
+        return analysis
 
     # ── Open-ended Evaluation ──────────────────────────────
 

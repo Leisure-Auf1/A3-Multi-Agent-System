@@ -7,7 +7,28 @@ from .resource_generation_agent import ResourceGenerationAgent
 from .resource_recommendation_agent import ResourceRecommendationAgent, RecommendedResource, PersonalizedResourcePlan
 from .conversation_profile_agent import ConversationProfileAgent
 from .tutor_agent import TutorAgent, TutorContext, TutorResponse
-from .evaluation_agent import EvaluationAgent, QuizQuestion, QuizResult, StudentAnswer
+from .evaluation_agent import EvaluationAgent, QuizQuestion, QuizResult, StudentAnswer, ErrorAnalysis
+from .content_generator_agent import (
+    ContentGeneratorAgent, TeachingMaterial, Chapter,
+    ConceptItem, ExampleItem, ExerciseItem,
+)
+# Phase 8.3-D2 — StudentGoal
+from .student_goal import (
+    StudentGoal, Milestone, GoalCategory, TargetLevel,
+    CAREER_PATHS, EXAM_PATHS,
+)
+# Phase 8.3-F1 — PPT Generator
+from .ppt_generator_agent import (
+    PPTGeneratorAgent, PPTStructure, SlideItem,
+)
+# Phase 8.3-F2 — Image Generator
+from .image_generator_agent import (
+    ImageGeneratorAgent, ImageArtifact,
+)
+# Phase 8.3-F3 — Video Generator
+from .video_generator_agent import (
+    VideoGeneratorAgent, VideoScript, VideoScene, VideoArtifact,
+)
 
 __all__ = [
     "ProfileAgent", "ProfileExtractionResult",
@@ -19,4 +40,16 @@ __all__ = [
     "ConversationProfileAgent",
     "TutorAgent", "TutorContext", "TutorResponse",
     "EvaluationAgent", "QuizQuestion", "QuizResult", "StudentAnswer",
+    "ErrorAnalysis",
+    "ContentGeneratorAgent", "TeachingMaterial", "Chapter",
+    "ConceptItem", "ExampleItem", "ExerciseItem",
+    # Phase 8.3-D2
+    "StudentGoal", "Milestone", "GoalCategory", "TargetLevel",
+    "CAREER_PATHS", "EXAM_PATHS",
+    # Phase 8.3-F1
+    "PPTGeneratorAgent", "PPTStructure", "SlideItem",
+    # Phase 8.3-F2
+    "ImageGeneratorAgent", "ImageArtifact",
+    # Phase 8.3-F3
+    "VideoGeneratorAgent", "VideoScript", "VideoScene", "VideoArtifact",
 ]

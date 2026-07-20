@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM A3-Agent v7.1.0 — Windows PyInstaller Build Script
+REM A3-Agent v1.0.0 — Windows PyInstaller Build Script
 REM =============================================================================
 REM Requires: pyinstaller, Python 3.10+, all deps from requirements.txt installed
 REM
@@ -11,7 +11,7 @@ REM Output: dist\A3-Agent\A3-Agent.exe
 REM =============================================================================
 
 echo ============================================
-echo   A3-Agent v7.1.0 — PyInstaller Build
+echo   A3-Agent v1.0.0 — PyInstaller Build
 echo ============================================
 echo.
 

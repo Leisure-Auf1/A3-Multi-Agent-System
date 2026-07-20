@@ -1,5 +1,5 @@
 """
-PyInstaller runtime hook for A3-Agent v7.1.0.
+PyInstaller runtime hook for A3-Agent v1.0.0.
 
 Ensures the bundle root (sys._MEIPASS) is on sys.path so that
 application source directories (src/, web/) can be imported

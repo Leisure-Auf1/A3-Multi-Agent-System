@@ -60,7 +60,11 @@ def generate_learning_plan(
     req: LearningPlanRequest,
     user: AuthUser = Depends(require_auth),
 ):
-    """Generate a personalized learning plan."""
+    """⚠️ LEGACY — Direct agent call. Migrate to POST /api/v2/learning/run.
+
+    Generate a personalized learning plan via PlannerAgent directly.
+    """
+    from fastapi.responses import JSONResponse
     agent = PlannerAgent()
     plan = agent.plan(
         profile=req.profile,
@@ -78,12 +82,15 @@ def generate_learning_plan(
                 resources=getattr(n, 'resources', []),
             ))
 
-    return LearningPlanResponse(
+    resp = JSONResponse(content=LearningPlanResponse(
         topic=getattr(plan, 'topic', req.goal),
         nodes=nodes,
         total_estimated_hours=getattr(plan, 'estimated_hours', len(nodes)),
         difficulty=getattr(plan, 'difficulty', 'beginner'),
-    )
+    ).model_dump())
+    resp.headers["X-Deprecated-API"] = "true"
+    resp.headers["X-Migration-Path"] = "/api/v2/learning/run"
+    return resp
 
 
 @router.get("/history", response_model=List[LearningRecordResponse])

@@ -188,7 +188,7 @@ class A3APIClient:
     def assess_profile(self, student_text: str,
                        token: Optional[str] = None) -> dict:
         return self._post("/api/v2/profile/assess",
-                          {"student_text": student_text}, token=token)
+                          {"text": student_text}, token=token)
 
     # ── Learning ──────────────────────────────────────────
 
@@ -227,3 +227,48 @@ class A3APIClient:
     def get_evaluation_results(self, limit: int = 20,
                                token: Optional[str] = None) -> list:
         return self._get(f"/api/v2/evaluation/results?limit={limit}", token=token)
+
+    # ── Learning Plan (Phase 10.1) ────────────────────────
+
+    def create_learning_plan(
+        self, goal: str, profile: Optional[dict] = None,
+        knowledge_gaps: Optional[list] = None,
+        token: Optional[str] = None,
+    ) -> dict:
+        return self._post("/api/v2/learning/plan", {
+            "goal": goal,
+            "profile": profile or {},
+            "knowledge_gaps": knowledge_gaps or [],
+        }, token=token)
+
+    # ── Settings (Phase 10.1) ─────────────────────────────
+
+    def get_llm_settings(self, token: Optional[str] = None) -> dict:
+        return self._get("/api/v2/settings/llm", token=token)
+
+    def save_llm_settings(self, provider: str, model: str,
+                          api_key: str = "",
+                          token: Optional[str] = None) -> dict:
+        return self._post("/api/v2/settings/llm", {
+            "provider": provider, "model": model, "api_key": api_key,
+        }, token=token)
+
+    def test_llm_connection(self, provider: str, model: str,
+                            api_key: str = "",
+                            token: Optional[str] = None) -> dict:
+        return self._post("/api/v2/settings/test", {
+            "provider": provider, "model": model, "api_key": api_key,
+        }, token=token)
+
+    # ── User / Usage (Phase 10.1) ─────────────────────────
+
+    def get_usage(self, token: Optional[str] = None) -> dict:
+        return self._get("/api/v2/usage", token=token)
+
+    # ── Unified Pipeline (Phase 10.2) ───────────────────
+
+    def run_pipeline(self, goal: str, depth: str = "normal",
+                     token: Optional[str] = None) -> dict:
+        return self._post("/api/v2/learning/run", {
+            "goal": goal, "depth": depth,
+        }, token=token)

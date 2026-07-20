@@ -8,9 +8,9 @@ test:
 test-cov:
 	python -m pytest tests/ -v --tb=short --cov=src --cov-report=term-missing
 
-# Launch Streamlit Dashboard
+# Launch Streamlit Dashboard (Phase 10.1 unified UI)
 run:
-	streamlit run web/app_v3.py
+	streamlit run web/app.py
 
 # Clean temporary files
 clean:

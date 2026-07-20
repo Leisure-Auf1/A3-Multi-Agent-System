@@ -94,6 +94,9 @@ class WorkflowResult:
     memory_saved: bool = False
     """MemoryManager 是否成功持久化本次会话"""
 
+    content: Optional[Dict[str, Any]] = None
+    """ContentGeneratorAgent 输出: TeachingMaterial.to_dict()"""
+
     meta_reflection: Optional[Dict[str, Any]] = None
     """Phase 4.6 — MetaReflector 输出: {mistake, root_cause, improvement, future_strategy, severity, concept, node_id}"""
 
@@ -128,6 +131,7 @@ class WorkflowResult:
             "resources": self.resources,
             "evaluation": self.evaluation,
             "reflection": self.reflection,
+            "content": self.content,
             "trace": self.trace,
             "memory_saved": self.memory_saved,
             "meta_reflection": self.meta_reflection,

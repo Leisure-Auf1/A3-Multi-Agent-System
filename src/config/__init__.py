@@ -25,6 +25,15 @@ from src.config.secret_manager import (
 )
 from src.config.onboarding import OnboardingState, detect_onboarding
 from src.config.error_helper import format_provider_error
+from src.config.secrets import (
+    get_api_key,
+    has_api_key,
+    get_all_configured_providers,
+    get_config_summary,
+    get_env_var_name,
+    PROVIDER_LABELS as SECRETS_PROVIDER_LABELS,
+    PROVIDER_EMOJI,
+)
 
 __all__ = [
     # Config
@@ -37,6 +46,13 @@ __all__ = [
     "decrypt_api_key",
     "delete_api_key",
     "get_storage_backend",
+    # Secrets (env vars)
+    "get_api_key",
+    "has_api_key",
+    "get_all_configured_providers",
+    "get_config_summary",
+    "get_env_var_name",
+    "PROVIDER_EMOJI",
     # Capability detection
     "ProviderCapability",
     "validate_provider_capability",
