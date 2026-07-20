@@ -31,7 +31,6 @@ pyinstaller --onedir --name A3-Agent --clean --noconfirm ^
   --add-data "utils;utils" ^
   --add-data "desktop;desktop" ^
   --add-data "knowledge_base;knowledge_base" ^
-  --add-data "storage/a3.db;storage" ^
   --add-data "demo/fixtures;demo/fixtures" ^
   --add-data ".streamlit/config.toml;.streamlit" ^
   --add-data ".env.example;." ^

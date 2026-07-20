@@ -3,7 +3,7 @@
 # Build: pyinstaller A3-Agent.spec
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('app.py', '.'), ('src', 'src'), ('web', 'web'), ('utils', 'utils'), ('desktop', 'desktop'), ('knowledge_base', 'knowledge_base'), ('storage/a3.db', 'storage'), ('demo/fixtures', 'demo/fixtures'), ('.streamlit/config.toml', '.streamlit'), ('.env.example', '.'), ('LICENSE', '.')]
+datas = [('app.py', '.'), ('src', 'src'), ('web', 'web'), ('utils', 'utils'), ('desktop', 'desktop'), ('knowledge_base', 'knowledge_base'), ('demo/fixtures', 'demo/fixtures'), ('.streamlit/config.toml', '.streamlit'), ('.env.example', '.'), ('LICENSE', '.')]
 binaries = []
 hiddenimports = ['desktop.config', 'fastapi', 'uvicorn', 'streamlit', 'veritas', 'veritas.llm', 'veritas.llm.factory', 'veritas.llm.provider', 'veritas.llm.mock_provider', 'veritas.llm.deepseek_provider', 'veritas.llm.openai_provider', 'veritas.llm.xunfei_provider', 'veritas.llm.rule_provider', 'veritas.memory', 'veritas.runtime', 'keyring', 'keyring.backend', 'keyring.backends', 'keyring.errors', 'keyring.credentials', 'SecretStorage', 'jeepney', 'jaraco.classes', 'jaraco.functools']
 tmp_ret = collect_all('fastapi')

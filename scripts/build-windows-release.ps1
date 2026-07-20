@@ -79,8 +79,29 @@ if (Test-Path $readme) {
 }
 
 # VERSION
-"$PACKAGE_NAME" | Out-File -Encoding ASCII "$RELEASE_DIR\$PACKAGE_NAME\VERSION"
+"$VERSION" | Out-File -Encoding ASCII "$RELEASE_DIR\\$PACKAGE_NAME\\VERSION"
 Write-Host "  ✓ VERSION"
+
+# start.bat convenience launcher
+$startBat = @"
+@echo off
+echo ============================================
+echo   A3-Agent v$VERSION
+echo ============================================
+echo.
+echo Starting A3-Agent...
+echo.
+A3-Agent.exe
+pause
+"@
+$startBat | Out-File -Encoding ASCII "$RELEASE_DIR\\$PACKAGE_NAME\\start.bat"
+Write-Host "  ✓ start.bat"
+
+# config directory (empty placeholder for user settings)
+New-Item -ItemType Directory -Force -Path "$RELEASE_DIR\\$PACKAGE_NAME\\config" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RELEASE_DIR\\$PACKAGE_NAME\\assets" | Out-Null
+Write-Host "  ✓ config/"
+Write-Host "  ✓ assets/"
 
 # ── Create zip ─────────────────────────────
 Write-Host "[5/5] Creating zip archive..." -ForegroundColor Green
