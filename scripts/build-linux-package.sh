@@ -8,14 +8,14 @@
 #   bash scripts/build-linux-package.sh
 #
 # Output:
-#   dist/A3-Agent-linux-x64-v7.1.0.tar.gz
+#   dist/A3-Agent-linux-x64-v1.0.0.tar.gz
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-VERSION="${A3_VERSION:-7.1.0}"
+VERSION="${A3_VERSION:-1.0.0}"
 PACKAGE_NAME="A3-Agent-linux-x64-v${VERSION}"
 BUILD_DIR="$PROJECT_ROOT/dist/$PACKAGE_NAME"
 
@@ -30,16 +30,25 @@ rm -rf "$PROJECT_ROOT/dist/$PACKAGE_NAME" "$PROJECT_ROOT/dist/$PACKAGE_NAME.tar.
 mkdir -p "$BUILD_DIR"
 
 # ── Copy application source ───────────────
-echo "[1/5] Copying application source..."
-rsync -a --exclude='.venv' --exclude='.git' --exclude='__pycache__' \
-      --exclude='.pytest_cache' --exclude='dist' --exclude='storage/*.db' \
-      "$PROJECT_ROOT/" "$BUILD_DIR/"
+echo "[1/5] Cleaning __pycache__ and stale artifacts..."
+find "$PROJECT_ROOT/src" -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+find "$PROJECT_ROOT/web" -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+
+echo "[2/5] Copying application source..."
+cp -r "$PROJECT_ROOT"/* "$BUILD_DIR/" 2>/dev/null || true
+# Remove unwanted directories
+rm -rf "$BUILD_DIR/.venv" "$BUILD_DIR/.git" "$BUILD_DIR/dist" "$BUILD_DIR/build" "$BUILD_DIR/release" "$BUILD_DIR/.pytest_cache" 2>/dev/null || true
+# Remove __pycache__ and .pyc files
+find "$BUILD_DIR" -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find "$BUILD_DIR" -name "*.pyc" -delete 2>/dev/null || true
+# Remove database files from storage
+find "$BUILD_DIR" -name "*.db" -path "*/storage/*" -delete 2>/dev/null || true
 
 # ── Copy start script ─────────────────────
-echo "[2/5] Creating launcher..."
+echo "[3/5] Creating launcher..."
 cat > "$BUILD_DIR/start.sh" << 'LAUNCHER'
 #!/bin/bash
-# A3-Agent v7.1.0 — Linux Launcher
+# A3-Agent v1.0.0 — Linux Launcher
 # Starts FastAPI backend + Streamlit frontend.
 
 set -e
@@ -63,7 +72,7 @@ fi
 mkdir -p storage
 
 echo "============================================"
-echo "  A3-Agent v7.1.0"
+echo "  A3-Agent v1.0.0"
 echo "  http://localhost:8501"
 echo "============================================"
 
@@ -90,9 +99,9 @@ LAUNCHER
 chmod +x "$BUILD_DIR/start.sh"
 
 # ── Create dist README ────────────────────
-echo "[3/5] Creating package README..."
+echo "[4/5] Creating package README..."
 cat > "$BUILD_DIR/INSTALL.md" << 'README'
-# A3-Agent v7.1.0 — Linux Installation
+# A3-Agent v1.0.0 — Linux Installation
 
 ## Requirements
 - Python 3.10+
@@ -102,8 +111,8 @@ cat > "$BUILD_DIR/INSTALL.md" << 'README'
 
 ```bash
 # 1. Extract
-tar xzf A3-Agent-linux-x64-v7.1.0.tar.gz
-cd A3-Agent-linux-x64-v7.1.0
+tar xzf A3-Agent-linux-x64-v1.0.0.tar.gz
+cd A3-Agent-linux-x64-v1.0.0
 
 # 2. Launch (auto-installs deps on first run)
 ./start.sh
@@ -137,13 +146,31 @@ Or choose "Demo Mode" to try without an API key.
 README
 chmod +x "$BUILD_DIR/INSTALL.md"
 
+# ── Add root-level documentation ────────
+echo "[4.5/6] Adding root documentation..."
+cp "$PROJECT_ROOT/LICENSE" "$BUILD_DIR/LICENSE" 2>/dev/null || echo "(LICENSE not found)"
+echo "A3-Agent v${VERSION}" > "$BUILD_DIR/VERSION"
+cat > "$BUILD_DIR/README.txt" << README_TXT
+A3-Agent v${VERSION} — AI Multi-Agent Learning System
+
+Quick Start:
+  1. Extract: tar xzf A3-Agent-linux-x64-v${VERSION}.tar.gz
+  2. Launch: ./start.sh
+  3. Open:   http://localhost:8501
+
+Demo Mode: No API key needed.
+Full pipeline with 7 agents, quizzes, reflection, and history replay.
+
+Docs: https://github.com/Leisure-Auf1/A3-Multi-Agent-System
+README_TXT
+
 # ── Package ───────────────────────────────
-echo "[4/5] Creating tarball..."
+echo "[5/6] Creating tarball..."
 cd "$PROJECT_ROOT/dist"
 tar czf "$PACKAGE_NAME.tar.gz" "$PACKAGE_NAME"
 
 # ── Summary ───────────────────────────────
-echo "[5/5] Done!"
+echo "[6/6] Done!"
 echo ""
 echo "Package: dist/$PACKAGE_NAME.tar.gz"
 echo "Size:    $(du -h "$PACKAGE_NAME.tar.gz" | cut -f1)"

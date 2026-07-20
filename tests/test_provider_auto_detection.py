@@ -98,7 +98,7 @@ class TestProviderLabel:
 
     def test_openai_label(self):
         cfg = LLMConfig(provider="openai", api_key="sk-test")
-        assert cfg.provider_label == "OpenAI"
+        assert cfg.provider_label == "GPT (OpenAI)"
 
     def test_mock_not_configured(self):
         cfg = LLMConfig(provider="mock")

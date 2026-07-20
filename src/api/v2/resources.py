@@ -100,7 +100,13 @@ def generate_resources_v2(
     req: GenerateBody,
     user: AuthUser = Depends(require_auth),
 ):
+    """Generate resources for a topic using configured LLM provider."""
+    from src.api.dependencies import get_llm_provider
+
     gateway = MultimodalGateway()
+    llm = get_llm_provider()
+    if llm is not None:
+        gateway.set_llm_provider(llm)
     results = []
     for rtype in req.resource_types:
         try:

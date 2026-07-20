@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+# A3-Agent v1.0.0 — Windows PyInstaller Spec
+# Build: pyinstaller A3-Agent.spec
 from PyInstaller.utils.hooks import collect_all
 
 datas = [('app.py', '.'), ('src', 'src'), ('web', 'web'), ('utils', 'utils'), ('desktop', 'desktop'), ('knowledge_base', 'knowledge_base'), ('storage/a3.db', 'storage'), ('demo/fixtures', 'demo/fixtures'), ('.streamlit/config.toml', '.streamlit'), ('.env.example', '.'), ('LICENSE', '.')]

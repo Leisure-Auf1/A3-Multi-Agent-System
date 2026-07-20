@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A3-Agent v7.1.0 — Release Validation Script
+A3-Agent v1.0.0 — Release Validation Script
 
 Checks the PyInstaller build output for correctness before distribution.
 Run from project root after a successful PyInstaller build.
@@ -159,7 +159,7 @@ def main():
         sys.exit(1)
 
     print("=" * 60)
-    print(f"  A3-Agent v7.1.0 — Release Validation")
+    print(f"  A3-Agent v1.0.0 — Release Validation")
     print(f"  Target: {dist}")
     print("=" * 60)
     print()

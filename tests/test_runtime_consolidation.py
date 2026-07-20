@@ -240,11 +240,13 @@ class TestSecurity:
         assert "TokenBudgetManager" in src
 
     def test_role_check_in_code(self):
-        """Verify role-based provider selection exists."""
+        """Phase 14.2: Role gate removed — all users can access LLM via config.
+        Verify pipeline source no longer contains role-based gating."""
         import inspect
         from src.api.v2.pipeline import run_learning_pipeline
         src = inspect.getsource(run_learning_pipeline)
-        assert "Role" in src or "role" in src.lower()
+        # Phase 14.2: Role-based gating was removed. Verify create_provider is called unconditionally.
+        assert "create_provider" in src
 
     def test_free_user_can_run_pipeline(self):
         """Free users can run pipeline (rule-only)."""

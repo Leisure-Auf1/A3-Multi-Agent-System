@@ -66,19 +66,25 @@ def assess_student_profile(
     req: ProfileAssessRequest,
     user: AuthUser = Depends(require_auth),
 ):
-    """⚠️ LEGACY — Direct agent call. Migrate to POST /api/v2/learning/run.
+    """Analyze student description and return profile assessment.
 
-    Analyze student description and return profile assessment.
+    Uses LLM provider if configured, falls back to rule-based extraction.
     """
     from fastapi.responses import JSONResponse
+    from src.api.dependencies import get_llm_provider
+
+    llm = get_llm_provider()
     agent = ProfileAgent()
-    result = agent.extract(req.text)
+    if llm is not None:
+        agent.set_llm_provider(llm)
+        result = agent.extract_with_provider(req.text)
+    else:
+        result = agent.extract(req.text)
+
     profile = result.to_dict() if hasattr(result, 'to_dict') else {}
-    # Auto-save the assessed profile
+    source = result.source if hasattr(result, 'source') else 'rule'
     save_profile(user.id, profile)
     resp = JSONResponse(content=ProfileResponse(
-        user_id=user.id, profile=profile, source="rule"
+        user_id=user.id, profile=profile, source=source
     ).model_dump())
-    resp.headers["X-Deprecated-API"] = "true"
-    resp.headers["X-Migration-Path"] = "/api/v2/learning/run"
     return resp

@@ -284,10 +284,9 @@ class TestJWTManager:
     def test_verify_tampered_signature(self):
         token = self.mgr.create_token("usr_1")
         parts = token.split(".")
-        # Flip last char of signature
-        sig = parts[2]
-        flipped = sig[:-1] + ("A" if sig[-1] != "A" else "B")
-        tampered = f"{parts[0]}.{parts[1]}.{flipped}"
+        # Replace signature with an obviously invalid one
+        # (flipping single char can hit base64url padding edge cases)
+        tampered = f"{parts[0]}.{parts[1]}.INVALID_SIGNATURE_XXXX"
         payload = self.mgr.verify_token(tampered)
         assert payload is None
 

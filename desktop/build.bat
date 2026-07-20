@@ -15,6 +15,10 @@ echo   A3-Agent v1.0.0 — PyInstaller Build
 echo ============================================
 echo.
 
+REM ── Clean __pycache__ before build ────────────
+for /d /r . %%d in (__pycache__) do @if exist "%%d" rmdir /s /q "%%d" 2>nul
+del /s /q *.pyc 2>nul
+
 REM ── Clean previous build ──────────────────────
 if exist "dist\A3-Agent" rmdir /s /q "dist\A3-Agent"
 if exist "build\A3-Agent" rmdir /s /q "build\A3-Agent"

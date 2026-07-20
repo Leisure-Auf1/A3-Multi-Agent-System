@@ -1,5 +1,5 @@
 # =============================================================================
-# A3-Agent v7.1.0 — Windows Release Asset Builder
+# A3-Agent v1.0.0 — Windows Release Asset Builder
 # =============================================================================
 # Creates the Windows distribution zip from a PyInstaller build.
 #
@@ -8,15 +8,15 @@
 #   2. Successful build at dist\A3-Agent\A3-Agent.exe
 #
 # Output:
-#   release\A3-Agent-v7.1.0-win64.zip
-#   release\A3-Agent-v7.1.0-win64.sha256
+#   release\A3-Agent-v1.0.0-win64.zip
+#   release\A3-Agent-v1.0.0-win64.sha256
 #
 # Usage (PowerShell):
 #   .\scripts\build-windows-release.ps1
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
-$VERSION = "7.1.0"
+$VERSION = "1.0.0"
 $PROJECT_ROOT = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $DIST_DIR = Join-Path $PROJECT_ROOT "dist\A3-Agent"
 $RELEASE_DIR = Join-Path $PROJECT_ROOT "release"

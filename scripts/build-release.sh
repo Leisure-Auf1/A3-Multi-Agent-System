@@ -1,12 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# A3-Agent v7.1.0 — Release Builder
+# A3-Agent v1.0.0 — Release Builder
 # =============================================================================
 # Creates release packages for distribution.
 #
 # Output:
-#   release/A3-Agent-v7.1.0-linux-x64.tar.gz
-#   release/A3-Agent-v7.1.0-linux-x64.sha256
+#   release/A3-Agent-v1.0.0-linux-x64.tar.gz
+#   release/A3-Agent-v1.0.0-linux-x64.sha256
 #
 # Prerequisites:
 #   PyInstaller build must exist at dist/A3-Agent/
@@ -16,7 +16,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-VERSION="${A3_VERSION:-7.1.0}"
+VERSION="${A3_VERSION:-1.0.0}"
 DIST_DIR="$PROJECT_ROOT/dist/A3-Agent"
 RELEASE_DIR="$PROJECT_ROOT/release"
 
