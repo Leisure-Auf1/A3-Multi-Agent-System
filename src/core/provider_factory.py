@@ -43,6 +43,26 @@ def _build_from_config(cfg: LLMConfig) -> Optional[LLMProvider]:
         from veritas.llm.xunfei_provider import XunfeiSparkProvider
         return XunfeiSparkProvider(api_key=cfg.api_key, model=cfg.model or "spark-pro")
 
+    if provider_name == "anthropic":
+        from src.providers.anthropic_provider import AnthropicProvider
+        return AnthropicProvider(api_key=cfg.api_key, model=cfg.model or "claude-sonnet")
+
+    if provider_name == "google":
+        from src.providers.google_provider import GoogleProvider
+        return GoogleProvider(api_key=cfg.api_key, model=cfg.model or "gemini-pro")
+
+    if provider_name == "qwen":
+        from src.providers.qwen_provider import QwenProvider
+        return QwenProvider(api_key=cfg.api_key, model=cfg.model or "qwen3.5")
+
+    if provider_name == "kimi":
+        from src.providers.kimi_provider import KimiProvider
+        return KimiProvider(api_key=cfg.api_key, model=cfg.model or "kimi-k3")
+
+    if provider_name == "grok":
+        from src.providers.grok_provider import GrokProvider
+        return GrokProvider(api_key=cfg.api_key, model=cfg.model or "grok")
+
     # mock / rule / unrecognized → delegate to Veritas factory
     return None
 

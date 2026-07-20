@@ -242,9 +242,11 @@ class EvaluationAgent:
             if is_correct:
                 correct += 1
                 earned += q.points
-                strong.add(q.topic)
+                if q.topic:  # Phase 17.1: filter empty topics
+                    strong.add(q.topic)
             else:
-                weak.add(q.topic)
+                if q.topic:  # Phase 17.1: filter empty topics
+                    weak.add(q.topic)
 
         score = (earned / max(total_points, 1)) * 100
 

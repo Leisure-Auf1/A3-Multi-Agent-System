@@ -54,6 +54,16 @@ class MultimodalGateway:
         """Register a provider for a resource type."""
         self._providers[resource_type] = provider
 
+    def set_llm_provider(self, provider: Any) -> None:
+        """Phase 15.1: Inject LLM provider into all registered resource providers.
+
+        Propagates to any provider that supports set_llm_provider().
+        Providers without LLM support (template-based) ignore the injection.
+        """
+        for p in self._providers.values():
+            if hasattr(p, 'set_llm_provider'):
+                p.set_llm_provider(provider)
+
     def generate(self, request: GenerateRequest) -> ResourceArtifact:
         """Full generation pipeline: check quota → generate → validate."""
         artifact = ResourceArtifact(

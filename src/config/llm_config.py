@@ -35,7 +35,62 @@ from src.config.secret_manager import encrypt_api_key, decrypt_api_key
 
 # ── Supported providers ────────────────────
 
-SUPPORTED_PROVIDERS = frozenset({"deepseek", "openai", "spark", "mock", "rule"})
+SUPPORTED_PROVIDERS = frozenset({
+    "deepseek", "openai", "anthropic", "google", "qwen",
+    "kimi", "grok", "spark", "mock", "rule",
+})
+
+# Provider categorization for UI grouping
+PRODUCTION_PROVIDERS = frozenset({
+    "deepseek", "openai", "anthropic", "google", "qwen",
+    "kimi", "grok", "spark",
+})
+
+DEMO_PROVIDERS = frozenset({"mock", "rule"})
+
+# Full provider metadata for UI display (Phase 13.2)
+PROVIDER_META = {
+    "deepseek":   {"label": "DeepSeek",       "emoji": "🌊", "category": "production",
+                   "models": ["deepseek-chat", "deepseek-v4-pro", "deepseek-reasoner"],
+                   "default_model": "deepseek-chat",
+                   "desc": "高性价比，中文能力强"},
+    "openai":     {"label": "GPT (OpenAI)",    "emoji": "🤖", "category": "production",
+                   "models": ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+                   "default_model": "gpt-4o",
+                   "desc": "全球领先的AI能力"},
+    "anthropic":  {"label": "Claude (Anthropic)", "emoji": "🧠", "category": "production",
+                   "models": ["claude-sonnet", "claude-opus", "claude-haiku"],
+                   "default_model": "claude-sonnet",
+                   "desc": "深度推理，长上下文"},
+    "google":     {"label": "Gemini (Google)", "emoji": "🔮", "category": "production",
+                   "models": ["gemini-pro", "gemini-flash"],
+                   "default_model": "gemini-pro",
+                   "desc": "多模态理解与生成"},
+    "qwen":       {"label": "通义千问 (Qwen)",  "emoji": "☁️", "category": "production",
+                   "models": ["qwen3.5", "qwen-max", "qwen-plus"],
+                   "default_model": "qwen3.5",
+                   "desc": "阿里云大模型，国产领先"},
+    "kimi":       {"label": "Kimi (Moonshot)", "emoji": "🌙", "category": "production",
+                   "models": ["kimi-k3"],
+                   "default_model": "kimi-k3",
+                   "desc": "长文本理解专家"},
+    "grok":       {"label": "Grok (xAI)",      "emoji": "🚀", "category": "production",
+                   "models": ["grok"],
+                   "default_model": "grok",
+                   "desc": "xAI 实时推理模型"},
+    "spark":      {"label": "讯飞星火 (Spark)",  "emoji": "⭐", "category": "production",
+                   "models": ["spark-pro", "spark-lite", "spark-max"],
+                   "default_model": "spark-pro",
+                   "desc": "国产大模型，合规可靠"},
+    "mock":       {"label": "Mock (演示模式)",    "emoji": "🎭", "category": "demo",
+                   "models": ["mock-model-v1"],
+                   "default_model": "mock-model-v1",
+                   "desc": "本地演示模式 — 无需API Key"},
+    "rule":       {"label": "Rule (纯规则)",      "emoji": "⚙️", "category": "demo",
+                   "models": ["rule-v1"],
+                   "default_model": "rule-v1",
+                   "desc": "纯规则引擎 — 不调用AI模型"},
+}
 
 DEFAULT_CONFIG = {
     "provider": "mock",
@@ -77,15 +132,18 @@ class LLMConfig:
 
     @property
     def provider_label(self) -> str:
-        """Human-readable provider label."""
-        labels = {
-            "deepseek": "DeepSeek",
-            "openai": "OpenAI",
-            "spark": "Spark",
-            "mock": "Mock (演示)",
-            "rule": "Rule (纯规则)",
-        }
-        return labels.get(self.provider, self.provider)
+        """Human-readable provider label from PROVIDER_META."""
+        return PROVIDER_META.get(self.provider, {}).get("label", self.provider)
+
+    @property
+    def provider_emoji(self) -> str:
+        """Provider emoji from PROVIDER_META."""
+        return PROVIDER_META.get(self.provider, {}).get("emoji", "🔌")
+
+    @property
+    def provider_category(self) -> str:
+        """Provider category: 'production' or 'demo'."""
+        return PROVIDER_META.get(self.provider, {}).get("category", "production")
 
     def to_dict(self) -> dict:
         """Serialize for API response (API key hidden)."""
