@@ -92,9 +92,9 @@ class TestMemoryDashboardCard:
         app_path = os.path.join(os.path.dirname(__file__), "..", "web", "app.py")
         with open(app_path) as f:
             content = f.read()
-        assert "Mastered Concepts" in content
-        assert "Weak Areas" in content
-        assert "Interactions" in content
+        assert "dash.mastered" in content
+        assert "dash.weak" in content
+        assert "dash.interactions" in content
 
     def test_student_memory_exists_after_pipeline(self):
         """StudentMemoryStore has data after pipeline run."""

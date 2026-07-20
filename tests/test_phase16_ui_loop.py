@@ -242,7 +242,7 @@ class TestUIComponentStructure:
             content = f.read()
         # All UI sections present
         sections = [
-            "AI Engine Details",
+            "learn.engine_details",
             "Learning Plan",
             "Quality Evaluation",
             "AI Reflection",

@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
+from web.i18n import t
+
 from web.utils.api import A3APIClient, A3APIError
 from web.components.auth import render_auth_gate, render_logout
 from web.components.chat import render_chat_sidebar, render_chat_main
@@ -68,23 +70,23 @@ def handle_api_error(e: A3APIError, context: str = "") -> None:
     detail = str(e.detail)[:200]
 
     if code == 401:
-        st.error("🔒 Session expired. Please log in again.")
-        if st.button("Go to Login"):
+        st.error(t("err.session_expired"))
+        if st.button(t("err.go_login")):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
             st.rerun()
     elif code == 429:
-        st.warning(f"⏳ Usage limit reached: {detail}")
-        st.info("💡 Your daily token budget has been used. Try again tomorrow or upgrade your plan.")
+        st.warning(t("err.usage_limit", detail=detail))
+        st.info(t("err.upgrade_hint"))
     elif code == 422:
-        st.warning(f"⚠️ Invalid input: {detail}")
+        st.warning(t("err.invalid_input", detail=detail))
     elif code >= 500:
-        st.error(f"🛠️ Server error ({context}): {detail}")
-        st.info("The AI backend encountered an issue. Please try again in a moment.")
-        if st.button("🔄 Retry"):
+        st.error(t("err.server", context=context, detail=detail))
+        st.info(t("err.server_hint"))
+        if st.button(t("err.retry")):
             st.rerun()
     else:
-        st.error(f"❌ Error ({context}): {detail}")
+        st.error(t("err.generic", context=context, detail=detail))
 
 
 # ═══════════════════════════════════════════════
@@ -143,20 +145,20 @@ def main() -> None:
                 if cfg.model:
                     st.caption(f"`{cfg.model}`")
             else:
-                st.info("🎭 **Demo Mode**")
-                st.caption("No LLM configured")
+                st.info(t("sidebar.demo_mode"))
+                st.caption(t("sidebar.no_llm"))
         except Exception:
-            st.info("🎭 **Demo Mode**")
+            st.info(t("sidebar.demo_mode"))
 
         st.markdown("---")
 
         tabs = {
-            "dashboard":  "🏠 Dashboard",
-            "learning":   "🎓 Learning",
-            "history":    "📜 History",
-            "workspace":  "📂 Workspace",
-            "profile":    "👤 Profile",
-            "settings":   "⚙️ Settings",
+            "dashboard":  t("tab.dashboard"),
+            "learning":   t("tab.learning"),
+            "history":    t("tab.history"),
+            "workspace":  t("tab.workspace"),
+            "profile":    t("tab.profile"),
+            "settings":   t("tab.settings"),
         }
         for tab_key, tab_label in tabs.items():
             if st.button(
@@ -228,8 +230,8 @@ def _render_onboarding_gate() -> None:
 # ═══════════════════════════════════════════════
 
 def _render_dashboard(api: A3APIClient) -> None:
-    st.markdown("## 🏠 Dashboard")
-    st.markdown("Your AI-powered learning command center.")
+    st.markdown(f"## {t('dash.title')}")
+    st.markdown(t("dash.subtitle"))
 
     # Phase 16.2-B: Show AI Engine status — Demo or real provider
     try:
@@ -247,7 +249,7 @@ def _render_dashboard(api: A3APIClient) -> None:
                 st.markdown("### 🎭")
             with c2:
                 st.markdown("**Demo Mode** — exploring with rule-based AI.")
-                st.caption("Configure an LLM API key in Settings for AI-powered features.")
+                st.caption(t("dash.demo_hint"))
     else:
         with st.container(border=True):
             c1, c2 = st.columns([1, 3])
@@ -292,10 +294,10 @@ def _render_dashboard(api: A3APIClient) -> None:
 
             st.markdown("### 🧠 AI Memory")
             mc1, mc2, mc3, mc4 = st.columns(4)
-            mc1.metric("Mastered Concepts", mastery_count)
-            mc2.metric("Weak Areas", weak_count)
-            mc3.metric("Sessions", sessions)
-            mc4.metric("Interactions", interactions)
+            mc1.metric(t("dash.mastered"), mastery_count)
+            mc2.metric(t("dash.weak"), weak_count)
+            mc3.metric(t("dash.sessions_count"), sessions)
+            mc4.metric(t("dash.interactions"), interactions)
 
             # Show weak area labels if any
             if weak_count > 0:
@@ -323,7 +325,7 @@ def _render_dashboard(api: A3APIClient) -> None:
             with st.container(border=True):
                 st.markdown(f"**{icon} {goal}**")
                 st.caption(desc)
-                if st.button(f"Try This", key=f"demo_goal_{idx}", use_container_width=True):
+                if st.button(t("dash.try_btn"), key=f"demo_goal_{idx}", use_container_width=True):
                     st.session_state.learning_goal = goal
                     st.session_state.active_tab = "learning"
                     st.rerun()
@@ -337,7 +339,7 @@ def _render_dashboard(api: A3APIClient) -> None:
         placeholder="e.g., I'm a CS student with basic Python. I want to understand multi-agent AI systems...",
         height=100, key="dash_goal",
     )
-    if st.button("🚀 Start Learning", type="primary", disabled=not goal.strip()):
+    if st.button(t("dash.start"), type="primary", disabled=not goal.strip()):
         st.session_state.learning_goal = goal.strip()
         st.session_state.active_tab = "learning"
         st.rerun()
@@ -348,32 +350,32 @@ def _render_dashboard(api: A3APIClient) -> None:
 # ═══════════════════════════════════════════════
 
 PIPELINE_STAGES = [
-    ("ProfileAgent", "🧠", "Analyzing your learning profile"),
-    ("PlannerAgent", "🗺️", "Building learning path"),
-    ("ContentGeneratorAgent", "📝", "Generating materials"),
-    ("ResourceAgent", "📚", "Finding resources"),
-    ("ReviewAgent", "🔍", "Quality review"),
-    ("ReflectionAgent", "💭", "Reflecting on plan"),
-    ("Memory", "💾", "Saving to memory"),
+    ("ProfileAgent", "🧠", t("stage.profile")),
+    ("PlannerAgent", "🗺️", t("stage.planner")),
+    ("ContentGeneratorAgent", "📝", t("stage.content")),
+    ("ResourceAgent", "📚", t("stage.resource")),
+    ("ReviewAgent", "🔍", t("stage.review")),
+    ("ReflectionAgent", "💭", t("stage.reflection")),
+    ("Memory", "💾", t("stage.memory")),
 ]
 
 
 def _render_learning(api: A3APIClient) -> None:
-    st.markdown("## 🎓 Learning Pipeline")
+    st.markdown(f"## {t('learn.title')}")
 
     goal = st.text_area(
-        "Learning Goal",
+        t("learn.goal"),
         value=st.session_state.get("learning_goal", ""),
-        placeholder="Describe your background and what you want to learn...",
+        placeholder=t("learn.goal_placeholder"),
         height=100, key="learn_goal",
     )
 
     c1, c2 = st.columns([1, 3])
     with c1:
-        run_clicked = st.button("🚀 Run Pipeline", type="primary", use_container_width=True, disabled=not goal.strip())
+        run_clicked = st.button(t("learn.run"), type="primary", use_container_width=True, disabled=not goal.strip())
     with c2:
         if st.session_state.get("learning_goal"):
-            st.caption(f"Goal: _{st.session_state.learning_goal[:80]}..._")
+            st.caption(t("learn.goal_preview", goal=st.session_state.learning_goal[:80]))
 
     if run_clicked:
         st.session_state.learning_goal = goal.strip()
@@ -388,13 +390,13 @@ def _render_learning(api: A3APIClient) -> None:
 
 def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
     """Execute pipeline with EventBus-driven progress visualization."""
-    progress_bar = st.progress(0, "Starting pipeline...")
+    progress_bar = st.progress(0, t("learn.init"))
     status_text = st.empty()
     trace_container = st.container()
 
     try:
         status_text.info("🚀 Launching AI agents...")
-        progress_bar.progress(5, "Initializing")
+        progress_bar.progress(5, t("learn.init"))
 
         result = api.run_pipeline(goal)
 
@@ -440,14 +442,14 @@ def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
 def _render_pipeline_results(result: dict, trace: list | None) -> None:
     """Render pipeline results: plan, trace, evaluation, and model transparency."""
     st.markdown("---")
-    st.markdown("### 📊 Pipeline Results")
+    st.markdown(f"### {t('learn.results')}")
 
     # ═══════════════════════════════════════════
     # Runtime Transparency (Phase 13.2)
     # ═══════════════════════════════════════════
     run_info = result.get("run_info", {})
     if run_info:
-        with st.expander("⚡ AI Engine Details", expanded=False):
+        with st.expander(t("learn.engine_details"), expanded=False):
             c1, c2, c3 = st.columns(3)
             engine = run_info.get("engine", "N/A")
             model = run_info.get("model", "N/A")
@@ -469,7 +471,7 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
 
     # Phase 16.2: Memory saved indicator
     if result.get("memory_saved"):
-        st.success("🧠 **AI remembered this session** — your learning profile has been updated.")
+        st.success(t("learn.memory_saved"))
 
     # Phase 17.1: AI Execution Card — per-agent LLM usage
     if trace:
@@ -486,7 +488,7 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
                 rule_agents.append(agent_name)
 
         if llm_agents or rule_agents:
-            with st.expander("🤖 AI Execution Card", expanded=False):
+            with st.expander(t("learn.exec_card"), expanded=False):
                 # Provider info
                 provider_name = llm_agents[0]["provider"] if llm_agents else "rule"
                 model_name = llm_agents[0]["model"] if llm_agents else ""

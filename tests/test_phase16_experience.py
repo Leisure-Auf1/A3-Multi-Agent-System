@@ -67,7 +67,7 @@ class TestProviderBadgeSidebar:
     def test_sidebar_shows_demo_when_unconfigured(self):
         """Sidebar shows Demo Mode when no LLM configured."""
         content = _read_app()
-        assert "🎭 **Demo Mode**" in content or "'🎭 **Demo Mode**'" in content
+        assert "sidebar.demo_mode" in content
 
     def test_sidebar_shows_provider_when_configured(self):
         """Sidebar shows provider name when configured."""

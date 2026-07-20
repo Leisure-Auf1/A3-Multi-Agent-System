@@ -14,6 +14,8 @@ import time
 
 import streamlit as st
 
+from web.i18n import t
+
 from src.config.llm_config import (
     load_llm_config,
     save_llm_config,
@@ -102,14 +104,14 @@ def _render_welcome() -> None:
     """Welcome / introduction screen."""
 
     # Hero
-    st.markdown("""
+    st.markdown(f"""
     <div style="text-align:center;padding:2em 0 1em;">
         <div style="font-size:4em;">🤖</div>
         <div class="hero-title" style="font-size:2.8em;margin-top:0.3em;">
-            A3 智能学习伙伴
+            {t('onboard.hero_title')}
         </div>
         <div class="hero-subtitle" style="font-size:1.2em;margin-top:0.5em;">
-            9 个 AI 智能体协同 · 个性化学习路径 · 资源精准推荐
+            {t('onboard.hero_subtitle')}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -117,7 +119,7 @@ def _render_welcome() -> None:
     # Feature cards
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-header" style="text-align:center;">🚀 开始之前</div>',
+        f'<div class="section-header" style="text-align:center;">{t("onboard.before")}</div>',
         unsafe_allow_html=True,
     )
 
@@ -156,11 +158,11 @@ def _render_welcome() -> None:
 
     col_a, col_b = st.columns(2)
     with col_a:
-        if st.button("🚀 开始配置", use_container_width=True, type="primary"):
+        if st.button(t("onboard.btn_setup"), use_container_width=True, type="primary"):
             st.session_state.onboarding_step = "setup"
             st.rerun()
     with col_b:
-        if st.button("🎭 先体验 Demo", use_container_width=True):
+        if st.button(t("onboard.btn_demo"), use_container_width=True):
             # Save mock config and skip
             cfg = LLMConfig(provider="mock", model="", api_key="")
             save_llm_config(cfg)
@@ -171,10 +173,10 @@ def _render_welcome() -> None:
 def _render_setup() -> None:
     """Provider setup screen (step 2)."""
 
-    st.markdown("""
+    st.markdown(f"""
     <div style="text-align:center;padding:1em 0;">
-        <div class="hero-title" style="font-size:2em;">⚙️ 配置 AI 模型</div>
-        <div class="hero-subtitle">选择你的大模型提供商，输入 API Key 即可开始</div>
+        <div class="hero-title" style="font-size:2em;">{t('onboard.setup_title')}</div>
+        <div class="hero-subtitle">{t('onboard.setup_subtitle')}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -227,7 +229,7 @@ def _render_setup() -> None:
 
     # ── API Key input ──────────────────────
     if provider == "mock":
-        st.success("🎭 Demo 模式不需要 API Key。你可以直接开始体验！")
+        st.success(t("onboard.demo_no_key"))
     else:
         api_url = PROVIDER_ACCOUNT_URLS.get(provider, "")
         st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
@@ -263,8 +265,8 @@ def _render_setup() -> None:
 
     with btn1:
         can_test = provider == "mock" or bool(st.session_state.onboarding_api_key.strip())
-        if st.button("🔍 测试连接", use_container_width=True, disabled=not can_test):
-            with st.spinner("正在测试连接..."):
+        if st.button(t("onboard.btn_test"), use_container_width=True, disabled=not can_test):
+            with st.spinner(t("onboard.testing")):
                 result = _test_connection(
                     provider,
                     st.session_state.onboarding_model,
@@ -279,7 +281,7 @@ def _render_setup() -> None:
             and test_result["success"]
             and bool(st.session_state.onboarding_api_key.strip())
         )
-        label = "🎭 进入 Demo" if provider == "mock" else "💾 保存并开始使用"
+        label = t("onboard.btn_enter_demo") if provider == "mock" else t("onboard.btn_save")
         if st.button(label, use_container_width=True, type="primary", disabled=False if provider == "mock" else not can_save):
             cfg = LLMConfig(
                 provider=provider,
@@ -291,7 +293,7 @@ def _render_setup() -> None:
             st.rerun()
 
     with btn3:
-        if st.button("← 返回", use_container_width=True):
+        if st.button(t("onboard.btn_back"), use_container_width=True):
             st.session_state.onboarding_step = "welcome"
             st.rerun()
 

@@ -23,6 +23,8 @@ from typing import Optional
 
 import streamlit as st
 
+from web.i18n import t
+
 from src.config.llm_config import (
     load_llm_config,
     save_llm_config,
@@ -73,25 +75,42 @@ def render_settings_tab() -> None:
     """Render the AI Provider Center with categorized providers and runtime status."""
 
     st.markdown(
-        '<div class="hero-title" style="font-size:2em;">⚙️ AI Provider Center</div>',
+        f'<div class="hero-title" style="font-size:2em;">{t("settings.title")}</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="hero-subtitle">Configure your AI engine — production models and offline demos</div>',
+        f'<div class="hero-subtitle">{t("settings.subtitle")}</div>',
         unsafe_allow_html=True,
     )
+
+    # ── Language selector (Phase 19.4) ──
+    from web.i18n import set_lang as set_lang_fn, _detect_lang
+    lang_col1, lang_col2 = st.columns([1, 3])
+    with lang_col1:
+        current_lang = _detect_lang()
+        st.markdown("### 🌐")
+    with lang_col2:
+        lang_options = {"en": "English", "zh": "中文"}
+        selected_lang = st.selectbox(
+            "Language / 语言",
+            options=list(lang_options.keys()),
+            index=0 if current_lang == "en" else 1,
+            format_func=lambda l: lang_options[l],
+            key="lang_selector",
+            label_visibility="collapsed",
+        )
+        if selected_lang != current_lang:
+            set_lang_fn(selected_lang)
+            st.rerun()
+
+    st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
 
     current = load_llm_config()
     config_path = get_config_path()
 
     # First launch detection
     if not os.path.exists(config_path):
-        st.warning(
-            "🔔 **No AI provider configured — running in Demo mode.**\n\n"
-            "Select a production model below and enter your API Key "
-            "to unlock the full multi-agent AI learning experience.",
-            icon="🔔",
-        )
+        st.warning(t("settings.no_config_warn"), icon="🔔")
 
     # Session state init
     for key, default in [
@@ -108,8 +127,8 @@ def render_settings_tab() -> None:
     # Section: Production Models
     # ═══════════════════════════════════════════
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
-    st.markdown("### 🚀 Production Models")
-    st.caption("Connect real AI engines with your API key. Status shows runtime connection state.")
+    st.markdown(f"### {t('settings.production')}")
+    st.caption(t("settings.production_desc"))
 
     production_list = sorted(PRODUCTION_PROVIDERS)
     for p in production_list:
@@ -130,8 +149,8 @@ def render_settings_tab() -> None:
     # Section: Demo & Offline Models
     # ═══════════════════════════════════════════
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
-    st.markdown("### 🎭 Demo & Offline Models")
-    st.caption("No API key required — explore the system with preset responses.")
+    st.markdown(f"### {t('settings.demo')}")
+    st.caption(t("settings.demo_desc"))
 
     demo_list = sorted(DEMO_PROVIDERS)
     for p in demo_list:
@@ -142,13 +161,13 @@ def render_settings_tab() -> None:
                 st.markdown(f"**{meta.get('emoji', '')} {meta.get('label', p)}**")
                 st.caption(meta.get("desc", ""))
             with c2:
-                st.success("Always On")
+                st.success(t("settings.always_on"))
 
     # ═══════════════════════════════════════════
     # Provider selector + configuration
     # ═══════════════════════════════════════════
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
-    st.markdown("### ⚡ Active Provider Configuration")
+    st.markdown(f"### {t('settings.active_config')}")
 
     provider_options = sorted(SUPPORTED_PROVIDERS)
     current_idx = (
@@ -158,7 +177,7 @@ def render_settings_tab() -> None:
     )
 
     selected_provider = st.selectbox(
-        "Select AI Provider",
+        t("settings.select_provider"),
         options=provider_options,
         index=current_idx,
         format_func=lambda p: _meta_label(p),
@@ -191,7 +210,7 @@ def render_settings_tab() -> None:
             model_idx = models.index(st.session_state.settings_model)
 
         selected_model = st.selectbox(
-            "Model",
+            t("settings.model"),
             options=models,
             index=model_idx,
             label_visibility="collapsed",
@@ -207,15 +226,15 @@ def render_settings_tab() -> None:
     # API Key + Actions
     with st.form("api_key_settings_form", clear_on_submit=False):
         if provider in DEMO_PROVIDERS:
-            st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
-            st.caption(f"{_meta_label(provider)} does not require an API Key")
+            st.markdown(f'<div class="section-header">{t("settings.api_key")}</div>', unsafe_allow_html=True)
+            st.caption(t("settings.no_key_needed", provider=_meta_label(provider)))
             api_key = ""
         else:
-            st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="section-header">{t("settings.api_key")}</div>', unsafe_allow_html=True)
             api_key = st.text_input(
-                "API Key",
+                t("settings.api_key"),
                 type="password",
-                placeholder="Paste your API key...",
+                placeholder=t("settings.api_key_placeholder"),
                 label_visibility="collapsed",
                 key="settings_api_key_input",
             )
@@ -223,14 +242,14 @@ def render_settings_tab() -> None:
         btn_col1, btn_col2, btn_col3 = st.columns([2, 2, 1])
         with btn_col1:
             test_clicked = st.form_submit_button(
-                "🔍 Test Connection",
+                t("settings.btn_test"),
                 use_container_width=True,
                 type="secondary",
             )
         with btn_col2:
             can_save = provider in DEMO_PROVIDERS or bool(api_key.strip())
             save_clicked = st.form_submit_button(
-                "💾 Save Configuration",
+                t("settings.btn_save"),
                 use_container_width=True,
                 type="primary",
                 disabled=not can_save,
@@ -244,7 +263,7 @@ def render_settings_tab() -> None:
 
     if test_clicked:
         with st.status(
-            f"Testing {_meta_label(provider)}...",
+            t("settings.testing", provider=_meta_label(provider)),
             expanded=True,
         ) as status:
             result = _test_connection(provider, st.session_state.settings_model, api_key)
@@ -252,12 +271,12 @@ def render_settings_tab() -> None:
             st.session_state.settings_saved = False
             if result["success"]:
                 status.update(
-                    label=f"✅ Connected! ({result['latency']:.1f}s)",
+                    label=t("settings.connected", latency=result['latency']),
                     state="complete",
                 )
             else:
                 status.update(
-                    label=f"❌ Failed: {result.get('error', 'Unknown error')}",
+                    label=t("settings.failed", error=result.get('error', 'Unknown error')),
                     state="error",
                 )
 
@@ -270,7 +289,7 @@ def render_settings_tab() -> None:
         save_llm_config(cfg)
         st.session_state.settings_saved = True
         st.session_state.settings_test_result = None
-        st.success(f"✅ Saved — {_meta_label(provider)}")
+        st.success(t("settings.saved", provider=_meta_label(provider)))
 
     # Status display
     test_result = st.session_state.settings_test_result
@@ -282,19 +301,18 @@ def render_settings_tab() -> None:
                 f"({_meta_label(test_result['provider'])}"
                 f" · {test_result['model']})"
             )
-            st.caption("Connection verified. Click 'Save Configuration' to persist.")
+            st.caption(t("settings.verify_hint"))
         else:
             error_msg = test_result.get("error", "Unknown error")
             st.error(f"❌ Connection failed: {error_msg}")
-            with st.expander("💡 Troubleshooting"):
+            with st.expander(t("settings.troubleshoot")):
                 hints = _get_error_hints(error_msg)
                 for hint in hints:
                     st.markdown(f"- {hint}")
 
     elif st.session_state.settings_saved:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
-        st.info(
-            f"✅ Active: **{_meta_label(provider)}**"
+        st.info(t("settings.active", provider=_meta_label(provider))
             + (f" · {st.session_state.settings_model}" if st.session_state.settings_model else "")
         )
 
@@ -304,9 +322,9 @@ def render_settings_tab() -> None:
             f"📋 Saved: **{_meta_label(current.provider)}**"
             + (f" · {current.model}" if current.model else "")
         )
-
+    ...
     # Config details
-    with st.expander("📋 Configuration Details"):
+    with st.expander(t("settings.config_details")):
         st.json({
             "config_path": config_path,
             "exists": os.path.exists(config_path),

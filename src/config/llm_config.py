@@ -124,6 +124,7 @@ class LLMConfig:
     provider: str = "mock"
     model: str = ""
     api_key: str = ""  # plaintext in memory, encrypted on disk
+    language: str = "en"  # UI language: "en" or "zh"
 
     @property
     def is_configured(self) -> bool:
@@ -150,6 +151,7 @@ class LLMConfig:
         return {
             "provider": self.provider,
             "model": self.model,
+            "language": self.language,
             "configured": self.is_configured,
         }
 
@@ -186,6 +188,7 @@ def load_llm_config() -> LLMConfig:
 
     provider = raw.get("provider", DEFAULT_CONFIG["provider"])
     model = raw.get("model", DEFAULT_CONFIG["model"])
+    language = raw.get("language", "en")
     encrypted_key = raw.get("api_key", "")
 
     # Decrypt API key (pass provider for keyring lookup)
@@ -201,7 +204,7 @@ def load_llm_config() -> LLMConfig:
     if provider not in SUPPORTED_PROVIDERS:
         provider = DEFAULT_CONFIG["provider"]
 
-    return LLMConfig(provider=provider, model=model, api_key=api_key)
+    return LLMConfig(provider=provider, model=model, api_key=api_key, language=language)
 
 
 def save_llm_config(config: LLMConfig) -> None:
@@ -220,6 +223,7 @@ def save_llm_config(config: LLMConfig) -> None:
     data = {
         "provider": config.provider,
         "model": config.model,
+        "language": getattr(config, "language", "en"),
         "api_key": encrypted_key,
     }
 
