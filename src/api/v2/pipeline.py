@@ -26,7 +26,6 @@ from src.auth.models import AuthUser
 from src.services.learning_pipeline import LearningPipelineService
 from src.platform.token_budget import TokenBudgetManager
 from src.platform.errors import TokenBudgetExceeded
-from src.user.permission import PermissionManager, Role
 
 router = APIRouter(prefix="/api/v2/learning", tags=["learning"])
 
@@ -53,6 +52,8 @@ class PipelineRunResponse(BaseModel):
     memory_saved: bool = False
     duration_ms: float = 0.0
     status: str = "success"
+    # Phase 14.2: Runtime observability
+    run_info: Optional[Dict[str, Any]] = None
 
 
 # ── Service instance ─────────────────────────────────
@@ -83,22 +84,15 @@ def run_learning_pipeline(
     except TokenBudgetExceeded as e:
         raise HTTPException(status_code=429, detail=e.user_message)
 
-    # ── Security: Role-based permission ────
-    # Free users can run pipeline but with rule-only mode
-    # Pro/Teacher/Admin users get LLM provider if configured
-    from src.user.manager import UserManager
-    um = UserManager()
-    platform_user = um.get_user_by_email(user.email)
-    role = platform_user.role if platform_user else "free"
-
     # ── Resolve LLM provider ───────────────
+    # Phase 14.2: All users with valid config get LLM.
+    # create_provider() handles priority: user config > env var > mock/rule fallback.
     llm_provider = None
-    if role in (Role.PRO, Role.TEACHER, Role.ADMIN):
-        try:
-            from src.core.provider_factory import create_provider
-            llm_provider = create_provider()
-        except Exception:
-            pass  # Fall back to rule-only
+    try:
+        from src.core.provider_factory import create_provider
+        llm_provider = create_provider()
+    except Exception:
+        pass  # Falls back to rule-only if no provider configured
 
     # ── Execute through unified pipeline ───
     result = _pipeline_service.run(
@@ -106,6 +100,9 @@ def run_learning_pipeline(
         goal=req.goal,
         llm_provider=llm_provider,
     )
+
+    # Phase 14.2: Populate run_info for UI observability
+    run_info = _build_run_info(llm_provider, result)
 
     # ── Consume token budget ───────────────
     try:
@@ -116,4 +113,52 @@ def run_learning_pipeline(
     except Exception:
         pass
 
-    return PipelineRunResponse(**result)
+    return PipelineRunResponse(**result, run_info=run_info)
+
+
+# ── Phase 14.2: Runtime observability helper ────────
+
+
+def _build_run_info(llm_provider: Any, result: Dict[str, Any]) -> Dict[str, Any]:
+    """Build run_info dict for UI transparency.
+
+    Extracts provider, model, tokens, latency from provider and result trace.
+    """
+    # Detect provider name: src/providers/* use .provider_name,
+    # veritas.llm.* providers don't — fall back to type name.
+    provider_name = getattr(llm_provider, 'provider_name', None)
+    if not provider_name and llm_provider is not None:
+        provider_name = type(llm_provider).__name__.replace('Provider', '').lower()
+    model_name = getattr(llm_provider, 'model', None)
+    info = {
+        "engine": provider_name or "rule",
+        "provider": provider_name or "rule",
+        "model": model_name or "",
+        "generation_time_ms": result.get("duration_ms", 0),
+        "is_fallback": False,
+        "fallback_from": "",
+        "fallback_reason": "",
+        "tokens_used": 0,
+    }
+
+    # Extract token totals from agent trace if available
+    trace = result.get("trace", [])
+    if trace:
+        total_tokens = 0
+        for t in trace:
+            if isinstance(t, dict):
+                total_tokens += t.get("tokens_used", 0)
+        info["tokens_used"] = total_tokens
+
+    # Detect if we fell back from a real provider to rule-only
+    if info["engine"] == "mock" and info["model"] == "":
+        info["is_fallback"] = True
+        info["fallback_reason"] = "No LLM provider configured"
+
+    elif info["engine"] == "rule" or info["engine"] is None:
+        info["engine"] = "rule-only"
+        info["provider"] = "rule"
+        info["is_fallback"] = True
+        info["fallback_reason"] = "No API key configured — using rule-only mode"
+
+    return info

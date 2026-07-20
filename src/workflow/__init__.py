@@ -301,7 +301,8 @@ class A3Workflow:
             self._emit("Memory", "experience_saved",
                         f"Session: {session_id}",
                         "Memory 已更新",
-                        duration_ms=round((time.time() - _t0) * 1000, 1))
+                        duration_ms=round((time.time() - _t0) * 1000, 1),
+                        metadata={"source": "rule", "llm_used": False})
 
             # Phase 9.0 — Artifact save: persist generated content to workspace
             self._save_artifacts_to_workspace(session_id, result)
@@ -717,8 +718,29 @@ class A3Workflow:
         output_summary: str,
         status: str = "success",
         duration_ms: float = 0.0,
+        metadata: Optional[Dict[str, Any]] = None,
     ):
-        """发送事件到 EventBus"""
+        """发送事件到 EventBus。
+        
+        Phase 17.1: 自动注入 provider metadata 到每个事件。
+        Explicit metadata 参数可覆盖自动生成的值。
+        """
+        if metadata is None:
+            metadata = {}
+        
+        # Phase 17.1: Auto-populate provider metadata from self.llm_provider
+        if self.llm_provider is not None:
+            pn = getattr(self.llm_provider, 'provider_name', None)
+            if not pn:
+                pn = type(self.llm_provider).__name__.replace('Provider', '').lower()
+            metadata.setdefault("source", "llm")
+            metadata.setdefault("provider", pn)
+            metadata.setdefault("model", getattr(self.llm_provider, 'model', ''))
+            metadata.setdefault("llm_used", True)
+        else:
+            metadata.setdefault("source", "rule")
+            metadata.setdefault("llm_used", False)
+        
         try:
             self._bus.emit(
                 agent=agent,
@@ -727,6 +749,7 @@ class A3Workflow:
                 output_summary=output_summary,
                 status=status,
                 duration_ms=duration_ms,
+                metadata=metadata,
             )
         except Exception:
             pass
