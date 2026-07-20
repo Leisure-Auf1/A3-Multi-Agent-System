@@ -237,6 +237,7 @@ def render_settings_tab() -> None:
                 placeholder=t("settings.api_key_placeholder"),
                 label_visibility="collapsed",
                 key="settings_api_key_input",
+                value=st.session_state.get("settings_api_key_input", ""),
             )
 
         btn_col1, btn_col2, btn_col3 = st.columns([2, 2, 1])
@@ -262,11 +263,13 @@ def render_settings_tab() -> None:
         st.session_state.settings_api_key = ""
 
     if test_clicked:
+        # Use session_state as fallback (password fields clear on re-render)
+        active_key = api_key or st.session_state.settings_api_key
         with st.status(
             t("settings.testing", provider=_meta_label(provider)),
             expanded=True,
         ) as status:
-            result = _test_connection(provider, st.session_state.settings_model, api_key)
+            result = _test_connection(provider, st.session_state.settings_model, active_key)
             st.session_state.settings_test_result = result
             st.session_state.settings_saved = False
             if result["success"]:
