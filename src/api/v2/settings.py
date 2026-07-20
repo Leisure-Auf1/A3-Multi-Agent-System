@@ -124,6 +124,16 @@ def test_llm_connection(req: Optional[LLMSettingsRequest] = None) -> TestConnect
     else:
         cfg = load_llm_config()
 
+    # Mock/rule providers don't need API keys — respond immediately
+    if cfg.provider in ("mock", "rule"):
+        return TestConnectionResponse(
+            success=True,
+            provider=cfg.provider,
+            model=cfg.model,
+            latency=0.0,
+            error="",
+        )
+
     if not cfg.is_configured:
         return TestConnectionResponse(
             success=False,

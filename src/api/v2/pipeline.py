@@ -78,11 +78,14 @@ def run_learning_pipeline(
     Pipeline runs generate EventBus events + TraceCollector records.
     """
     # ── Security: Token Budget check ───────
+    budget = None
     try:
         budget = TokenBudgetManager(user.id)
         budget.check_available(tokens=500)
     except TokenBudgetExceeded as e:
         raise HTTPException(status_code=429, detail=e.user_message)
+    except Exception:
+        budget = None  # Non-critical — proceed without budget tracking
 
     # ── Resolve LLM provider ───────────────
     # Phase 14.2: All users with valid config get LLM.
@@ -105,13 +108,14 @@ def run_learning_pipeline(
     run_info = _build_run_info(llm_provider, result)
 
     # ── Consume token budget ───────────────
-    try:
-        budget.consume(
-            tokens=500,
-            provider=getattr(llm_provider, 'provider_name', 'rule'),
-        )
-    except Exception:
-        pass
+    if budget is not None:
+        try:
+            budget.consume(
+                tokens=500,
+                provider=getattr(llm_provider, 'provider_name', 'rule'),
+            )
+        except Exception:
+            pass
 
     return PipelineRunResponse(**result, run_info=run_info)
 

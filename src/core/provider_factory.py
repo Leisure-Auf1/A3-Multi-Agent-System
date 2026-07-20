@@ -63,8 +63,9 @@ def _build_from_config(cfg: LLMConfig) -> Optional[LLMProvider]:
         from src.providers.grok_provider import GrokProvider
         return GrokProvider(api_key=cfg.api_key, model=cfg.model or "grok")
 
-    # mock / rule / unrecognized → delegate to Veritas factory
-    return None
+    if provider_name in ("mock", "rule"):
+        from veritas.llm.mock_provider import MockLLMProvider
+        return MockLLMProvider(model=cfg.model or "mock")
 
 
 def create_provider(

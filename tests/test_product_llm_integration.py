@@ -166,10 +166,11 @@ class TestCreateProviderPriority:
         assert p is None
 
     def test_returns_none_for_mock(self):
-        """Mock provider → _build_from_config returns None (delegates to Veritas)."""
+        """Mock provider → _build_from_config returns MockProvider."""
         cfg = LLMConfig(provider="mock", model="mock-model-v1")
         p = _build_from_config(cfg)
-        assert p is None  # Delegates to Veritas factory
+        assert p is not None  # Now returns MockProvider
+        assert p.is_available
 
 
 # ═══════════════════════════════════════════════
