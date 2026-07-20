@@ -90,13 +90,27 @@ class LearningPipelineService:
             wf_result.evaluation or {},
         )
 
-        # ── Record pipeline completion ──
+        # ── Record pipeline completion with full result for replay ──
+        full_result = {
+            "run_id": run_id,
+            "goal": goal,
+            "plan": wf_result.learning_plan or {},
+            "content": wf_result.content,
+            "resources": wf_result.resources or [],
+            "evaluation": wf_result.evaluation or {},
+            "reflection": wf_result.reflection,
+            "trace": wf_result.trace,
+            "memory_saved": wf_result.memory_saved,
+            "duration_ms": duration_ms,
+            "status": "success" if wf_result.success else ("partial" if wf_result.errors else "error"),
+        }
         try:
             record_agent_action(
                 user_id, "pipeline", "run_complete",
                 course_id="pipeline",
                 score=wf_result.evaluation.get("score", 0) if wf_result.evaluation else 0,
                 duration_ms=int(duration_ms),
+                result=full_result,
             )
         except Exception:
             pass

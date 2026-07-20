@@ -22,6 +22,7 @@ import streamlit as st
 from web.utils.api import A3APIClient, A3APIError
 from web.components.auth import render_auth_gate, render_logout
 from web.components.chat import render_chat_sidebar, render_chat_main
+from web.components.quiz_panel import render_quiz_panel
 
 
 # ═══════════════════════════════════════════════
@@ -131,6 +132,22 @@ def main() -> None:
     with st.sidebar:
         st.markdown(f"### 👤 {display_name}")
         st.caption(f"`{user_id[:12]}...`")
+
+        # Phase 16.2-B: Active provider badge
+        try:
+            from src.config.llm_config import load_llm_config
+            cfg = load_llm_config()
+            if cfg.is_configured and cfg.provider not in ("mock", "rule"):
+                provider_label = cfg.provider.title()
+                st.success(f"🤖 **{provider_label}**")
+                if cfg.model:
+                    st.caption(f"`{cfg.model}`")
+            else:
+                st.info("🎭 **Demo Mode**")
+                st.caption("No LLM configured")
+        except Exception:
+            st.info("🎭 **Demo Mode**")
+
         st.markdown("---")
 
         tabs = {
@@ -171,37 +188,39 @@ def main() -> None:
 # ═══════════════════════════════════════════════
 
 def _render_onboarding_gate() -> None:
-    """First-launch onboarding: quick intro + skip option."""
-    st.markdown("## 🤖 Welcome to A3 AI Learning Assistant")
-    st.markdown("""
-    Your personal AI tutor that understands **how** you learn.
-
-    **What A3 does:**
-    - 🧠 Analyzes your learning style from natural language
-    - 🗺️ Builds personalized learning paths
-    - 📚 Recommends resources matched to your profile
-    - 📊 Tracks your progress and adapts
-
-    **You'll need:**
-    - A free account (email + password)
-    - Optionally, an LLM API key for AI-powered features
-    """)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🚀 Get Started", type="primary", use_container_width=True):
+    """Phase 16.2-B: Full onboarding page for first launch."""
+    try:
+        from web.onboarding_page import render_onboarding_page
+        render_onboarding_page()
+        if st.session_state.get("onboarding_done"):
             st.session_state._onboarded = True
-            st.rerun()
-    with c2:
-        # Optionally wire the full onboarding_page here
-        if st.button("⚙️ Configure LLM First", use_container_width=True):
-            try:
-                from web.onboarding_page import render_onboarding_page
-                render_onboarding_page()
+    except Exception:
+        # Fallback: minimal gate
+        st.markdown("## 🤖 Welcome to A3 AI Learning Assistant")
+        st.markdown("""
+        Your personal AI tutor that understands **how** you learn.
+
+        **What A3 does:**
+        - 🧠 Analyzes your learning style from natural language
+        - 🗺️ Builds personalized learning paths
+        - 📚 Recommends resources matched to your profile
+        - 📊 Tracks your progress and adapts
+        """)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🚀 Get Started", type="primary", use_container_width=True):
                 st.session_state._onboarded = True
-            except Exception:
+                st.rerun()
+        with c2:
+            if st.button("🎭 Try Demo", use_container_width=True):
+                try:
+                    from src.config.llm_config import LLMConfig, save_llm_config
+                    save_llm_config(LLMConfig(provider="mock", model="", api_key=""))
+                except Exception:
+                    pass
                 st.session_state._onboarded = True
-            st.rerun()
+                st.rerun()
 
 
 # ═══════════════════════════════════════════════
@@ -211,6 +230,35 @@ def _render_onboarding_gate() -> None:
 def _render_dashboard(api: A3APIClient) -> None:
     st.markdown("## 🏠 Dashboard")
     st.markdown("Your AI-powered learning command center.")
+
+    # Phase 16.2-B: Show AI Engine status — Demo or real provider
+    try:
+        from src.config.llm_config import load_llm_config
+        cfg = load_llm_config()
+        is_demo = not cfg.is_configured or cfg.provider in ("mock", "rule")
+    except Exception:
+        is_demo = True
+        cfg = None
+
+    if is_demo:
+        with st.container(border=True):
+            c1, c2 = st.columns([1, 3])
+            with c1:
+                st.markdown("### 🎭")
+            with c2:
+                st.markdown("**Demo Mode** — exploring with rule-based AI.")
+                st.caption("Configure an LLM API key in Settings for AI-powered features.")
+    else:
+        with st.container(border=True):
+            c1, c2 = st.columns([1, 3])
+            with c1:
+                st.markdown("### 🤖")
+            with c2:
+                provider_label = cfg.provider.title() if cfg else "Unknown"
+                model_name = cfg.model or ""
+                st.markdown(f"**AI Mode — {provider_label}**")
+                if model_name:
+                    st.caption(f"Active model: `{model_name}`")
 
     # Quick stats row
     c1, c2, c3, c4 = st.columns(4)
@@ -230,8 +278,60 @@ def _render_dashboard(api: A3APIClient) -> None:
 
     st.markdown("---")
 
+    # Phase 16.2: Memory Card — what AI remembers
+    try:
+        from veritas.memory.student_memory import StudentMemoryStore
+        store = StudentMemoryStore()
+        user_id = st.session_state.get("user_id", "")
+        if user_id and store.exists(user_id):
+            mem = store.load(user_id)
+            mastery_count = len(mem.mastery_map)
+            weak_count = sum(1 for v in mem.mastery_map.values() if isinstance(v, (int, float)) and v < 0.5)
+            sessions = len(mem.session_summaries)
+            interactions = mem.learning_behavior.get("interaction_count", 0)
+
+            st.markdown("### 🧠 AI Memory")
+            mc1, mc2, mc3, mc4 = st.columns(4)
+            mc1.metric("Mastered Concepts", mastery_count)
+            mc2.metric("Weak Areas", weak_count)
+            mc3.metric("Sessions", sessions)
+            mc4.metric("Interactions", interactions)
+
+            # Show weak area labels if any
+            if weak_count > 0:
+                weak_labels = [
+                    k for k, v in mem.mastery_map.items()
+                    if isinstance(v, (int, float)) and v < 0.5
+                ][:5]
+                if weak_labels:
+                    st.caption(f"Focus areas: {', '.join(weak_labels)}")
+    except Exception:
+        pass
+
+    st.markdown("---")
+
+    # Phase 16.2: Smart goal suggestions
+    st.markdown("### 🎯 Try These")
+    suggestions = [
+        ("🐍", "Learn Python basics", "Variables, loops, functions"),
+        ("🤖", "Understand machine learning", "Supervised vs unsupervised"),
+        ("📊", "Master data structures", "Lists, trees, graphs, hash maps"),
+    ]
+    cols = st.columns(len(suggestions))
+    for idx, (icon, goal, desc) in enumerate(suggestions):
+        with cols[idx]:
+            with st.container(border=True):
+                st.markdown(f"**{icon} {goal}**")
+                st.caption(desc)
+                if st.button(f"Try This", key=f"demo_goal_{idx}", use_container_width=True):
+                    st.session_state.learning_goal = goal
+                    st.session_state.active_tab = "learning"
+                    st.rerun()
+
+    st.markdown("---")
+
     # Quick Start
-    st.markdown("### 🎯 Quick Start")
+    st.markdown("### ✏️ Custom Goal")
     goal = st.text_area(
         "What do you want to learn today?",
         placeholder="e.g., I'm a CS student with basic Python. I want to understand multi-agent AI systems...",
@@ -301,23 +401,31 @@ def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
         # Extract trace from API response
         trace = result.get("trace", [])
 
-        # Simulate progress from trace data
-        stage_map = {s[0]: s for s in PIPELINE_STAGES}
-        completed = 0
-        for i, stage in enumerate(PIPELINE_STAGES):
-            agent_name, icon, label = stage
-            pct = int((i + 1) / len(PIPELINE_STAGES) * 100)
-            # Check if agent appears in trace
-            matching = [t for t in trace if t.get("agent") == agent_name]
-            if matching:
-                status_text.success(f"{icon} {label} — complete")
-                completed += 1
-            else:
-                status_text.info(f"{icon} {label} — done (rule-based)")
-            progress_bar.progress(pct, f"{completed}/{len(PIPELINE_STAGES)} stages")
+        # Phase 16.1: Trace-driven agent progress (actual agents that ran)
+        agents_in_trace = []
+        seen = set()
+        for t in trace:
+            agent = t.get("agent", "")
+            if agent and agent not in seen and agent != "System":
+                seen.add(agent)
+                agents_in_trace.append(agent)
 
-        progress_bar.progress(100, "Pipeline complete!")
-        status_text.success(f"✅ Pipeline complete — {completed} stages executed")
+        if agents_in_trace:
+            completed = 0
+            for i, agent_name in enumerate(agents_in_trace):
+                pct = int((i + 1) / len(agents_in_trace) * 100)
+                matching = [t for t in trace if t.get("agent") == agent_name]
+                if matching:
+                    dur = matching[-1].get("duration_ms", 0)
+                    status_text.success(f"🤖 {agent_name} — {dur:.0f}ms")
+                else:
+                    status_text.info(f"🤖 {agent_name}")
+                completed += 1
+                progress_bar.progress(pct, f"{completed}/{len(agents_in_trace)} agents")
+            status_text.success(f"✅ Pipeline complete — {completed} agents executed")
+        else:
+            progress_bar.progress(100, "Pipeline complete (rule-only)")
+            status_text.success("✅ Pipeline complete")
 
         # Store results
         st.session_state.pipeline_result = result
@@ -330,9 +438,76 @@ def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
 
 
 def _render_pipeline_results(result: dict, trace: list | None) -> None:
-    """Render pipeline results: plan, trace, evaluation."""
+    """Render pipeline results: plan, trace, evaluation, and model transparency."""
     st.markdown("---")
     st.markdown("### 📊 Pipeline Results")
+
+    # ═══════════════════════════════════════════
+    # Runtime Transparency (Phase 13.2)
+    # ═══════════════════════════════════════════
+    run_info = result.get("run_info", {})
+    if run_info:
+        with st.expander("⚡ AI Engine Details", expanded=False):
+            c1, c2, c3 = st.columns(3)
+            engine = run_info.get("engine", "N/A")
+            model = run_info.get("model", "N/A")
+            is_fb = run_info.get("is_fallback", False)
+
+            c1.metric("AI Engine", engine)
+            c2.metric("Model", model)
+            gen_ms = run_info.get("generation_time_ms", 0)
+            c3.metric("Generation Time", f"{gen_ms:.0f}ms" if gen_ms else "N/A")
+
+            if is_fb:
+                st.warning(
+                    f"⚠️ **Fallback active** — {run_info.get('fallback_from', 'unknown')} "
+                    f"→ {engine}. Reason: {run_info.get('fallback_reason', 'unknown')}"
+                )
+            else:
+                tokens = run_info.get("tokens_used", 0)
+                st.caption(f"Tokens used: {tokens:,}")
+
+    # Phase 16.2: Memory saved indicator
+    if result.get("memory_saved"):
+        st.success("🧠 **AI remembered this session** — your learning profile has been updated.")
+
+    # Phase 17.1: AI Execution Card — per-agent LLM usage
+    if trace:
+        llm_agents = []
+        rule_agents = []
+        for t in trace:
+            meta = t.get("metadata", {})
+            agent_name = t.get("agent", "")
+            if agent_name in ("System", "Workflow"):
+                continue
+            if meta.get("llm_used") or meta.get("source") == "llm":
+                llm_agents.append({"agent": agent_name, "provider": meta.get("provider","?"), "model": meta.get("model","")})
+            else:
+                rule_agents.append(agent_name)
+
+        if llm_agents or rule_agents:
+            with st.expander("🤖 AI Execution Card", expanded=False):
+                # Provider info
+                provider_name = llm_agents[0]["provider"] if llm_agents else "rule"
+                model_name = llm_agents[0]["model"] if llm_agents else ""
+                st.markdown(f"**Provider:** `{provider_name}`" + (f" · Model: `{model_name}`" if model_name else ""))
+                
+                # Counts
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Agents (LLM)", len(llm_agents))
+                c2.metric("Agents (Rule)", len(rule_agents))
+                tokens = result.get("run_info", {}).get("tokens_used", 0)
+                c3.metric("Tokens", f"{tokens:,}" if tokens else "—")
+                
+                # Per-agent breakdown
+                if llm_agents:
+                    st.caption("**LLM-powered agents:**")
+                    for a in llm_agents:
+                        st.success(f"🤖 {a['agent']}")
+                if rule_agents:
+                    st.caption("**Rule-based agents:**")
+                    for a in rule_agents:
+                        st.info(f"⚙️ {a}")
 
     # Quick summary
     c1, c2, c3 = st.columns(3)
@@ -385,6 +560,93 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
             if issues:
                 st.warning(f"Issues found: {len(issues)}")
 
+    # ═══════════════════════════════════════════
+    # Phase 16.1: Reflection Output
+    # ═══════════════════════════════════════════
+    refl = result.get("reflection")
+    if refl:
+        with st.expander("💭 AI Reflection", expanded=False):
+            source = refl.get("source", "rule")
+            if source == "llm":
+                st.success("🤖 AI-powered analysis")
+            else:
+                st.info("⚙️ Rule-based analysis")
+
+            summary = refl.get("summary", "")
+            if summary:
+                st.markdown(summary[:500])
+
+            achievements = refl.get("achievements", [])
+            improvements = refl.get("improvements", [])
+
+            if achievements:
+                st.markdown("**Achievements:**")
+                for a in achievements:
+                    st.markdown(f"- ✅ {a}")
+
+            if improvements:
+                st.markdown("**Improvements:**")
+                for imp in improvements:
+                    st.markdown(f"- 📝 {imp}")
+
+    # ═══════════════════════════════════════════
+    # Phase 14.2: Generated Content
+    # ═══════════════════════════════════════════
+    content_data = result.get("content")
+    if content_data:
+        with st.expander("📝 AI-Generated Lesson", expanded=True):
+            title = content_data.get("title", "Teaching Material")
+            summary = content_data.get("overall_summary", "")
+            chapters = content_data.get("chapters", [])
+            gen_source = content_data.get("generation_source", "rule")
+
+            st.markdown(f"### {title}")
+            if summary:
+                st.markdown(summary)
+            if gen_source == "llm":
+                st.success("🤖 Generated by AI")
+            elif gen_source == "rule":
+                st.info("⚙️ Template-generated (no AI configured)")
+
+            if chapters:
+                st.markdown("---")
+                for ch in chapters:
+                    ch_title = ch.get("title", "Untitled")
+                    ch_content = ch.get("content", "")
+                    with st.expander(f"📖 {ch_title}"):
+                        st.markdown(ch_content[:3000] if ch_content else "(empty)")
+
+    # ═══════════════════════════════════════════
+    # Phase 14.2: Resource Cards
+    # ═══════════════════════════════════════════
+    resources_list = result.get("resources", [])
+    if resources_list:
+        with st.expander("📚 Recommended Resources", expanded=False):
+            for res in resources_list:
+                rtype = res.get("type", "unknown")
+                rtitle = res.get("title", "Untitled")
+                rreason = res.get("reason", "")
+                rdifficulty = res.get("difficulty", "beginner")
+                with st.container(border=True):
+                    c1, c2 = st.columns([3, 1])
+                    c1.markdown(f"**{rtitle}**")
+                    c2.caption(f"`{rtype}` · {rdifficulty}")
+                    if rreason:
+                        st.caption(rreason)
+
+    # ═══════════════════════════════════════════
+    # Phase 16.1: Interactive Quiz Panel
+    # ═══════════════════════════════════════════
+    st.markdown("---")
+    topic = result.get("goal", "")
+    if topic:
+        try:
+            from src.core.provider_factory import create_provider
+            provider = create_provider()
+            render_quiz_panel(provider, topic)
+        except Exception:
+            st.caption("Quiz unavailable — configure an LLM provider in Settings")
+
 
 # ═══════════════════════════════════════════════
 # Tab: History
@@ -409,15 +671,96 @@ def _render_history(api: A3APIClient) -> None:
             return
 
         for r in records[-20:]:
+            created = r.get('created_at', '')[:10]
+            dur = r.get('duration_ms', 0)
+            run_id = r.get('run_id', '')
+            result_json = r.get('result_json')
+
             with st.expander(
                 f"{r.get('agent', 'pipeline')} — {r.get('action', 'run')} "
-                f"({r.get('created_at', '')[:10]})",
+                f"({created})",
             ):
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 c1.metric("Score", f"{r.get('score', 0):.0f}")
-                c2.metric("Duration", f"{r.get('duration_ms', 0)}ms")
+                c2.metric("Duration", f"{dur}ms")
                 if r.get("course_id"):
-                    st.caption(f"Course: {r['course_id']}")
+                    c3.caption(f"Course: {r['course_id']}")
+
+                # Phase 16.2: History replay — render result_json if available
+                if result_json and isinstance(result_json, dict):
+                    goal = result_json.get("goal", "")
+                    plan_data = result_json.get("plan", {})
+                    eval_data = result_json.get("evaluation", {})
+                    content_data = result_json.get("content")
+                    resources_list = result_json.get("resources", [])
+                    refl = result_json.get("reflection")
+                    mem_saved = result_json.get("memory_saved")
+
+                    st.markdown("---")
+                    st.markdown("#### 📋 Session Replay")
+
+                    if goal:
+                        st.caption(f"**Goal:** {goal}")
+
+                    # Memory saved badge in replay
+                    if mem_saved:
+                        st.success("🧠 AI remembered this session")
+
+                    # Plan
+                    nodes = plan_data.get("nodes", [])
+                    if nodes:
+                        with st.expander("🗺️ Learning Plan", expanded=False):
+                            for i, node in enumerate(nodes):
+                                st.markdown(f"**{i+1}. {node.get('title', 'Untitled')}**")
+                                concepts = node.get("concepts", [])
+                                if concepts:
+                                    st.caption(f"Concepts: {', '.join(concepts)}")
+
+                    # Evaluation
+                    if eval_data:
+                        with st.expander("📊 Evaluation", expanded=False):
+                            st.metric("Score", eval_data.get("score", "N/A"))
+                            if eval_data.get("passed"):
+                                st.success("✅ Passed quality gate")
+
+                    # Reflection
+                    if refl:
+                        with st.expander("💭 AI Reflection", expanded=False):
+                            s = refl.get("summary", "")
+                            if s:
+                                st.markdown(s[:300])
+                            ach = refl.get("achievements", [])
+                            imp = refl.get("improvements", [])
+                            if ach:
+                                st.markdown("**Achievements:**")
+                                for a in ach[:3]:
+                                    st.markdown(f"- ✅ {a}")
+                            if imp:
+                                st.markdown("**Improvements:**")
+                                for i in imp[:3]:
+                                    st.markdown(f"- 📝 {i}")
+
+                    # Content
+                    if content_data:
+                        with st.expander("📝 Generated Lesson", expanded=False):
+                            title = content_data.get("title", "Teaching Material")
+                            chapters = content_data.get("chapters", [])
+                            st.markdown(f"**{title}**")
+                            if chapters:
+                                for ch in chapters[:3]:
+                                    st.caption(f"📖 {ch.get('title', 'Untitled')}")
+
+                    # Resources
+                    if resources_list:
+                        with st.expander("📚 Resources", expanded=False):
+                            for res in resources_list[:5]:
+                                st.caption(f"• {res.get('title', 'Untitled')} ({res.get('type', '?')})")
+
+                    # Artifact link
+                    if run_id:
+                        if st.button("📂 View Workspace Artifacts", key=f"replay_ws_{r['id']}"):
+                            st.session_state.active_tab = "workspace"
+                            st.rerun()
 
     except A3APIError as e:
         handle_api_error(e, "history")

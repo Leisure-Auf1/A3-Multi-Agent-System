@@ -47,6 +47,10 @@ class LearningRecordResponse(BaseModel):
     course_id: str
     score: float
     created_at: str
+    # Phase 16.2: History replay support
+    result_json: Optional[Dict[str, Any]] = None
+    run_id: Optional[str] = None
+    duration_ms: Optional[int] = None
 
 
 class LearningStatsResponse(BaseModel):
@@ -95,14 +99,21 @@ def generate_learning_plan(
 
 @router.get("/history", response_model=List[LearningRecordResponse])
 def get_learning_history(user: AuthUser = Depends(require_auth)):
-    return [
-        LearningRecordResponse(
+    # Phase 16.2: Include result_json, run_id, duration_ms for replay
+    import json as _json
+    results = []
+    for r in get_history(user.id):
+        raw = r.get("result_json", "{}")
+        result_data = _json.loads(raw) if raw and raw != "{}" else {}
+        results.append(LearningRecordResponse(
             id=r["id"], agent=r["agent"], action=r["action"],
             course_id=r.get("course_id", ""), score=r.get("score", 0.0),
             created_at=r["created_at"],
-        )
-        for r in get_history(user.id)
-    ]
+            result_json=result_data if result_data else None,
+            run_id=result_data.get("run_id") if result_data else None,
+            duration_ms=r.get("duration_ms"),
+        ))
+    return results
 
 
 @router.get("/stats", response_model=LearningStatsResponse)
