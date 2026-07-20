@@ -406,8 +406,8 @@ def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
         # Phase 16.1: Trace-driven agent progress (actual agents that ran)
         agents_in_trace = []
         seen = set()
-        for t in trace:
-            agent = t.get("agent", "")
+        for ev in trace:
+            agent = ev.get("agent", "")
             if agent and agent not in seen and agent != "System":
                 seen.add(agent)
                 agents_in_trace.append(agent)
@@ -477,8 +477,8 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
     if trace:
         llm_agents = []
         rule_agents = []
-        for t in trace:
-            meta = t.get("metadata", {})
+        for ev in trace:
+            meta = ev.get("metadata", {})
             agent_name = t.get("agent", "")
             if agent_name in ("System", "Workflow"):
                 continue
@@ -538,8 +538,8 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
             try:
                 render_pipeline_progress(events, st)
             except Exception:
-                for t in trace:
-                    st.text(f"{t.get('agent', '?')}: {t.get('output_summary', '')[:80]}")
+                for ev in trace:
+                    st.text(f"{ev.get('agent', '?')}: {t.get('output_summary', '')[:80]}")
 
     # Learning Plan
     if nodes:
