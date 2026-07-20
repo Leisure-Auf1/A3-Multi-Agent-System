@@ -1,170 +1,216 @@
 # Phase 19.7 — Product Final Acceptance Audit Report
 
 **Date:** 2026-07-20
-**Status:** ⚠️ BLOCKED — Linux package missing i18n files
+**Audit Type:** Read-Only, Code + Package Inspection
+**Constraints:** No code changes, no rebuilds, no commits
 
 ---
 
-## Environment
+## A. Release Baseline
 
-| Metric | Value |
-|--------|-------|
-| HEAD | `d14f632` |
-| Tag v1.0.0 | `9b43631` (1 behind HEAD, docs-only) |
-| `git describe` | `v1.0.0-1-gd14f632` |
-| Working tree | Clean (2 WAL files, .gitignored) |
-| Tests | 2874 passed, 0 failures |
-| GitHub Release | Published, Draft=false |
-| Linux asset | 90 MB tar.gz + sha256 |
-| Windows asset | ⏳ Pending |
+| Check | Value | Status |
+|-------|-------|--------|
+| Working tree | Clean (2 WAL, .gitignored) | ✅ |
+| `git describe` | `v1.0.0-2-g8dd3aa5` | ✅ |
+| Tag v1.0.0 | `9b43631` | ✅ |
+| HEAD | `8dd3aa5` (+2 docs-only) | ✅ |
+| Tag↔HEAD diff | `docs/release/*.md` only | ✅ |
+
+**VERSION_STATUS: PASS**
 
 ---
 
-## Audit B — Linux Package Structure
+## B. Linux Package Structure
 
-**Package:** `A3-Agent-v1.0.0-linux-x64.tar.gz` (2.3 MB compressed, 90 MB source)
+**Package:** `A3-Agent-v1.0.0-linux-x64.tar.gz` (2.3 MB compressed)
+
+| Item | Expected | Actual | Status |
+|------|----------|--------|--------|
+| `start.sh` | ✅ | Present | ✅ |
+| `VERSION` | `1.0.0` | `A3-Agent v1.0.0` | ⚠️ |
+| `LICENSE` | ✅ | Present | ✅ |
+| `README.md` | ✅ | Present | ✅ |
+| `config/` | ✅ | **Missing** | ❌ |
+| `assets/` | ✅ | **Missing** | ❌ |
+| `__pycache__/` | Absent | None found | ✅ |
+| `*.pyc` | Absent | None found | ✅ |
+| **`web/i18n/`** | **Required** | **🔴 MISSING** | **BLOCKER** |
+
+### 🔴 BLOCKER Detail
 
 ```
-A3-Agent-linux-x64-v1.0.0/
-├── start.sh          ✅
-├── VERSION           ⚠️ "A3-Agent v1.0.0" (should be "1.0.0")
-├── LICENSE           ✅
-├── README.md         ✅
-├── requirements.txt  ✅
-├── app.py            ✅
-├── src/              ✅
-├── web/              ⚠️ MISSING web/i18n/
-│   ├── app.py
-│   ├── components/   ✅ auth, chat, quiz, material
-│   ├── dashboard/    ✅
-│   ├── v1/           ✅
-│   ├── utils/        ✅
-│   └── ❌ i18n/      BLOCKER — not in package
-├── desktop/          ✅
-├── config/           ❌ (at package root, expected)
-├── assets/           ❌ (at package root, expected)
-└── __pycache__       ✅ None found
+Missing from release package:
+  web/i18n/__init__.py   — t() translation engine
+  web/i18n/keys.py       — 146 key constants
+  web/i18n/en.toml       — English locale
+  web/i18n/zh.toml       — Chinese locale
+
+Root Cause: Package built BEFORE Phase 19.4-B (i18n implementation).
+Impact: app.py line 22: `from web.i18n import t` → ImportError at runtime.
 ```
-
-### 🔴 BLOCKER: web/i18n/ Missing
-
-The Linux release package was built **before Phase 19.4-B** (i18n implementation). Four files are missing:
-
-| Missing File | Purpose |
-|-------------|---------|
-| `web/i18n/__init__.py` | t() translation engine |
-| `web/i18n/keys.py` | 146 key constants |
-| `web/i18n/en.toml` | English locale |
-| `web/i18n/zh.toml` | Chinese locale |
-
-**Impact:** Language switch will fail at runtime — `from web.i18n import t` raises ImportError.
 
 ---
 
-## Audit C — Onboarding + Language Switch
+## C. Fresh User Journey (Code Audit — Package Cannot Launch)
 
-### Code Path Verified (source only, not package)
+### Onboarding Flow
 
-```
-app.py:111-113  → _render_onboarding_gate() checks session_state._onboarded
-onboarding_page.py:57-96 → 2-step flow: welcome → setup
-settings_tab.py:87-103 → Language selector (🌐) with st.selectbox
-```
+| Step | Code Path | Status |
+|------|-----------|--------|
+| First launch detection | `app.py:111` → `_render_onboarding_gate()` | ✅ Verified |
+| Welcome screen | `onboarding_page.py:101` → hero + feature cards | ✅ Code correct |
+| Provider setup | `onboarding_page.py:171` → `_render_setup()` | ✅ Code correct |
+| API key test | `onboarding_page.py:266` → `_test_connection()` | ✅ Code correct |
+| Save & enter | `onboarding_page.py:282` → `save_llm_config()` | ✅ Code correct |
+| Onboard flag | `st.session_state.onboarding_done = True` | ✅ |
 
-✅ Onboarding flow: welcome → provider setup → save → main app
-✅ Language selector: present in Settings page, triggers `st.rerun()`
-⚠️ Cannot verify at runtime (package missing i18n)
+### Language Switch
 
----
+| Step | Code Path | Status |
+|------|-----------|--------|
+| Language selector | `settings_tab.py:87-104` → `st.selectbox` | ✅ |
+| Switch en→zh | `set_lang("zh")` → `st.rerun()` | ✅ Code correct |
+| Switch zh→en | `set_lang("en")` → `st.rerun()` | ✅ Code correct |
+| Persistence | `LLMConfig.language` → `llm.json` | ✅ |
 
-## Audit D — Guest User Flow
+### i18n Coverage Per Page
 
-### Code Path Verified
+| Page | t() calls | Untranslated Strings |
+|------|-----------|---------------------|
+| Dashboard | 14 | 5 (mode cards, suggestions) |
+| Settings | 23 | 2 (model registry) |
+| Auth | 15 | 0 |
+| Onboarding | 8 | 3 (HTML cards) |
+| Learning/Pipeline | 16 | 2 (agent labels) |
+| Error handler | 9 | 0 |
+| **Total** | **85** | **~12 minor** |
 
-```
-auth.py:32-33     → Guest tab → _render_guest()
-auth.py:78-85     → api.guest() → persist_auth()
-app.py:378-382    → _execute_pipeline_with_progress()
-app.py:389-437    → 7-stage pipeline with progress bar
-app.py:440-       → _render_pipeline_results() with quiz, trace, memory
-```
-
-✅ Full pipeline: Profile → Planner → Content → Resource → Review → Reflection → Memory
-✅ Quiz panel: `render_quiz_panel()` imported and integrated
-✅ History replay: History tab renders session records
-⚠️ Cannot run live (package broken)
-
----
-
-## Audit E — AI Transparency
-
-### Execution Card Code (app.py:476-500)
-
-```python
-# Phase 17.1: AI Execution Card
-for t in trace:
-    meta = t.get("metadata", {})
-    if meta.get("llm_used") or meta.get("source") == "llm":
-        llm_agents.append({"agent": ..., "provider": ..., "model": ...})
-    else:
-        rule_agents.append(...)
-```
-
-✅ Per-agent LLM/Rule classification
-✅ Provider + model displayed
-✅ `t("learn.exec_card")` i18n key used
-⚠️ Cannot verify live
+**Untranslated strings are cosmetic** — emoji headers, dynamic provider labels, demo suggestions. No critical UI blocker.
 
 ---
 
-## Audit F — i18n Completeness Scan
+## D. Guest User Complete Flow (Code Audit)
 
-### Remaining Hardcoded Strings
+```
+auth.py:32      → tab_guest selected
+auth.py:78      → _render_guest() renders guest name input
+auth.py:82      → api.guest(name) creates guest session
+app.py:378      → st.button("🚀 Run Pipeline") clicked
+app.py:391      → _execute_pipeline_with_progress() starts
+app.py:401      → api.run_pipeline(goal) executes 7 agents
+app.py:440      → _render_pipeline_results() displays output
+app.py:         → render_quiz_panel() integrated
+app.py:         → History tab shows session records
+```
 
-| File | Line | Text | Severity |
-|------|------|------|----------|
-| `web/app.py` | 251 | `"**Demo Mode** — exploring with rule-based AI."` | Low |
-| `web/app.py` | 261 | `"**AI Mode — {provider_label}**"` | Low |
-| `web/app.py` | 201-218 | Fallback welcome text (hardcoded English) | Low |
-| `web/onboarding_page.py` | 128-150 | Feature cards + privacy HTML (hardcoded Chinese) | Low |
-| `web/onboarding_page.py` | 307-309 | `"原因"`, `"解决办法"` (hardcoded Chinese) | Low |
-| `web/settings_tab.py` | 504 | `"### 🌐 模型连接状态"` (hardcoded Chinese) | Low |
-| `web/settings_tab.py` | 505 | Provider status caption (hardcoded Chinese) | Low |
-| `web/settings_tab.py` | 461 | `"No models registered"` | Low |
+| Stage | Code Verified | Hardcoded? |
+|-------|--------------|------------|
+| ProfileAgent | ✅ `PIPELINE_STAGES[0]` | t("stage.profile") |
+| PlannerAgent | ✅ `PIPELINE_STAGES[1]` | t("stage.planner") |
+| ContentGeneratorAgent | ✅ `PIPELINE_STAGES[2]` | t("stage.content") |
+| ResourceAgent | ✅ `PIPELINE_STAGES[3]` | t("stage.resource") |
+| ReviewAgent | ✅ `PIPELINE_STAGES[4]` | t("stage.review") |
+| ReflectionAgent | ✅ `PIPELINE_STAGES[5]` | t("stage.reflection") |
+| Memory | ✅ `PIPELINE_STAGES[6]` | t("stage.memory") |
+| Quiz Panel | ✅ `render_quiz_panel()` imported | ✅ |
+| History Replay | ✅ History tab routing | ✅ |
 
-**Verdict:** 12 minor hardcoded strings remain. None are critical UI blockers. All major pages (Dashboard, Settings, Login, Pipeline, Quiz, History) use t() correctly.
-
----
-
-## Audit G — Release Completeness
-
-| Check | Status |
-|-------|--------|
-| GitHub Release published | ✅ Not draft |
-| Linux .tar.gz | ✅ 90 MB |
-| Linux .sha256 | ✅ 99 bytes |
-| VERSION file | ⚠️ "A3-Agent v1.0.0" (should be "1.0.0") |
-| LICENSE present | ✅ |
-| README present | ✅ |
-| Windows .zip | ⏳ Pending |
-| i18n in package | ❌ MISSING |
+**Guest flow: PASS (code audit)**
 
 ---
 
-## Issues Summary
+## E. AI Transparency (Code Audit)
 
-| # | Priority | File/Area | Issue | Recommendation |
-|---|----------|-----------|-------|----------------|
-| 1 | **BLOCKER** | Linux package | `web/i18n/` not included | Rebuild with `scripts/build-linux-package.sh` |
-| 2 | **HIGH** | `release/VERSION` | "A3-Agent v1.0.0" → "1.0.0" | Fix in build script |
-| 3 | LOW | `web/app.py` | 2 dashboard strings not i18n | t()-ify remaining strings |
-| 4 | LOW | `web/onboarding_page.py` | HTML card text not i18n | Wrap in t() calls |
-| 5 | LOW | `web/settings_tab.py` | Model registry Chinese text | i18n remaining strings |
+```
+app.py:476  → # Phase 17.1: AI Execution Card — per-agent LLM usage
+app.py:478  → llm_agents = []
+app.py:479  → rule_agents = []
+app.py:483  → meta.get("llm_used") or meta.get("source") == "llm"
+app.py:486  → llm_agents.append({"agent": ..., "provider": ..., "model": ...})
+app.py:491  → with st.expander(t("learn.exec_card"), expanded=False):
+app.py:493  → provider_name = llm_agents[0]["provider"] if llm_agents else "rule"
+```
+
+| Requirement | Code Path | Status |
+|-------------|-----------|--------|
+| Provider displayed | `provider_name` from trace metadata | ✅ |
+| Model displayed | `model_name` from trace metadata | ✅ |
+| LLM vs Rule agents | `llm_agents` / `rule_agents` classification | ✅ |
+| Trace metadata | `source`, `provider`, `model`, `llm_used` | ✅ |
+| AI Engine Details | `run_info.engine`, `run_info.model`, `run_info.tokens_used` | ✅ |
+
+**AI Transparency: PASS (code audit)**
+
+---
+
+## F. Persistence (Code Audit)
+
+| Mechanism | Code Path | Status |
+|-----------|-----------|--------|
+| LLM Config | `save_llm_config()` → `llm.json` | ✅ |
+| Language pref | `LLMConfig.language` → persisted | ✅ |
+| Session/Learning | `api.run_pipeline()` → API persistence | ✅ |
+| Memory | `StudentMemoryStore` → `veritas/memory/` | ✅ |
+| Memory saved indicator | `result.get("memory_saved")` → UI success | ✅ |
+
+**Persistence: PASS (code audit)**
+
+---
+
+## G. Error Experience (Code Audit)
+
+```
+app.py:65  → handle_api_error() — 8 error types with user-friendly messages
+app.py:71  → 401: t("err.session_expired") + Go to Login button
+app.py:76  → 429: t("err.usage_limit") + upgrade hint
+app.py:79  → 422: t("err.invalid_input")
+app.py:81  → 500: t("err.server") + server hint + Retry button
+app.py:87  → generic: t("err.generic")
+app.py:39  → 39 try/except blocks across app
+```
+
+| Error Scenario | User Message | Status |
+|---------------|-------------|--------|
+| Unauthorized | "Session expired. Please log in again." | ✅ i18n |
+| Rate limited | "Usage limit reached: ..." | ✅ i18n |
+| Invalid input | "Invalid input: ..." | ✅ i18n |
+| Server error | "Server error (context): ..." | ✅ i18n |
+| Generic error | "Error (context): ..." | ✅ i18n |
+| Stack trace exposed? | No — all via `handle_api_error()` | ✅ |
+
+**Error Experience: PASS (code audit)**
+
+---
+
+## H. Product Quality Score
+
+| Dimension | Score | Notes |
+|-----------|-------|-------|
+| First Launch UX | 7/10 | Onboarding flow solid; blocked by missing i18n in package |
+| Language Experience | 5/10 | Code complete (85 t() calls); 12 minor untranslated; package broken |
+| Learning Loop | 9/10 | 7-agent pipeline verified; quiz + history + reflection all present |
+| AI Transparency | 9/10 | Execution Card with provider/model/LLM classification |
+| Persistence | 8/10 | Config + memory + session all persisted |
+| Release Quality | 2/10 | 🔴 Package missing i18n, config/, assets/; VERSION format wrong |
+
+**Overall Product Score: 40/60 (67%)** — downgraded by package issue
 
 ---
 
 ## PRODUCT_STATUS: **BLOCKED**
 
-**Reason:** Linux release package (`A3-Agent-v1.0.0-linux-x64.tar.gz`) was built before i18n implementation (Phase 19.4-B). The `web/i18n/` directory is missing, causing ImportError at runtime.
+### Blockers
 
-**Action Required:** Rebuild the Linux package with the current source tree that includes `web/i18n/`.
+| Priority | Issue | Location | Recommendation |
+|----------|-------|----------|----------------|
+| **P0** | `web/i18n/` missing from package | `A3-Agent-v1.0.0-linux-x64.tar.gz` | Rebuild with `scripts/build-linux-package.sh` |
+| **P1** | `config/` and `assets/` dirs missing | Package root | Add to build-linux-package.sh |
+| **P1** | VERSION = "A3-Agent v1.0.0" | Package VERSION file | Change to "1.0.0" |
+
+### Non-Blocking
+
+| Priority | Issue | Location |
+|----------|-------|----------|
+| P2 | 12 untranslated dashboard strings | `web/app.py` lines 249-506 |
+| P2 | Onboarding HTML cards not i18n | `web/onboarding_page.py` lines 128-150 |
+| P2 | Model registry Chinese text | `web/settings_tab.py` lines 504-505 |
