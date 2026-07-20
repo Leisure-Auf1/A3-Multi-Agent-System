@@ -1,16 +1,17 @@
 """
-Phase 4.0 — Streamlit Settings Tab (⚙️ AI模型设置)
+Phase 13.2 — Streamlit Settings Tab (⚙️ AI Provider Center)
 
-User LLM configuration UI component. Imported by app_v3.py as a 4th tab.
+Redesigned with provider categorization, runtime status, and model transparency.
 
 Features:
-  - Provider selector (DeepSeek / OpenAI / Spark / Mock)
-  - Model selector (with presets per provider)
+  - Production Models section (8 providers with connection status)
+  - Demo & Offline Models section (mock / rule)
+  - Provider selector with runtime status indicators
+  - Model selector (from PROVIDER_META presets)
   - API Key input (password-masked)
-  - Test connection button
-  - Save configuration button
-  - Status display (connected / failed / unconfigured)
-  - First-launch detection with demo mode notification
+  - Test connection + runtime recording
+  - Save configuration
+  - Provider health summary from ProviderStatusTracker
 """
 
 from __future__ import annotations
@@ -27,86 +28,129 @@ from src.config.llm_config import (
     save_llm_config,
     LLMConfig,
     SUPPORTED_PROVIDERS,
+    PRODUCTION_PROVIDERS,
+    DEMO_PROVIDERS,
+    PROVIDER_META,
     get_config_path,
 )
 from src.core.provider_factory import _build_from_config
+from src.providers.status import ProviderStatusTracker, ActiveRunInfo
 
 
-# ── Provider presets ───────────────────────
+def _meta_label(provider: str) -> str:
+    """Get display label from PROVIDER_META."""
+    meta = PROVIDER_META.get(provider, {})
+    return f"{meta.get('emoji', '')} {meta.get('label', provider)}"
 
-PROVIDER_LABELS = {
-    "deepseek": "🌊 DeepSeek",
-    "openai": "🤖 OpenAI",
-    "spark": "🚀 讯飞星火 (Spark)",
-    "mock": "🎭 Mock (演示模式)",
-    "rule": "⚙️ Rule (纯规则)",
-}
 
-PROVIDER_MODELS = {
-    "deepseek": ["deepseek-chat", "deepseek-v4-pro", "deepseek-reasoner"],
-    "openai": ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
-    "spark": ["spark-pro", "spark-lite", "spark-max"],
-    "mock": ["mock-model-v1"],
-    "rule": ["rule-v1"],
-}
+def _meta_desc(provider: str) -> str:
+    """Get description from PROVIDER_META."""
+    return PROVIDER_META.get(provider, {}).get("desc", "")
 
-PROVIDER_DESCRIPTIONS = {
-    "deepseek": "DeepSeek 大模型 — 高性价比，中文能力强",
-    "openai": "OpenAI GPT 系列 — 全球领先的AI能力",
-    "spark": "讯飞星火大模型 — 国产大模型，合规可靠",
-    "mock": "本地演示模式 — 无需API Key，使用预设回复",
-    "rule": "纯规则引擎 — 不调用任何AI模型",
-}
+
+def _status_icon(provider: str) -> str:
+    """Get connection status icon from runtime tracker."""
+    try:
+        tracker = ProviderStatusTracker.get_instance()
+        snap = tracker.get_snapshot(provider)
+        if snap.connected:
+            return "🟢"
+        if snap.check_error:
+            return "🔴"
+        return "⚪"
+    except Exception:
+        return "⚪"
+
+
+def _default_model(provider: str) -> str:
+    """Get default model for a provider from PROVIDER_META."""
+    meta = PROVIDER_META.get(provider, {})
+    models = meta.get("models", [""])
+    return models[0] if models else ""
 
 
 def render_settings_tab() -> None:
-    """
-    Render the AI Model Settings tab.
-
-    Call this from app_v3.py:
-        with tab_settings:
-            render_settings_tab()
-    """
+    """Render the AI Provider Center with categorized providers and runtime status."""
 
     st.markdown(
-        '<div class="hero-title" style="font-size:2em;">⚙️ AI模型设置</div>',
+        '<div class="hero-title" style="font-size:2em;">⚙️ AI Provider Center</div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="hero-subtitle">配置你的大语言模型，让A3智能体为你服务</div>',
+        '<div class="hero-subtitle">Configure your AI engine — production models and offline demos</div>',
         unsafe_allow_html=True,
     )
 
-    # Load current config
     current = load_llm_config()
-
-    # ── First launch detection ──────────────
     config_path = get_config_path()
+
+    # First launch detection
     if not os.path.exists(config_path):
         st.warning(
-            "🔔 **未配置AI模型，当前使用 Demo 模式。**\n\n"
-            "请在下方的设置中输入你的 API Key，"
-            "以解锁真实的 AI 多智能体学习体验。",
+            "🔔 **No AI provider configured — running in Demo mode.**\n\n"
+            "Select a production model below and enter your API Key "
+            "to unlock the full multi-agent AI learning experience.",
             icon="🔔",
         )
 
-    # ── Session state init ──────────────────
+    # Session state init
     for key, default in [
         ("settings_provider", current.provider),
         ("settings_model", current.model or _default_model(current.provider)),
-        ("settings_api_key", ""),  # Never pre-fill API key
+        ("settings_api_key", ""),
         ("settings_test_result", None),
         ("settings_saved", False),
     ]:
         if key not in st.session_state:
             st.session_state[key] = default
 
+    # ═══════════════════════════════════════════
+    # Section: Production Models
+    # ═══════════════════════════════════════════
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
+    st.markdown("### 🚀 Production Models")
+    st.caption("Connect real AI engines with your API key. Status shows runtime connection state.")
 
-    # ── Provider selector ───────────────────
-    st.markdown('<div class="section-header">🤖 模型提供商</div>', unsafe_allow_html=True)
+    production_list = sorted(PRODUCTION_PROVIDERS)
+    for p in production_list:
+        meta = PROVIDER_META.get(p, {})
+        status_icon = _status_icon(p)
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([3, 2, 1])
+            with c1:
+                st.markdown(f"**{meta.get('emoji', '')} {meta.get('label', p)}**")
+                st.caption(meta.get("desc", ""))
+            with c2:
+                models_str = ", ".join(meta.get("models", [])[:3])
+                st.caption(f"Models: `{models_str}`")
+            with c3:
+                st.markdown(f"### {status_icon}")
 
-    provider_options = list(SUPPORTED_PROVIDERS)
+    # ═══════════════════════════════════════════
+    # Section: Demo & Offline Models
+    # ═══════════════════════════════════════════
+    st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
+    st.markdown("### 🎭 Demo & Offline Models")
+    st.caption("No API key required — explore the system with preset responses.")
+
+    demo_list = sorted(DEMO_PROVIDERS)
+    for p in demo_list:
+        meta = PROVIDER_META.get(p, {})
+        with st.container(border=True):
+            c1, c2 = st.columns([4, 1])
+            with c1:
+                st.markdown(f"**{meta.get('emoji', '')} {meta.get('label', p)}**")
+                st.caption(meta.get("desc", ""))
+            with c2:
+                st.success("Always On")
+
+    # ═══════════════════════════════════════════
+    # Provider selector + configuration
+    # ═══════════════════════════════════════════
+    st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
+    st.markdown("### ⚡ Active Provider Configuration")
+
+    provider_options = sorted(SUPPORTED_PROVIDERS)
     current_idx = (
         provider_options.index(current.provider)
         if current.provider in provider_options
@@ -114,15 +158,14 @@ def render_settings_tab() -> None:
     )
 
     selected_provider = st.selectbox(
-        "选择模型提供商",
+        "Select AI Provider",
         options=provider_options,
         index=current_idx,
-        format_func=lambda p: PROVIDER_LABELS.get(p, p),
+        format_func=lambda p: _meta_label(p),
         label_visibility="collapsed",
         key="settings_provider_selector",
     )
 
-    # Update session state on provider change
     if selected_provider != st.session_state.settings_provider:
         st.session_state.settings_provider = selected_provider
         st.session_state.settings_model = _default_model(selected_provider)
@@ -131,25 +174,24 @@ def render_settings_tab() -> None:
 
     provider = st.session_state.settings_provider
 
-    # Provider description
-    desc = PROVIDER_DESCRIPTIONS.get(provider, "")
+    # Description
+    desc = _meta_desc(provider)
     if desc:
         st.caption(desc)
 
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
 
-    # ── Model selector ──────────────────────
+    # Model selector
     col_left, col_right = st.columns(2)
-
     with col_left:
-        st.markdown('<div class="section-header">🧩 模型版本</div>', unsafe_allow_html=True)
-        models = PROVIDER_MODELS.get(provider, [""])
+        meta = PROVIDER_META.get(provider, {})
+        models = meta.get("models", [""])
         model_idx = 0
         if st.session_state.settings_model in models:
             model_idx = models.index(st.session_state.settings_model)
 
         selected_model = st.selectbox(
-            "模型",
+            "Model",
             options=models,
             index=model_idx,
             label_visibility="collapsed",
@@ -162,59 +204,47 @@ def render_settings_tab() -> None:
 
     st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
 
-    # ── API Key + Actions (wrapped in st.form) ─
-    #
-    # st.form batches all widget states before processing submit.
-    # This guarantees the password field value is captured even when
-    # the user pastes a key and clicks submit without pressing Enter.
-    # Ref: Streamlit docs — Form execution model.
+    # API Key + Actions
     with st.form("api_key_settings_form", clear_on_submit=False):
-        # ── API Key input ──────────────────
-        if provider in ("mock", "rule"):
+        if provider in DEMO_PROVIDERS:
             st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
-            st.caption(f"{PROVIDER_LABELS.get(provider)} 无需 API Key")
+            st.caption(f"{_meta_label(provider)} does not require an API Key")
             api_key = ""
         else:
             st.markdown('<div class="section-header">🔑 API Key</div>', unsafe_allow_html=True)
             api_key = st.text_input(
                 "API Key",
                 type="password",
-                placeholder="输入你的 API Key...",
+                placeholder="Paste your API key...",
                 label_visibility="collapsed",
                 key="settings_api_key_input",
             )
 
-        # ── Action buttons ─────────────────
         btn_col1, btn_col2, btn_col3 = st.columns([2, 2, 1])
-
         with btn_col1:
             test_clicked = st.form_submit_button(
-                "🔍 测试连接",
+                "🔍 Test Connection",
                 use_container_width=True,
                 type="secondary",
             )
-
         with btn_col2:
-            can_save = provider in ("mock", "rule") or bool(api_key.strip())
+            can_save = provider in DEMO_PROVIDERS or bool(api_key.strip())
             save_clicked = st.form_submit_button(
-                "💾 保存配置",
+                "💾 Save Configuration",
                 use_container_width=True,
                 type="primary",
                 disabled=not can_save,
             )
 
-    # ── Process form submission ─────────────
-    # These run AFTER the form context exits, when form data is committed.
-
-    # Sync key to session_state (for display in "配置详情" etc.)
+    # Process form
     if api_key:
         st.session_state.settings_api_key = api_key
-    elif provider in ("mock", "rule"):
+    elif provider in DEMO_PROVIDERS:
         st.session_state.settings_api_key = ""
 
     if test_clicked:
         with st.status(
-            f"正在连接 {PROVIDER_LABELS.get(provider, provider)}...",
+            f"Testing {_meta_label(provider)}...",
             expanded=True,
         ) as status:
             result = _test_connection(provider, st.session_state.settings_model, api_key)
@@ -222,12 +252,12 @@ def render_settings_tab() -> None:
             st.session_state.settings_saved = False
             if result["success"]:
                 status.update(
-                    label=f"✅ 连接成功! ({result['latency']:.1f}s)",
+                    label=f"✅ Connected! ({result['latency']:.1f}s)",
                     state="complete",
                 )
             else:
                 status.update(
-                    label=f"❌ 连接失败: {result.get('error', '未知错误')}",
+                    label=f"❌ Failed: {result.get('error', 'Unknown error')}",
                     state="error",
                 )
 
@@ -240,27 +270,23 @@ def render_settings_tab() -> None:
         save_llm_config(cfg)
         st.session_state.settings_saved = True
         st.session_state.settings_test_result = None
-        st.success(f"✅ 配置已保存 — {PROVIDER_LABELS.get(provider, provider)}")
+        st.success(f"✅ Saved — {_meta_label(provider)}")
 
-    # ── Status display (stable containers) ─
-    # Always rendered — never conditionally removed from the widget tree.
-    # This prevents React DOM removeChild errors caused by
-    # spinner/expander appearing and disappearing between renders.
-
+    # Status display
     test_result = st.session_state.settings_test_result
     if test_result is not None:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
         if test_result["success"]:
             st.success(
-                f"✅ 连接成功！延迟: {test_result['latency']:.2f}s "
-                f"({PROVIDER_LABELS.get(test_result['provider'], test_result['provider'])}"
+                f"✅ Connection verified! Latency: {test_result['latency']:.2f}s "
+                f"({_meta_label(test_result['provider'])}"
                 f" · {test_result['model']})"
             )
-            st.caption("连接已验证，点击「保存配置」以保存设置。")
+            st.caption("Connection verified. Click 'Save Configuration' to persist.")
         else:
-            error_msg = test_result.get("error", "未知错误")
-            st.error(f"❌ 连接失败: {error_msg}")
-            with st.expander("💡 故障排除建议"):
+            error_msg = test_result.get("error", "Unknown error")
+            st.error(f"❌ Connection failed: {error_msg}")
+            with st.expander("💡 Troubleshooting"):
                 hints = _get_error_hints(error_msg)
                 for hint in hints:
                     st.markdown(f"- {hint}")
@@ -268,19 +294,19 @@ def render_settings_tab() -> None:
     elif st.session_state.settings_saved:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
         st.info(
-            f"✅ 当前使用: **{PROVIDER_LABELS.get(provider, provider)}**"
+            f"✅ Active: **{_meta_label(provider)}**"
             + (f" · {st.session_state.settings_model}" if st.session_state.settings_model else "")
         )
 
     elif current.is_configured:
         st.markdown('<div class="divider-custom"></div>', unsafe_allow_html=True)
         st.info(
-            f"📋 已保存配置: **{PROVIDER_LABELS.get(current.provider, current.provider)}**"
+            f"📋 Saved: **{_meta_label(current.provider)}**"
             + (f" · {current.model}" if current.model else "")
         )
 
-    # ── Current config info ─────────────────
-    with st.expander("📋 配置详情"):
+    # Config details
+    with st.expander("📋 Configuration Details"):
         st.json({
             "config_path": config_path,
             "exists": os.path.exists(config_path),
@@ -290,11 +316,6 @@ def render_settings_tab() -> None:
 
 
 # ── Helpers ────────────────────────────────
-
-def _default_model(provider: str) -> str:
-    """Get default model for a provider."""
-    models = PROVIDER_MODELS.get(provider, [""])
-    return models[0] if models else ""
 
 
 def _test_connection(provider: str, model: str, api_key: str) -> dict:

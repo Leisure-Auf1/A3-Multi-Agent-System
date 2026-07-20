@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400" viewBox="0 0 900 400">
+  <rect width="900" height="400" fill="#0d1117"/>
+  <text x="220" y="35" fill="#c9d1d9" font-size="22" font-family="monospace" font-weight="bold">👤 Learning Profile</text>
+  <!-- Dimensions -->
+  <rect x="220" y="55" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="73" fill="#8b949e" font-size="9" font-family="monospace">📚 Knowledge Base</text>
+  <text x="235" y="93" fill="#58a6ff" font-size="14" font-family="monospace">junior_dev</text>
+  <rect x="385" y="55" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="73" fill="#8b949e" font-size="9" font-family="monospace">🧠 Cognitive Style</text>
+  <text x="400" y="93" fill="#58a6ff" font-size="14" font-family="monospace">visual</text>
+  <rect x="550" y="55" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="565" y="73" fill="#8b949e" font-size="9" font-family="monospace">⚡ Learning Pace</text>
+  <text x="565" y="93" fill="#58a6ff" font-size="14" font-family="monospace">fast_track</text>
+  <rect x="220" y="110" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="128" fill="#8b949e" font-size="9" font-family="monospace">⚠️ Error Prone</text>
+  <text x="235" y="148" fill="#58a6ff" font-size="14" font-family="monospace">magic_syntax</text>
+  <rect x="385" y="110" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="128" fill="#8b949e" font-size="9" font-family="monospace">🖐️ Interaction</text>
+  <text x="400" y="148" fill="#58a6ff" font-size="14" font-family="monospace">hands_on</text>
+  <!-- Memory Stats -->
+  <text x="220" y="185" fill="#c9d1d9" font-size="16" font-family="monospace">🧠 AI Memory</text>
+  <rect x="220" y="195" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="215" fill="#8b949e" font-size="9" font-family="monospace">Interactions</text>
+  <text x="235" y="235" fill="#58a6ff" font-size="16" font-family="monospace">42</text>
+  <rect x="385" y="195" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="215" fill="#8b949e" font-size="9" font-family="monospace">Mastery Concepts</text>
+  <text x="400" y="235" fill="#3fb950" font-size="16" font-family="monospace">12</text>
+  <rect x="550" y="195" width="155" height="45" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="565" y="215" fill="#8b949e" font-size="9" font-family="monospace">Sessions</text>
+  <text x="565" y="235" fill="#58a6ff" font-size="16" font-family="monospace">5</text>
+</svg>

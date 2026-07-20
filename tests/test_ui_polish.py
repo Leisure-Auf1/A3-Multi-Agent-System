@@ -358,7 +358,7 @@ class TestUIComponents:
     def test_pipeline_result_has_all_fields(self):
         c, uid, _ = _setup_api_client()
         result = c.run_pipeline("Full result test pipeline")
-        required = ["run_id", "plan", "trace", "evaluation", "status"]
+        required = ["run_id", "plan", "trace", "evaluation", "reflection", "content", "resources", "run_info", "status"]
         for key in required:
             assert key in result, f"Missing key: {key}"
 

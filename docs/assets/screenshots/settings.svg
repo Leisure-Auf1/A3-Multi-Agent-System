@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="550" viewBox="0 0 900 550">
+  <rect width="900" height="550" fill="#0d1117"/>
+  <text x="220" y="35" fill="#c9d1d9" font-size="22" font-family="monospace" font-weight="bold">⚙️ AI Provider Center</text>
+  <text x="220" y="60" fill="#8b949e" font-size="12" font-family="monospace">Configure your AI engine — production models and offline demos</text>
+  <!-- Production Models -->
+  <text x="220" y="90" fill="#c9d1d9" font-size="14" font-family="monospace">🚀 Production Models</text>
+  <rect x="220" y="100" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="123" fill="#c9d1d9" font-size="11" font-family="monospace">🌊 DeepSeek  Models: deepseek-chat...</text>
+  <rect x="440" y="100" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="455" y="123" fill="#c9d1d9" font-size="11" font-family="monospace">🤖 OpenAI   Models: gpt-4o-mini...</text>
+  <rect x="660" y="100" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="675" y="123" fill="#c9d1d9" font-size="11" font-family="monospace">🧠 Claude   Models: claude-sonnet...</text>
+  <rect x="220" y="140" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="163" fill="#c9d1d9" font-size="11" font-family="monospace">🔮 Gemini   Models: gemini-pro...</text>
+  <rect x="440" y="140" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="455" y="163" fill="#c9d1d9" font-size="11" font-family="monospace">☁️ Qwen     Models: qwen3.5...</text>
+  <rect x="660" y="140" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="675" y="163" fill="#c9d1d9" font-size="11" font-family="monospace">🌙 Kimi     Models: kimi-k3...</text>
+  <rect x="220" y="180" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="203" fill="#c9d1d9" font-size="11" font-family="monospace">🚀 Grok     Models: grok...</text>
+  <rect x="440" y="180" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="455" y="203" fill="#c9d1d9" font-size="11" font-family="monospace">⭐ Spark    Models: spark-pro...</text>
+  <!-- Demo Models -->
+  <text x="220" y="230" fill="#c9d1d9" font-size="14" font-family="monospace">🎭 Demo &amp; Offline Models</text>
+  <rect x="220" y="240" width="210" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="263" fill="#c9d1d9" font-size="11" font-family="monospace">🎭 Mock  Always On</text>
+  <!-- Active Config -->
+  <text x="220" y="295" fill="#c9d1d9" font-size="14" font-family="monospace">⚡ Active Provider: 🎭 Demo (mock)</text>
+  <text x="220" y="320" fill="#8b949e" font-size="11" font-family="monospace">No API key required — full pipeline works offline</text>
+  <rect x="220" y="340" width="200" height="32" rx="6" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+  <text x="290" y="361" fill="#c9d1d9" font-size="12" font-family="monospace" text-anchor="middle">🔍 Test Connection</text>
+  <rect x="430" y="340" width="200" height="32" rx="6" fill="#238636"/>
+  <text x="530" y="361" fill="#ffffff" font-size="12" font-family="monospace" text-anchor="middle">💾 Save Configuration</text>
+</svg>

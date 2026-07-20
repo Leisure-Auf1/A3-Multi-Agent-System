@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="900" height="600" fill="#0d1117"/>
+  <text x="220" y="35" fill="#c9d1d9" font-size="22" font-family="monospace" font-weight="bold">🎓 Learning Pipeline</text>
+  <!-- Pipeline progress -->
+  <text x="220" y="70" fill="#3fb950" font-size="13" font-family="monospace">✅ Pipeline complete — 7 agents executed (595ms)</text>
+  <!-- AI Engine -->
+  <rect x="220" y="85" width="660" height="50" rx="4" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="235" y="108" fill="#58a6ff" font-size="12" font-family="monospace">⚡ AI Engine: mockllm | Model: mock-model-v1 | Tokens: 0 | Duration: 595ms</text>
+  <!-- Summary -->
+  <text x="220" y="160" fill="#c9d1d9" font-size="14" font-family="monospace">📊 Pipeline Results</text>
+  <text x="220" y="185" fill="#8b949e" font-size="11" font-family="monospace">Learning Nodes: 3  |  Quality Score: 90  |  Duration: 595ms</text>
+  <text x="220" y="210" fill="#3fb950" font-size="12" font-family="monospace">🧠 AI remembered this session</text>
+  <!-- AI Execution Card -->
+  <rect x="220" y="225" width="660" height="22" rx="3" fill="#1a2332"/>
+  <text x="235" y="241" fill="#58a6ff" font-size="11" font-family="monospace">🤖 AI Execution Card — 6 LLM / 1 Rule</text>
+  <text x="235" y="260" fill="#8b949e" font-size="10" font-family="monospace">Provider: mockllm  Model: mock-model-v1</text>
+  <text x="235" y="270" fill="#3fb950" font-size="11" font-family="monospace">🤖 ProfileAgent</text>
+  <text x="235" y="292" fill="#3fb950" font-size="11" font-family="monospace">🤖 PlannerAgent</text>
+  <text x="235" y="314" fill="#3fb950" font-size="11" font-family="monospace">🤖 ContentGeneratorAgent</text>
+  <text x="235" y="336" fill="#3fb950" font-size="11" font-family="monospace">🤖 ResourceAgent</text>
+  <text x="235" y="358" fill="#3fb950" font-size="11" font-family="monospace">🤖 ReviewAgent</text>
+  <text x="235" y="380" fill="#3fb950" font-size="11" font-family="monospace">🤖 ReflectionAgent</text>
+  <text x="235" y="402" fill="#8b949e" font-size="11" font-family="monospace">⚙️ Memory</text>
+</svg>

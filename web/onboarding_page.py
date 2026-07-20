@@ -26,12 +26,17 @@ from src.core.provider_factory import _build_from_config
 
 # ── Provider presets (shared with settings_tab.py) ──
 
-ONBOARDING_PROVIDERS = ["deepseek", "openai", "spark", "mock"]
+ONBOARDING_PROVIDERS = ["deepseek", "openai", "anthropic", "google", "qwen", "kimi", "grok", "spark", "mock"]
 
 PROVIDER_LABELS = {
     "deepseek": "🌊 DeepSeek",
     "openai": "🤖 OpenAI",
-    "spark": "🚀 讯飞星火 (Spark)",
+    "anthropic": "🧠 Claude (Anthropic)",
+    "google": "🔮 Gemini (Google)",
+    "qwen": "☁️ 通义千问 (Qwen)",
+    "kimi": "🌙 Kimi (Moonshot)",
+    "grok": "🚀 Grok (xAI)",
+    "spark": "⭐ 讯飞星火 (Spark)",
     "mock": "🎭 Demo 模式（先体验）",
 }
 
