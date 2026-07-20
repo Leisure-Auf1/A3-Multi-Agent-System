@@ -1,17 +1,19 @@
 # A3-Agent — Multi-Agent Personalized Learning System
 
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="A3-Agent Banner" width="100%">
+</p>
+
 [![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)
 [![CI](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions/workflows/test.yml/badge.svg)](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/actions/workflows/test.yml)
-[![Tests](https://img.shields.io/badge/tests-2661%2F2661-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-2857%2F2857-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Win%20%7C%20Linux%20%7C%20Docker-lightgrey)]()
 
-> **A multi-agent AI learning system that builds personalized curricula from natural language.**
->
-> *Describe what you want to learn. A team of specialized AI agents profiles you, plans your path, generates resources, tutors interactively, and evaluates your progress — all locally, with zero-config demo mode.*
+> **Production-ready multi-agent AI learning platform.** 7 specialized agents orchestrated through an EventBus pipeline — profiles you, plans your path, generates content, quizzes you, reflects on your learning, and persists it to memory. 2857 tests, 0 failures.
 
-**[📥 Download](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)** · **[📖 Docs](docs/)** · **[🚀 Quick Start](docs/user/getting-started.md)**
+**[📥 Download v1.0.0](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)** · **[🚀 Quick Start](docs/user/getting-started.md)** · **[📖 Docs](docs/)**
 
 ---
 
@@ -26,15 +28,50 @@ A3 is a **complete AI-powered learning application** that orchestrates 7 special
 - 🔍 **Reviews quality** through ReviewGate evaluation
 - 💭 **Reflects and improves** with ReflectionAgent
 - 💾 **Persists learning** to memory for continuous adaptation
+- ✅ **Interactive quizzes** with AI-powered error analysis and recovery plans
+- 📋 **History replay** — revisit any past learning session with full results
+- 🧠 **Memory dashboard** — see what AI has learned about your strengths and weaknesses
 
-| Feature | |
-|:--------|:--|
+| Feature | Description |
+|:--------|:------------|
 | 🔐 **Zero-config demo** | Full pipeline runs offline — no API key needed |
-| 🏗️ **Clean architecture** | API → Auth → Pipeline → A3Workflow → Agents |
+| 🤖 **8 LLM providers** | DeepSeek, OpenAI, Anthropic, Google, Qwen, Kimi, Grok, Spark |
 | 🖥️ **Cross-platform** | Windows `.exe`, Linux binary, Docker, Streamlit |
 | 🔒 **Security** | JWT auth, role-based permissions, token budget |
-| 📊 **Product UI** | 6-tab dashboard with onboarding, history, workspace browser |
-| ✅ **2661 tests** | 100% pass rate, 0 failures |
+| 📊 **Product UI** | 6-tab dashboard with onboarding, history replay, workspace, memory |
+| 🎯 **Goal suggestions** | 3 clickable demo goals — start learning in 1 click |
+| 🤖 **AI transparency** | Per-agent execution card — see which agents used LLM vs rule |
+| ✅ **2857 tests** | 100% pass rate, 0 failures |
+
+### Pipeline Execution Example
+
+```bash
+$ streamlit run web/app.py
+# → Register → Click "Learn Python basics" → Run Pipeline
+
+🤖 ProfileAgent        — cognitive analysis (7ms)
+🗺️ PlannerAgent        — 5-node learning path (4ms)
+📝 ContentGenerator    — personalized lesson (2ms)
+📚 ResourceAgent       — 4 resources recommended (3ms)
+💭 ReflectionAgent     — "well-structured for beginners" (1ms)
+💾 Memory              — experience saved, profile updated (1ms)
+
+✅ Pipeline complete — see plan, content, reflection, quiz
+📋 History → replay any past session with full details
+🧠 Memory → 12 concepts mastered, 3 areas to improve
+```
+
+---
+
+## Screenshots
+
+| Dashboard | Pipeline Results | Quiz & Reflection |
+|:---------:|:----------------:|:-----------------:|
+| ![Dashboard](docs/assets/screenshots/dashboard.svg) | ![Pipeline](docs/assets/screenshots/pipeline.svg) | ![Quiz](docs/assets/screenshots/quiz.svg) |
+
+| Memory Card | Provider Settings |
+|:-----------:|:-----------------:|
+| ![Memory](docs/assets/screenshots/memory.svg) | ![Settings](docs/assets/screenshots/settings.svg) |
 
 ---
 
@@ -48,7 +85,7 @@ https://a3-agent.streamlit.app
 
 ### 🖥️ Windows Desktop
 
-1. Download [`A3-Agent-v7.1.1-win64.zip`](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)
+1. Download [`A3-Agent-v1.0.0-win64.zip`](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases)
 2. Extract → double-click `A3-Agent.exe`
 3. Browser opens → choose Demo Mode or configure your LLM provider
 
@@ -129,7 +166,7 @@ streamlit run web/app.py
 # Run all tests
 make test
 
-# 2640 tests, 0 failures
+# 2857 tests, 0 failures
 ```
 
 📖 [Security documentation →](docs/product/security-production-readiness.md)

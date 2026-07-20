@@ -100,7 +100,7 @@ Target: **1154/1154 tests passing, 0 failures.**
 feat: add new agent capability
 fix: resolve database migration issue
 docs: update installation guide
-release: package v7.1.0 Windows .exe
+release: package v1.0.0 Windows .exe
 ```
 
 ## Questions?

@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |:--------|:----------|
-| v7.1.0 | ✅ Security updates |
-| < v7.1.0 | ❌ Upgrade to latest |
+| v1.0.0 | ✅ Active support |
+| v0.x | ❌ Upgrade to v1.0.0 |
 
 ## Reporting a Vulnerability
 
