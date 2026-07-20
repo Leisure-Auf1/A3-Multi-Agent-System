@@ -220,7 +220,7 @@ class TestLearningFlow:
         assert resp.status_code == 200
         data = resp.json()
         assert "profile" in data
-        assert data["source"] in ("rule", "stored")
+        assert data["source"] in ("rule", "stored", "llm")  # Phase 15.1: LLM path added
 
     def test_create_learning_plan(self):
         """PlannerAgent generates a plan via API."""
