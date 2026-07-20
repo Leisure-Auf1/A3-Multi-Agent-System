@@ -149,7 +149,8 @@ chmod +x "$BUILD_DIR/INSTALL.md"
 # ── Add root-level documentation ────────
 echo "[4.5/6] Adding root documentation..."
 cp "$PROJECT_ROOT/LICENSE" "$BUILD_DIR/LICENSE" 2>/dev/null || echo "(LICENSE not found)"
-echo "A3-Agent v${VERSION}" > "$BUILD_DIR/VERSION"
+echo "${VERSION}" > "$BUILD_DIR/VERSION"
+mkdir -p "$BUILD_DIR/config" "$BUILD_DIR/assets"
 cat > "$BUILD_DIR/README.txt" << README_TXT
 A3-Agent v${VERSION} — AI Multi-Agent Learning System
 
