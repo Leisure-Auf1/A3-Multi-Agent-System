@@ -416,7 +416,7 @@ def _execute_pipeline_with_progress(api: A3APIClient, goal: str) -> None:
             completed = 0
             for i, agent_name in enumerate(agents_in_trace):
                 pct = int((i + 1) / len(agents_in_trace) * 100)
-                matching = [t for t in trace if t.get("agent") == agent_name]
+                matching = [ev for ev in trace if ev.get("agent") == agent_name]
                 if matching:
                     dur = matching[-1].get("duration_ms", 0)
                     status_text.success(f"🤖 {agent_name} — {dur:.0f}ms")
@@ -479,7 +479,7 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
         rule_agents = []
         for ev in trace:
             meta = ev.get("metadata", {})
-            agent_name = t.get("agent", "")
+            agent_name = ev.get("agent", "")
             if agent_name in ("System", "Workflow"):
                 continue
             if meta.get("llm_used") or meta.get("source") == "llm":
@@ -539,7 +539,7 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
                 render_pipeline_progress(events, st)
             except Exception:
                 for ev in trace:
-                    st.text(f"{ev.get('agent', '?')}: {t.get('output_summary', '')[:80]}")
+                    st.text(f"{ev.get('agent', '?')}: {ev.get("output_summary', '')[:80]}")
 
     # Learning Plan
     if nodes:
