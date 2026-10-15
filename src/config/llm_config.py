@@ -26,7 +26,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -101,8 +103,22 @@ DEFAULT_CONFIG = {
 
 # ── Config path ────────────────────────────
 
-def get_config_dir() -> str:
-    """Platform-appropriate config directory."""
+def _validate_user_id(user_id: str) -> str:
+    """Validate identifiers before using them as filesystem components."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", user_id):
+        raise ValueError("Invalid user identifier")
+    if user_id in (".", ".."):
+        raise ValueError("Invalid user identifier")
+    return user_id
+
+
+def get_config_dir(user_id: str = "") -> str:
+    """Return the desktop config directory or an isolated API-user directory."""
+    if user_id:
+        safe_user_id = _validate_user_id(user_id)
+        return os.path.expanduser(
+            os.path.join("~/.a3-agent/workspace", safe_user_id, "config")
+        )
     if sys.platform == "win32":
         base = os.environ.get("APPDATA", os.path.expanduser("~"))
         return os.path.join(base, "A3-Agent", "config")
@@ -110,9 +126,9 @@ def get_config_dir() -> str:
         return os.path.expanduser("~/.a3-agent/config")
 
 
-def get_config_path() -> str:
+def get_config_path(user_id: str = "") -> str:
     """Path to the llm.json config file."""
-    return os.path.join(get_config_dir(), "llm.json")
+    return os.path.join(get_config_dir(user_id), "llm.json")
 
 
 # ── Data model ─────────────────────────────
@@ -170,13 +186,13 @@ class LLMConfig:
 
 # ── Persistence ────────────────────────────
 
-def load_llm_config() -> LLMConfig:
+def load_llm_config(user_id: str = "") -> LLMConfig:
     """
     Load user LLM configuration from llm.json.
 
     Returns default Mock config if file doesn't exist.
     """
-    path = get_config_path()
+    path = get_config_path(user_id) if user_id else get_config_path()
     if not os.path.exists(path):
         return LLMConfig(**DEFAULT_CONFIG)
 
@@ -195,7 +211,8 @@ def load_llm_config() -> LLMConfig:
     api_key = ""
     if encrypted_key:
         try:
-            api_key = decrypt_api_key(encrypted_key, provider=provider)
+            credential_name = f"{user_id}:{provider}" if user_id else provider
+            api_key = decrypt_api_key(encrypted_key, provider=credential_name)
         except Exception:
             # Corrupted encryption → treat as unconfigured
             api_key = ""
@@ -207,18 +224,19 @@ def load_llm_config() -> LLMConfig:
     return LLMConfig(provider=provider, model=model, api_key=api_key, language=language)
 
 
-def save_llm_config(config: LLMConfig) -> None:
+def save_llm_config(config: LLMConfig, user_id: str = "") -> None:
     """
     Save user LLM configuration to llm.json.
 
     API key is encrypted before writing.
     """
-    path = get_config_path()
+    path = get_config_path(user_id) if user_id else get_config_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     encrypted_key = ""
     if config.api_key:
-        encrypted_key = encrypt_api_key(config.api_key, provider=config.provider)
+        credential_name = f"{user_id}:{config.provider}" if user_id else config.provider
+        encrypted_key = encrypt_api_key(config.api_key, provider=credential_name)
 
     data = {
         "provider": config.provider,
@@ -227,8 +245,16 @@ def save_llm_config(config: LLMConfig) -> None:
         "api_key": encrypted_key,
     }
 
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    # Replace atomically so concurrent readers never observe a partial JSON file.
+    fd, temp_path = tempfile.mkstemp(prefix="llm-", suffix=".json", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.chmod(temp_path, 0o600)
+        os.replace(temp_path, path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
     os.chmod(path, 0o600)
 
 

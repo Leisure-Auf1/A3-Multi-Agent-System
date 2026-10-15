@@ -57,14 +57,19 @@ def get_workflow(
     )
 
 
-def get_llm_provider() -> Optional[LLMProvider]:
+def get_llm_provider(user_id: str = "") -> Optional[LLMProvider]:
     """
-    FastAPI dependency: provide LLMProvider from environment.
+    Resolve an LLM provider, optionally from an isolated user's settings.
 
     Priority:
-      1. LLM_PROVIDER env var (e.g., "deepseek", "spark")
-      2. Falls back to "mock" provider
+      1. Per-user saved settings, when user_id is provided
+      2. LLM_PROVIDER env var (e.g., "deepseek", "spark")
+      3. Falls back to "mock" provider
 
     Returns None only if LLM_PROVIDER is explicitly "none" / "rule_only".
     """
+    # User-scoped providers must not use the mode cache because credentials can
+    # change at runtime and must never be shared between accounts.
+    if user_id:
+        return create_provider(user_id=user_id)
     return get_provider()

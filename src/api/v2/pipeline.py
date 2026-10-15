@@ -93,7 +93,7 @@ def run_learning_pipeline(
     llm_provider = None
     try:
         from src.core.provider_factory import create_provider
-        llm_provider = create_provider()
+        llm_provider = create_provider(user_id=user.id)
     except Exception:
         pass  # Falls back to rule-only if no provider configured
 

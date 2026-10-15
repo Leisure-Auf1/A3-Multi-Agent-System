@@ -44,14 +44,14 @@ def create_learning_plan(
     try:
         workflow = get_workflow(
             provider_mode=req.provider,
-            student_id=req.student_id,
+            student_id=user.id,
         )
 
         result = workflow.run(
             user_goal=req.goal,
             user_profile=req.profile,
             knowledge_gaps=req.knowledge_gaps or [],
-            session_id=f"api_{req.student_id}",
+            session_id=f"api_{user.id}",
         )
     except Exception as exc:
         raise HTTPException(

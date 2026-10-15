@@ -208,7 +208,7 @@ class OrchestratorRuntime:
                 model=current_selection.model_id,
             )
 
-            call_start = time.time()
+            call_start = time.perf_counter()
             try:
                 resp: ProviderResponse = provider.generate(
                     prompt=prompt,
@@ -217,7 +217,7 @@ class OrchestratorRuntime:
                     max_tokens=max_tokens,
                     **kwargs,
                 )
-                call_elapsed = (time.time() - call_start) * 1000
+                call_elapsed = (time.perf_counter() - call_start) * 1000
 
                 if resp.success:
                     self._selector.report_success(
@@ -431,7 +431,7 @@ class OrchestratorRuntime:
         """Get current runtime metrics snapshot."""
         m = dict(self.metrics)
         n = m["total_calls"]
-        m["avg_latency_ms"] = round(m["total_latency_ms"] / n, 1) if n else 0.0
+        m["avg_latency_ms"] = m["total_latency_ms"] / n if n else 0.0
         m["success_rate"] = round(m["success_calls"] / n * 100, 1) if n else 0.0
         m["fallback_rate"] = round(m["fallback_calls"] / n * 100, 1) if n else 0.0
         m["total_cost"] = round(m["total_cost"], 4)

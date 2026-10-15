@@ -25,6 +25,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -336,11 +337,14 @@ class ReviewGateManager:
             import shutil
             # 1. 正向验证
             positive = subprocess.run(
-                ["python3", "-m", "pytest", str(tmp / "test_case.py"), "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", str(tmp / "test_case.py"), "-v", "--tb=short"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self.PYTEST_TIMEOUT_SECONDS,
                 cwd=str(tmp),
+                env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"},
             )
 
             if positive.returncode != 0:
@@ -377,11 +381,14 @@ class ReviewGateManager:
                     _shutil.rmtree(cache_dir)
 
             negative = subprocess.run(
-                ["python3", "-m", "pytest", str(tmp / "test_case.py"), "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", str(tmp / "test_case.py"), "-v", "--tb=short"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self.PYTEST_TIMEOUT_SECONDS,
                 cwd=str(tmp),
+                env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"},
             )
 
             if negative.returncode == 0:

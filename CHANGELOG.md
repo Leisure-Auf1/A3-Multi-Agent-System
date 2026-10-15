@@ -4,6 +4,23 @@ All notable changes to the A3-Multi-Agent-System.
 
 ---
 
+## [Unreleased]
+
+### Security
+- Isolated LLM settings and provider instances per authenticated user
+- Required authentication and ownership checks for settings and resource-status APIs
+- Restricted user administration and cross-user profile access
+- Bound deprecated learning routes to the authenticated user identity
+- Prevented workspace path traversal and removed credentialed wildcard CORS defaults
+
+### Fixed
+- Added Python 3.10 TOML compatibility so the full CI matrix can collect tests
+- Isolated EventBus instances for concurrent learning-pipeline runs
+- Granted the Windows release workflow permission to upload release assets
+- Unified reproducible test dependencies across CI and Docker publishing
+
+---
+
 ## [v7.1.0] — 2026-07-19 (Release)
 
 🔗 [GitHub Release](https://github.com/Leisure-Auf1/A3-Multi-Agent-System/releases/tag/v7.1.0)

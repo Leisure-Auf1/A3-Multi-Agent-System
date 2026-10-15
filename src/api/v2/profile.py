@@ -73,7 +73,7 @@ def assess_student_profile(
     from fastapi.responses import JSONResponse
     from src.api.dependencies import get_llm_provider
 
-    llm = get_llm_provider()
+    llm = get_llm_provider(user.id)
     agent = ProfileAgent()
     if llm is not None:
         agent.set_llm_provider(llm)

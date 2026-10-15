@@ -77,6 +77,14 @@ class TestUnauthorizedRequests:
         resp = client.post("/api/v2/learning/run", json={"goal": "test"})
         assert resp.status_code == 401
 
+    def test_missing_token_settings(self):
+        resp = client.get("/api/v2/settings/llm")
+        assert resp.status_code == 401
+
+    def test_missing_token_artifact_status(self):
+        resp = client.get("/api/v2/resources/nonexistent")
+        assert resp.status_code == 401
+
     def test_missing_token_v2_learning(self):
         """POST /api/v2/learning/plan without token → 401."""
         resp = client.post("/api/v2/learning/plan", json={"goal": "test"})

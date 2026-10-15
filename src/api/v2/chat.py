@@ -72,7 +72,11 @@ _tutor_cache: Dict[str, TutorAgent] = {}
 
 def _get_tutor(provider=None) -> TutorAgent:
     """Get or create a tutor agent instance with optional LLM provider."""
-    key = "llm" if provider is not None else "default"
+    # Configured providers contain user credentials and must never be cached in
+    # a process-global tutor shared by other accounts.
+    if provider is not None:
+        return TutorAgent(llm_provider=provider)
+    key = "default"
     if key not in _tutor_cache:
         _tutor_cache[key] = TutorAgent(llm_provider=provider)
     return _tutor_cache[key]
@@ -89,7 +93,7 @@ def chat_message(
     import time
     start = time.time()
 
-    tutor = _get_tutor(provider=get_llm_provider())
+    tutor = _get_tutor(provider=get_llm_provider(user.id))
     ctx = TutorContext(
         student_profile=req.student_profile,
         learning_goal=req.learning_goal,
@@ -134,7 +138,7 @@ def chat_stream(
     """Streaming SSE chat endpoint. Yields tokens as they arrive."""
 
     def generate():
-        tutor = _get_tutor(provider=get_llm_provider())
+        tutor = _get_tutor(provider=get_llm_provider(user.id))
         ctx = TutorContext(
             student_profile=req.student_profile,
             learning_goal=req.learning_goal,

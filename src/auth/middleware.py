@@ -9,6 +9,7 @@ Architecture: does NOT modify Veritas-Core or src/core/.
 
 from __future__ import annotations
 
+import os
 from fastapi import Header, HTTPException, Depends, Request
 from typing import Optional, Callable, List
 
@@ -60,8 +61,15 @@ async def optional_auth(
 
 # ── Role-Based Guards (Phase 9.6-A) ──────────
 
-def _get_user_role(user: AuthUser) -> str:
+def get_user_role(user: AuthUser) -> str:
     """Resolve a user's role from the platform UserManager."""
+    configured_admins = {
+        email.strip().lower()
+        for email in os.environ.get("A3_ADMIN_EMAILS", "").split(",")
+        if email.strip()
+    }
+    if user.email and user.email.lower() in configured_admins:
+        return Role.ADMIN
     try:
         from ..user.manager import UserManager
         mgr = UserManager()
@@ -76,6 +84,10 @@ def _get_user_role(user: AuthUser) -> str:
     return Role.FREE
 
 
+# Backward-compatible private alias used by older integrations.
+_get_user_role = get_user_role
+
+
 def require_role(*allowed_roles: str):
     """FastAPI dependency factory: require one of the given roles.
 
@@ -85,7 +97,7 @@ def require_role(*allowed_roles: str):
             ...
     """
     async def _guard(user: AuthUser = Depends(require_auth)) -> AuthUser:
-        role = _get_user_role(user)
+        role = get_user_role(user)
         if role not in allowed_roles:
             raise HTTPException(
                 status_code=403,
@@ -113,7 +125,7 @@ def require_admin():
 def require_multimodal_access():
     """FastAPI dependency: require a role with multimodal access."""
     async def _guard(user: AuthUser = Depends(require_auth)) -> AuthUser:
-        role = _get_user_role(user)
+        role = get_user_role(user)
         perm = PermissionManager.get_permission_for_role_str(role)
         if not perm.multimodal_access:
             raise HTTPException(
@@ -135,7 +147,7 @@ def require_model_access(model_provider: str):
             ...
     """
     async def _guard(user: AuthUser = Depends(require_auth)) -> AuthUser:
-        role = _get_user_role(user)
+        role = get_user_role(user)
         if not PermissionManager.can_use_model(model_provider, Role(role)):
             raise HTTPException(
                 status_code=403,

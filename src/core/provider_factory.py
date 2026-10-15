@@ -72,6 +72,7 @@ def create_provider(
     mode: str = "",
     fallback_chain: bool = False,
     fallback_providers: Optional[List[str]] = None,
+    user_id: str = "",
 ) -> Optional[LLMProvider]:
     """
     Create an LLM provider with user config layer.
@@ -84,6 +85,7 @@ def create_provider(
 
     If user has saved a config with an API key, it takes precedence
     over environment variables unless an explicit mode is passed.
+    Pass user_id for API requests so credentials remain account-scoped.
 
     Returns None for pure rule mode ("none" / "rule_only").
     """
@@ -96,7 +98,7 @@ def create_provider(
         )
 
     # No explicit mode — check user config
-    cfg = load_llm_config()
+    cfg = load_llm_config(user_id=user_id)
     if cfg.is_configured:
         provider = _build_from_config(cfg)
         if provider is not None and provider.is_available:

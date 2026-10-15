@@ -17,7 +17,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
-from src.auth.middleware import require_auth, optional_auth
+from src.auth.middleware import require_auth, require_admin, get_user_role
 from src.auth.models import AuthUser
 from src.user.manager import UserManager
 from src.user.models import User, UserStatus
@@ -94,19 +94,17 @@ def _user_to_response(u: User) -> Dict[str, Any]:
 # ── User Endpoints ──────────────────────────
 
 @router.post("/users", response_model=Dict[str, Any], status_code=201)
-def create_user(req: CreateUserRequest, user: AuthUser = Depends(require_auth)):
+def create_user(req: CreateUserRequest, user: AuthUser = Depends(require_admin())):
     """Create a new platform user.
 
-    Requires authentication. Only admin/teacher can create users
-    with elevated roles.
+    Requires an administrator. Normal users are provisioned through the
+    authentication registration flow.
     """
     mgr = UserManager()
 
-    # Check role escalation
-    if req.role not in (Role.FREE, Role.STUDENT):
-        # Only admin can assign elevated roles
-        # In MVP, we rely on the auth layer for admin check
-        pass
+    valid_roles = {Role.FREE, Role.STUDENT, Role.PRO, Role.TEACHER, Role.ADMIN}
+    if req.role not in valid_roles:
+        raise HTTPException(status_code=422, detail="Invalid role")
 
     result = mgr.create_user(
         username=req.username,
@@ -128,9 +126,9 @@ def create_user(req: CreateUserRequest, user: AuthUser = Depends(require_auth)):
 def list_users(
     include_deleted: bool = Query(False),
     role: str = Query(""),
-    user: AuthUser = Depends(require_auth),
+    user: AuthUser = Depends(require_admin()),
 ):
-    """List all platform users. Requires authentication."""
+    """List all platform users. Requires an administrator."""
     mgr = UserManager()
     users = mgr.list_users(include_deleted=include_deleted, role_filter=role)
     return [_user_to_response(u) for u in users]
@@ -146,6 +144,8 @@ def get_user(
     result = mgr.get_user(user_id)
     if result is None:
         raise HTTPException(status_code=404, detail="User not found")
+    if result.email.lower() != user.email.lower() and get_user_role(user) != Role.ADMIN:
+        raise HTTPException(status_code=403, detail="Access denied")
     return _user_to_response(result)
 
 
@@ -184,6 +184,14 @@ def get_profile(
     user: AuthUser = Depends(require_auth),
 ):
     """Get full user profile. Requires authentication."""
+    mgr = UserManager()
+    target = mgr.get_user(user_id)
+    is_owner = user_id == user.id or (
+        target is not None and target.email.lower() == user.email.lower()
+    )
+    if not is_owner and get_user_role(user) != Role.ADMIN:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     pm = UserProfileManager(user_id)
     profile = pm.get_full_profile()
     return profile.to_dict()

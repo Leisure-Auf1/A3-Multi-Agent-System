@@ -100,6 +100,16 @@ class TestUserIsolation:
         artifacts = self.wm.list_artifacts("user_b")
         assert "secret.md" not in " ".join(artifacts)
 
+    @pytest.mark.parametrize("student_id", ["", "..", "../other", "/tmp/other"])
+    def test_rejects_workspace_escape_in_student_id(self, student_id):
+        with pytest.raises(ValueError):
+            self.wm.create_workspace(student_id)
+
+    @pytest.mark.parametrize("filename", ["../../secret.txt", "../outside.md"])
+    def test_rejects_workspace_escape_in_filename(self, filename):
+        with pytest.raises(ValueError):
+            self.wm.save_artifact("user_a", "materials", filename, "secret")
+
 
 # ──────────────────────────────────────────────
 # 3. Artifact Operations

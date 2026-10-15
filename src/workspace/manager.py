@@ -21,6 +21,7 @@ Architecture: does NOT modify Veritas-Core or src/core/
 from __future__ import annotations
 import json
 import os
+import re
 import shutil
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -71,7 +72,7 @@ class WorkspaceManager:
     """
 
     def __init__(self, root: str = ""):
-        self._root = root or DEFAULT_WORKSPACE_ROOT
+        self._root = str(Path(root or DEFAULT_WORKSPACE_ROOT).expanduser().resolve())
 
     # ── Workspace lifecycle ──────────
 
@@ -80,7 +81,7 @@ class WorkspaceManager:
         ws_path = self._ws_path(student_id)
         for subdir in ["courses", "artifacts/materials", "artifacts/ppt",
                         "artifacts/images", "artifacts/videos", "memory", "history"]:
-            os.makedirs(os.path.join(ws_path, subdir), exist_ok=True)
+            os.makedirs(self._safe_path(student_id, *subdir.split("/")), exist_ok=True)
         return ws_path
 
     def delete_workspace(self, student_id: str) -> bool:
@@ -166,9 +167,7 @@ class WorkspaceManager:
             Absolute path to saved file
         """
         self.create_workspace(student_id)
-        file_path = os.path.join(
-            self._ws_path(student_id), "artifacts", category, filename
-        )
+        file_path = self._safe_path(student_id, "artifacts", category, filename)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -183,9 +182,7 @@ class WorkspaceManager:
     ) -> str:
         """Save binary artifact (e.g. .pptx)."""
         self.create_workspace(student_id)
-        file_path = os.path.join(
-            self._ws_path(student_id), "artifacts", category, filename
-        )
+        file_path = self._safe_path(student_id, "artifacts", category, filename)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as f:
             f.write(content)
@@ -198,9 +195,7 @@ class WorkspaceManager:
         filename: str,
     ) -> Optional[str]:
         """Load artifact content as string."""
-        file_path = os.path.join(
-            self._ws_path(student_id), "artifacts", category, filename
-        )
+        file_path = self._safe_path(student_id, "artifacts", category, filename)
         if not os.path.isfile(file_path):
             return None
         with open(file_path, "r", encoding="utf-8") as f:
@@ -222,9 +217,9 @@ class WorkspaceManager:
             List of file paths
         """
         if category:
-            base = os.path.join(self._ws_path(student_id), "artifacts", category)
+            base = self._safe_path(student_id, "artifacts", category)
         else:
-            base = os.path.join(self._ws_path(student_id), "artifacts")
+            base = self._safe_path(student_id, "artifacts")
 
         if not os.path.isdir(base):
             return []
@@ -242,9 +237,7 @@ class WorkspaceManager:
         filename: str,
     ) -> bool:
         """Delete a single artifact."""
-        file_path = os.path.join(
-            self._ws_path(student_id), "artifacts", category, filename
-        )
+        file_path = self._safe_path(student_id, "artifacts", category, filename)
         if os.path.isfile(file_path):
             os.remove(file_path)
             return True
@@ -258,7 +251,7 @@ class WorkspaceManager:
     ) -> bool:
         """Check if an artifact exists."""
         return os.path.isfile(
-            os.path.join(self._ws_path(student_id), "artifacts", category, filename)
+            self._safe_path(student_id, "artifacts", category, filename)
         )
 
     # ── Course operations ──────────────
@@ -271,14 +264,14 @@ class WorkspaceManager:
     ) -> str:
         """Save a course/teaching material as markdown."""
         self.create_workspace(student_id)
-        file_path = os.path.join(self._ws_path(student_id), "courses", filename)
+        file_path = self._safe_path(student_id, "courses", filename)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
         return file_path
 
     def load_course(self, student_id: str, filename: str) -> Optional[str]:
         """Load a course by filename."""
-        file_path = os.path.join(self._ws_path(student_id), "courses", filename)
+        file_path = self._safe_path(student_id, "courses", filename)
         if not os.path.isfile(file_path):
             return None
         with open(file_path, "r", encoding="utf-8") as f:
@@ -286,7 +279,7 @@ class WorkspaceManager:
 
     def list_courses(self, student_id: str) -> List[str]:
         """List all courses for a student."""
-        courses_dir = os.path.join(self._ws_path(student_id), "courses")
+        courses_dir = self._safe_path(student_id, "courses")
         if not os.path.isdir(courses_dir):
             return []
         return sorted([
@@ -302,7 +295,7 @@ class WorkspaceManager:
     ) -> str:
         """Append a history entry."""
         self.create_workspace(student_id)
-        history_path = os.path.join(self._ws_path(student_id), "history", "history.jsonl")
+        history_path = self._safe_path(student_id, "history", "history.jsonl")
         entry["timestamp"] = datetime.now(timezone.utc).isoformat()
         with open(history_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -350,7 +343,7 @@ class WorkspaceManager:
     ) -> str:
         """Append a usage record for the user."""
         self.create_workspace(user_id)
-        usage_path = os.path.join(self._ws_path(user_id), "usage", "usage.jsonl")
+        usage_path = self._safe_path(user_id, "usage", "usage.jsonl")
         entry["timestamp"] = datetime.now(timezone.utc).isoformat()
         os.makedirs(os.path.dirname(usage_path), exist_ok=True)
         with open(usage_path, "a", encoding="utf-8") as f:
@@ -363,7 +356,7 @@ class WorkspaceManager:
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
         """Get recent usage records for a user."""
-        usage_path = os.path.join(self._ws_path(user_id), "usage", "usage.jsonl")
+        usage_path = self._safe_path(user_id, "usage", "usage.jsonl")
         if not os.path.isfile(usage_path):
             return []
         records = []
@@ -380,7 +373,29 @@ class WorkspaceManager:
     # ── Helpers ────────────────────────
 
     def _ws_path(self, student_id: str) -> str:
-        return os.path.join(self._root, student_id)
+        return self._safe_path(student_id)
+
+    def _safe_path(self, *parts: str) -> str:
+        """Resolve a path and guarantee it remains inside the workspace root."""
+        if not parts or not re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", str(parts[0])
+        ):
+            raise ValueError("Invalid workspace user identifier")
+        for part in parts[1:]:
+            component = str(part)
+            if (
+                not component
+                or component in (".", "..")
+                or "/" in component
+                or "\\" in component
+                or Path(component).is_absolute()
+            ):
+                raise ValueError("Invalid workspace path component")
+        root = Path(self._root).resolve()
+        candidate = root.joinpath(*(str(part) for part in parts)).resolve()
+        if candidate != root and root not in candidate.parents:
+            raise ValueError("Workspace path escapes the configured root")
+        return str(candidate)
 
     def get_root(self) -> str:
         return self._root

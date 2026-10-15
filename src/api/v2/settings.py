@@ -14,7 +14,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.config.llm_config import (
@@ -24,6 +24,8 @@ from src.config.llm_config import (
     SUPPORTED_PROVIDERS,
 )
 from src.core.provider_factory import _build_from_config
+from src.auth.middleware import require_auth
+from src.auth.models import AuthUser
 
 router = APIRouter(prefix="/api/v2/settings", tags=["settings"])
 
@@ -57,14 +59,16 @@ class TestConnectionResponse(BaseModel):
 # ── Endpoints ──────────────────────────────
 
 @router.get("/llm", response_model=LLMSettingsResponse)
-def get_llm_settings() -> LLMSettingsResponse:
+def get_llm_settings(
+    user: AuthUser = Depends(require_auth),
+) -> LLMSettingsResponse:
     """
     Get current LLM configuration.
 
     Returns provider, model, and configured status.
     API key is never returned.
     """
-    cfg = load_llm_config()
+    cfg = load_llm_config(user.id)
     return LLMSettingsResponse(
         provider=cfg.provider,
         model=cfg.model,
@@ -74,7 +78,10 @@ def get_llm_settings() -> LLMSettingsResponse:
 
 
 @router.post("/llm", response_model=LLMSettingsResponse)
-def update_llm_settings(req: LLMSettingsRequest) -> LLMSettingsResponse:
+def update_llm_settings(
+    req: LLMSettingsRequest,
+    user: AuthUser = Depends(require_auth),
+) -> LLMSettingsResponse:
     """
     Save LLM configuration.
 
@@ -83,12 +90,7 @@ def update_llm_settings(req: LLMSettingsRequest) -> LLMSettingsResponse:
     """
     # Validate provider
     if req.provider not in SUPPORTED_PROVIDERS:
-        return LLMSettingsResponse(
-            provider=req.provider,
-            model=req.model,
-            configured=False,
-            supported=sorted(SUPPORTED_PROVIDERS),
-        )
+        raise HTTPException(status_code=422, detail="Unsupported LLM provider")
 
     # Build config and save
     cfg = LLMConfig(
@@ -96,7 +98,7 @@ def update_llm_settings(req: LLMSettingsRequest) -> LLMSettingsResponse:
         model=req.model,
         api_key=req.api_key,
     )
-    save_llm_config(cfg)
+    save_llm_config(cfg, user.id)
 
     return LLMSettingsResponse(
         provider=cfg.provider,
@@ -107,7 +109,10 @@ def update_llm_settings(req: LLMSettingsRequest) -> LLMSettingsResponse:
 
 
 @router.post("/test", response_model=TestConnectionResponse)
-def test_llm_connection(req: Optional[LLMSettingsRequest] = None) -> TestConnectionResponse:
+def test_llm_connection(
+    req: Optional[LLMSettingsRequest] = None,
+    user: AuthUser = Depends(require_auth),
+) -> TestConnectionResponse:
     """
     Test LLM connection using saved configuration or request body.
 
@@ -122,7 +127,7 @@ def test_llm_connection(req: Optional[LLMSettingsRequest] = None) -> TestConnect
             api_key=req.api_key,
         )
     else:
-        cfg = load_llm_config()
+        cfg = load_llm_config(user.id)
 
     # Mock/rule providers don't need API keys — respond immediately
     if cfg.provider in ("mock", "rule"):

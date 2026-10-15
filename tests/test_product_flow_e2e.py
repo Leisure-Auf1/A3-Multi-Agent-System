@@ -185,13 +185,12 @@ class TestUserContext:
         assert "total_tokens_used" in data
 
     def test_users_list_endpoint(self):
-        """GET /users requires auth and returns list."""
+        """GET /users rejects non-admin users."""
         client = TestClient(app)
         token, _, _ = _register_and_login(client)
         resp = client.get("/api/v2/users",
                           headers=_headers(token))
-        assert resp.status_code == 200
-        assert isinstance(resp.json(), list)
+        assert resp.status_code == 403
 
     def test_user_profile_endpoint(self):
         """GET /profile/{id} returns user profile."""

@@ -719,12 +719,10 @@ class TestAuditLogAdditional:
 
     def test_query_since_timestamp(self):
         from src.security.audit import AuditLogger
-        import time
         logger = AuditLogger()
-        logger.log("usr_time", endpoint="/old")
-        mid = time.time()
+        old = logger.log("usr_time", endpoint="/old")
         logger.log("usr_time", endpoint="/new")
-        entries = logger.query("usr_time", since=mid)
+        entries = logger.query("usr_time", since=old.timestamp)
         assert len(entries) == 1
         assert entries[0].endpoint == "/new"
 
