@@ -24,6 +24,7 @@ import base64
 import hashlib
 import hmac
 import json
+import secrets
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -170,6 +171,9 @@ class JWTManager:
             "email": email,
             "iat": now,
             "exp": now + ttl,
+            # Guarantees that an immediate refresh rotates the token even when
+            # both tokens are issued within the same clock tick.
+            "jti": secrets.token_hex(16),
         }
         if extra_claims:
             payload.update(extra_claims)

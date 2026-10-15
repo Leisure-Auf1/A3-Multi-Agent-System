@@ -318,13 +318,29 @@ class TestResourceAPI:
         gen = client.post("/api/v2/resources/generate/document", json={
             "topic": "Python", "concepts": ["A"]}, headers=headers)
         aid = gen.json()["id"]
-        resp = client.get(f"/api/v2/resources/{aid}")
+        resp = client.get(f"/api/v2/resources/{aid}", headers=headers)
         assert resp.status_code == 200
         assert resp.json()["resource_type"] == "document"
 
     def test_get_artifact_404(self, client):
-        resp = client.get("/api/v2/resources/nonexistent")
+        headers = _auth_headers(client)
+        resp = client.get("/api/v2/resources/nonexistent", headers=headers)
         assert resp.status_code == 404
+
+    def test_get_artifact_is_owner_scoped(self, client):
+        owner_headers = _auth_headers(client)
+        other_headers = _auth_headers(client)
+        generated = client.post(
+            "/api/v2/resources/generate/document",
+            json={"topic": "Private", "concepts": ["ownership"]},
+            headers=owner_headers,
+        )
+        artifact_id = generated.json()["id"]
+
+        denied = client.get(
+            f"/api/v2/resources/{artifact_id}", headers=other_headers
+        )
+        assert denied.status_code == 404
 
     def test_student_resources(self, client):
         headers = _auth_headers(client)
@@ -397,7 +413,7 @@ class TestFullIntegration:
             assert a["status"] == "active"
             assert a["provider"]
             # Verify artifact retrievable
-            check = client.get(f"/api/v2/resources/{a['id']}")
+            check = client.get(f"/api/v2/resources/{a['id']}", headers=headers)
             assert check.status_code == 200
 
     def test_all_seven_types(self, client):

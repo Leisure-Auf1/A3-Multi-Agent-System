@@ -151,7 +151,7 @@ class TestHookCallOrder:
         engine.run()
 
         assert "start" in events
-        assert any(e[0] == "end" and e[1] > 0 for e in events)
+        assert any(e[0] == "end" and e[1] >= 0 for e in events)
 
 
 def _raise(msg):

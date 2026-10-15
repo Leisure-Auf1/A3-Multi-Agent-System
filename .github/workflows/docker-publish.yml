@@ -22,17 +22,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Veritas-Core
-        run: |
-          git clone https://github.com/Leisure-Auf1/Veritas-Core.git /tmp/veritas-core
-          pip install -e /tmp/veritas-core
-
       - name: Install deps + test
         run: |
-          pip install -r requirements.txt pytest
-          # CI-only compatibility (same scope as PR #28 fix in test.yml):
-          # unpinned starlette requires httpx2; sklearn is a test-only dep.
-          pip install httpx2 scikit-learn
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           python -m pytest tests/ -q --tb=short
 
   # ═══════════════════════════════════════════════════════

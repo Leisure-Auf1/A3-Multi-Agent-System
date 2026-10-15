@@ -14,6 +14,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
@@ -25,21 +26,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Veritas-Core (framework dependency)
-        run: |
-          git clone https://github.com/Leisure-Auf1/Veritas-Core.git /tmp/veritas-core
-          pip install -e /tmp/veritas-core
-
       - name: Install A3 dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov
-          # CI-only compatibility: fresh installs pull the latest starlette,
-          # whose TestClient now REQUIRES httpx2 (older envs only warned).
-          # scikit-learn is a test-only dep (TF-IDF retriever tests import
-          # sklearn; it was never in production requirements).
-          # Production requirements are intentionally unchanged.
-          pip install httpx2 scikit-learn
+          pip install -r requirements-dev.txt
 
       - name: Run tests
         run: |

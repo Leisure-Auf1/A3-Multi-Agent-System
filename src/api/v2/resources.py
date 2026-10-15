@@ -104,7 +104,7 @@ def generate_resources_v2(
     from src.api.dependencies import get_llm_provider
 
     gateway = MultimodalGateway()
-    llm = get_llm_provider()
+    llm = get_llm_provider(user.id)
     if llm is not None:
         gateway.set_llm_provider(llm)
     results = []
@@ -155,10 +155,15 @@ def get_student_resources(
 
 
 @router.get("/{artifact_id}", response_model=ArtifactResponse)
-def get_artifact_status(artifact_id: str):
+def get_artifact_status(
+    artifact_id: str,
+    user: AuthUser = Depends(require_auth),
+):
     conn = _get_conn()
-    row = conn.execute("SELECT * FROM resources WHERE id = ?",
-                       (artifact_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM resources WHERE id = ? AND student_id = ?",
+        (artifact_id, user.id),
+    ).fetchone()
     if row is None:
         raise HTTPException(404, "Artifact not found")
     return ArtifactResponse(

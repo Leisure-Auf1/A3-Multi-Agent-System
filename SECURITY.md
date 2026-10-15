@@ -32,13 +32,13 @@ A3-Agent uses **OS-level credential stores** for API key encryption:
 | Windows | Credential Manager (via `keyring`) |
 | Linux | Secret Service / D-Bus (via `keyring`) |
 | macOS | Keychain (via `keyring`) |
-| Headless/Server | XOR encryption fallback |
+| Headless/Server | Local obfuscation fallback; configure an OS keyring for production |
 
-**API keys are NEVER stored in plaintext.**
+API keys are not stored as plaintext by the application.
 
 - `llm.json` configuration file contains `keyring://provider` references, not actual keys
-- The XOR fallback is local-only and uses a fixed obfuscation key (not cryptographically secure)
-- For production deployments, ensure OS-level keyring is available
+- The XOR fallback is obfuscation, not cryptographic protection; anyone who can read both local files can recover the key
+- Production deployments must provide a working OS-level keyring and protect the application data directory
 
 ### User Data Isolation
 
@@ -48,16 +48,20 @@ A3-Agent uses **OS-level credential stores** for API key encryption:
 | Linux/macOS | `~/.a3-agent/` |
 
 User data includes:
-- `config/` — LLM provider configuration (key references only)
+- `workspace/{user_id}/config/` — per-user API configuration (key references or obfuscated fallback values)
 - `storage/` — SQLite learning database
 - `logs/` — Application logs
 
 ### Authentication
 
 The FastAPI backend supports:
-- **JWT authentication** for multi-user deployments
+- **Opaque bearer sessions** stored server-side with a 24-hour expiry
 - **Guest mode** for single-user desktop usage
-- Passwords are hashed (bcrypt) before storage
+- Passwords are hashed with PBKDF2-HMAC-SHA256 before storage
+- Administrative access can be bootstrapped with the comma-separated `A3_ADMIN_EMAILS` environment variable
+
+Cross-origin browser access is restricted to local UI origins by default. Set
+`A3_CORS_ORIGINS` to a comma-separated allowlist for deployed frontends.
 
 ### Dependencies
 

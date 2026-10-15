@@ -86,7 +86,7 @@ def generate_quiz(
     user: AuthUser = Depends(require_auth),
 ):
     """Generate a quiz for a topic."""
-    agent = EvaluationAgent(llm_provider=get_llm_provider())
+    agent = EvaluationAgent(llm_provider=get_llm_provider(user.id))
     quiz_id = uuid.uuid4().hex[:12]
     questions = agent.generate_quiz(
         req.topic, req.student_level, req.num_questions, req.difficulty)
@@ -109,7 +109,7 @@ def score_quiz(
     user: AuthUser = Depends(require_auth),
 ):
     """Score a completed quiz."""
-    agent = EvaluationAgent(llm_provider=get_llm_provider())
+    agent = EvaluationAgent(llm_provider=get_llm_provider(user.id))
     quiz_id = req.quiz_id or uuid.uuid4().hex[:12]
 
     # Reconstruct questions from answers
@@ -160,7 +160,7 @@ def assess_open_answer(
     user: AuthUser = Depends(require_auth),
 ):
     """Evaluate an open-ended answer."""
-    agent = EvaluationAgent(llm_provider=get_llm_provider())
+    agent = EvaluationAgent(llm_provider=get_llm_provider(user.id))
     result = agent.evaluate_open_answer(req.question, req.answer, req.topic)
     return OpenAssessResponse(**result)
 

@@ -539,7 +539,10 @@ def _render_pipeline_results(result: dict, trace: list | None) -> None:
                 render_pipeline_progress(events, st)
             except Exception:
                 for ev in trace:
-                    st.text(f"{ev.get('agent', '?')}: {ev.get("output_summary', '')[:80]}")
+                    st.text(
+                        f"{ev.get('agent', '?')}: "
+                        f"{ev.get('output_summary', '')[:80]}"
+                    )
 
     # Learning Plan
     if nodes:

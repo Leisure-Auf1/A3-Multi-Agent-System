@@ -31,11 +31,14 @@ class TestVerifyBundleIntegrity:
             index_path = os.path.join(static_dir, "index.html")
             with open(index_path, "w") as f:
                 f.write("<html></html>")
+            executable = os.path.join(tmp, "python")
+            with open(executable, "w") as f:
+                f.write("")
 
             from desktop.config import BUNDLE_ROOT, verify_bundle_integrity
 
             with mock.patch("desktop.config.BUNDLE_ROOT", internal_dir):
-                with mock.patch.object(sys, "executable", "/usr/bin/python3"):
+                with mock.patch.object(sys, "executable", executable):
                     ok, missing = verify_bundle_integrity()
                     assert ok is True
                     assert missing == []
@@ -65,9 +68,12 @@ class TestVerifyBundleIntegrity:
         """Integrity check fails when streamlit static files are missing (frozen mode)."""
         with tempfile.TemporaryDirectory() as tmp:
             from desktop.config import verify_bundle_integrity
+            executable = os.path.join(tmp, "python")
+            with open(executable, "w") as f:
+                f.write("")
 
             with mock.patch("desktop.config.BUNDLE_ROOT", tmp):
-                with mock.patch.object(sys, "executable", "/usr/bin/python3"):
+                with mock.patch.object(sys, "executable", executable):
                     with mock.patch.object(sys, "frozen", True, create=True):
                         ok, missing = verify_bundle_integrity()
                         assert ok is False
@@ -78,9 +84,12 @@ class TestVerifyBundleIntegrity:
         """In dev mode (not frozen), critical paths check is skipped."""
         with tempfile.TemporaryDirectory() as tmp:
             from desktop.config import verify_bundle_integrity
+            executable = os.path.join(tmp, "python")
+            with open(executable, "w") as f:
+                f.write("")
 
             with mock.patch("desktop.config.BUNDLE_ROOT", tmp):
-                with mock.patch.object(sys, "executable", "/usr/bin/python3"):
+                with mock.patch.object(sys, "executable", executable):
                     # dev mode: frozen is False or absent
                     ok, missing = verify_bundle_integrity()
                     assert ok is True
@@ -95,11 +104,14 @@ class TestVerifyBundleIntegrity:
             index_path = os.path.join(static_dir, "index.html")
             with open(index_path, "w") as f:
                 f.write("<html></html>")
+            executable = os.path.join(tmp, "python")
+            with open(executable, "w") as f:
+                f.write("")
 
             from desktop.config import verify_bundle_integrity
 
             with mock.patch("desktop.config.BUNDLE_ROOT", tmp):
-                with mock.patch.object(sys, "executable", "/usr/bin/python3"):
+                with mock.patch.object(sys, "executable", executable):
                     with mock.patch.object(sys, "frozen", True, create=True):
                         ok, missing = verify_bundle_integrity()
                         assert ok is True

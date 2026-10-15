@@ -13,7 +13,10 @@ from __future__ import annotations
 
 import os
 import sys
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
 import tempfile
 import contextlib
 
@@ -191,6 +194,44 @@ class TestLLMConfigLanguage:
                 llm_mod.get_config_path = orig
         finally:
             os.unlink(tmp_path)
+
+    def test_llmconfig_isolated_by_user(self, tmp_path, monkeypatch):
+        import src.config.llm_config as llm_mod
+
+        original_expanduser = llm_mod.os.path.expanduser
+        monkeypatch.setattr(
+            llm_mod.os.path,
+            "expanduser",
+            lambda path: path.replace("~", str(tmp_path), 1)
+            if path.startswith("~") else original_expanduser(path),
+        )
+        monkeypatch.setattr(
+            llm_mod,
+            "encrypt_api_key",
+            lambda plaintext, provider="": f"enc:{plaintext}",
+        )
+        monkeypatch.setattr(
+            llm_mod,
+            "decrypt_api_key",
+            lambda ciphertext, provider="": ciphertext.removeprefix("enc:"),
+        )
+
+        llm_mod.save_llm_config(
+            llm_mod.LLMConfig(provider="deepseek", api_key="key-a"), "user_a"
+        )
+        llm_mod.save_llm_config(
+            llm_mod.LLMConfig(provider="openai", api_key="key-b"), "user_b"
+        )
+
+        assert llm_mod.load_llm_config("user_a").api_key == "key-a"
+        assert llm_mod.load_llm_config("user_b").api_key == "key-b"
+        assert llm_mod.get_config_path("user_a") != llm_mod.get_config_path("user_b")
+
+    def test_llmconfig_rejects_path_traversal_user_id(self):
+        from src.config.llm_config import get_config_path
+
+        with pytest.raises(ValueError):
+            get_config_path("../other-user")
 
 
 # ── Helpers ──────────────────────────────────

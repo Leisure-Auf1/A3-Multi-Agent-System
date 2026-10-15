@@ -31,6 +31,17 @@ from src.api.v2 import (
     users_router, pipeline_router,  # Phase 9.5-B / 10.2
 )
 
+
+def _cors_settings() -> tuple[list[str], bool]:
+    """Build a safe CORS policy from an explicit environment allowlist."""
+    raw = os.environ.get(
+        "A3_CORS_ORIGINS",
+        "http://localhost:8501,http://127.0.0.1:8501",
+    )
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    allow_credentials = "*" not in origins
+    return origins or ["http://localhost:8501"], allow_credentials
+
 app = FastAPI(
     title="A3 Multi-Agent Learning System — API",
     description=(
@@ -41,11 +52,13 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS — allow all origins for development
+_cors_origins, _cors_credentials = _cors_settings()
+
+# CORS — explicit local defaults; deployments can set A3_CORS_ORIGINS.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

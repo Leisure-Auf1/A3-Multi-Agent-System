@@ -17,6 +17,7 @@ Architecture: does NOT modify Veritas-Core or src/core/.
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 from dataclasses import dataclass, field
@@ -131,6 +132,9 @@ class AuditLogger:
         entries = logger.query("usr_1", limit=50)
     """
 
+    def __init__(self) -> None:
+        self._last_timestamp = 0.0
+
     def log(
         self,
         user_id: str,
@@ -156,11 +160,16 @@ class AuditLogger:
         import uuid
         event_id = f"audit_{uuid.uuid4().hex[:16]}"
 
+        timestamp = time.time()
+        if timestamp <= self._last_timestamp:
+            timestamp = math.nextafter(self._last_timestamp, math.inf)
+        self._last_timestamp = timestamp
+
         entry = AuditEntry(
             event_id=event_id,
             user_id=user_id,
             role=role,
-            timestamp=time.time(),
+            timestamp=timestamp,
             endpoint=endpoint,
             method=method,
             status_code=status_code,
@@ -222,7 +231,7 @@ class AuditLogger:
 
                         if success_only is not None and entry.success != success_only:
                             continue
-                        if since > 0 and entry.timestamp < since:
+                        if since > 0 and entry.timestamp <= since:
                             continue
                         if endpoint_prefix and not entry.endpoint.startswith(endpoint_prefix):
                             continue

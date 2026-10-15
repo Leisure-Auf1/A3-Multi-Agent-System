@@ -23,6 +23,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from src.workflow import A3Workflow
+from src.core.event_bus import AgentEventBus
 from src.workspace.manager import WorkspaceManager
 from src.data.learning_records import record_agent_action
 
@@ -71,6 +72,7 @@ class LearningPipelineService:
         workflow = A3Workflow(
             student_id=user_id,
             llm_provider=llm_provider,
+            bus=AgentEventBus(),
         )
 
         wf_result = workflow.run(
