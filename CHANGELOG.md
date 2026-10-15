@@ -12,6 +12,8 @@ All notable changes to the A3-Multi-Agent-System.
 - Restricted user administration and cross-user profile access
 - Bound deprecated learning routes to the authenticated user identity
 - Prevented workspace path traversal and removed credentialed wildcard CORS defaults
+- Enforced chat-thread ownership before appending regular or streaming messages
+- Restricted global runtime diagnostics and reset operations to administrators
 
 ### Fixed
 - Added Python 3.10 TOML compatibility so the full CI matrix can collect tests

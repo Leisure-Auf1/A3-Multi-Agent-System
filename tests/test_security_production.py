@@ -347,11 +347,20 @@ class TestV1DeprecatedAuth:
         assert "X-Deprecated-API" in resp.headers
         assert resp.headers["X-Deprecated-API"] == "true"
 
-    def test_v1_runtime_with_auth(self):
-        """GET /api/v1/runtime/state with valid token → 200."""
+    def test_v1_runtime_rejects_non_admin(self):
+        """Global runtime diagnostics are not exposed to normal users."""
         from veritas.runtime import RuntimeBus
         RuntimeBus.init()
         u = _user1()
+        resp = client.get("/api/v1/runtime/state", headers=u["headers"])
+        assert resp.status_code == 403
+
+    def test_v1_runtime_with_admin(self, monkeypatch):
+        """Administrators retain access to deprecated diagnostics."""
+        from veritas.runtime import RuntimeBus
+        RuntimeBus.init()
+        u = _user1()
+        monkeypatch.setenv("A3_ADMIN_EMAILS", u["email"])
         resp = client.get("/api/v1/runtime/state", headers=u["headers"])
         assert resp.status_code == 200
         assert "X-Deprecated-API" in resp.headers
@@ -366,11 +375,12 @@ class TestV1DeprecatedAuth:
         )
         assert resp.headers.get("X-Migration-Path") == "/api/v2/learning/run"
 
-    def test_v1_runtime_sunset_header(self):
+    def test_v1_runtime_sunset_header(self, monkeypatch):
         """v1 runtime response includes Sunset header."""
         from veritas.runtime import RuntimeBus
         RuntimeBus.init()
         u = _user1()
+        monkeypatch.setenv("A3_ADMIN_EMAILS", u["email"])
         resp = client.get("/api/v1/runtime/state", headers=u["headers"])
         assert "Sunset" in resp.headers
 
