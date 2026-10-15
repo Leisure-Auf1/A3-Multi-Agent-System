@@ -35,7 +35,7 @@ def _register_and_auth(client, prefix="A") -> dict:
 
 
 class TestChatThreadIsolation:
-    """Verify User A cannot read/rename User B's threads."""
+    """Verify User A cannot read, rename, or append to User B's threads."""
 
     def test_user_cannot_read_others_thread_messages(self, client):
         """User A creates thread → User B attempts read → 404."""
@@ -84,6 +84,33 @@ class TestChatThreadIsolation:
         threads = resp_a.json()
         assert any(t["id"] == thread_id and t["title"] == "My Private Thread"
                    for t in threads)
+
+    @pytest.mark.parametrize("endpoint", ["message", "stream"])
+    def test_user_cannot_append_to_others_thread(self, client, endpoint):
+        """A supplied thread_id must be ownership-checked before generation."""
+        user_a = _register_and_auth(client, "append-A")
+        user_b = _register_and_auth(client, "append-B")
+
+        created = client.post(
+            "/api/v2/chat/threads",
+            json={"title": "Private Thread"},
+            headers=user_a["headers"],
+        )
+        thread_id = created.json()["id"]
+
+        denied = client.post(
+            f"/api/v2/chat/{endpoint}",
+            json={"message": "Injected message", "thread_id": thread_id},
+            headers=user_b["headers"],
+        )
+        assert denied.status_code == 404
+
+        owner_view = client.get(
+            f"/api/v2/chat/threads/{thread_id}/messages",
+            headers=user_a["headers"],
+        )
+        assert owner_view.status_code == 200
+        assert owner_view.json() == []
 
     def test_thread_list_only_returns_owners_threads(self, client):
         """Each user only sees their own threads."""

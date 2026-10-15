@@ -39,6 +39,7 @@ client = TestClient(app)
 # ── Auth helper ──
 
 def _register_and_login(email: str = "rt_dash@a3.local") -> dict:
+    os.environ["A3_ADMIN_EMAILS"] = email
     client.post("/api/v2/auth/register", json={
         "email": email, "password": "testpass", "display_name": "RT Dash Test",
     })

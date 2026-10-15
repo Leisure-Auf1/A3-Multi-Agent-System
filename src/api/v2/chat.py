@@ -15,11 +15,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 import json
-import uuid
 
-from src.auth.middleware import require_auth, optional_auth
+from src.auth.middleware import require_auth
 from src.auth.models import AuthUser
-from src.agents.tutor_agent import TutorAgent, TutorContext, TutorResponse
+from src.agents.tutor_agent import TutorAgent, TutorContext
 from src.api.dependencies import get_llm_provider
 from src.data.thread_store import (
     new_thread, list_threads, add_message, get_messages, rename_thread,
@@ -82,6 +81,12 @@ def _get_tutor(provider=None) -> TutorAgent:
     return _tutor_cache[key]
 
 
+def _require_owned_thread(thread_id: Optional[str], user_id: str) -> None:
+    """Reject attempts to append messages to another user's thread."""
+    if thread_id and get_thread_by_id(thread_id, user_id) is None:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+
 # ── Routes ─────────────────────────────────────────────────
 
 @router.post("/message", response_model=Dict[str, Any])
@@ -92,6 +97,9 @@ def chat_message(
     """Non-streaming chat message. Returns full response."""
     import time
     start = time.time()
+
+    # Validate ownership before invoking the provider or writing any message.
+    _require_owned_thread(req.thread_id, user.id)
 
     tutor = _get_tutor(provider=get_llm_provider(user.id))
     ctx = TutorContext(
@@ -136,6 +144,10 @@ def chat_stream(
     user: AuthUser = Depends(require_auth),
 ):
     """Streaming SSE chat endpoint. Yields tokens as they arrive."""
+
+    # Streaming responses have already sent their HTTP status when the
+    # generator starts, so ownership must be checked before constructing it.
+    _require_owned_thread(req.thread_id, user.id)
 
     def generate():
         tutor = _get_tutor(provider=get_llm_provider(user.id))
